@@ -4,7 +4,6 @@ import { createSupabaseAdmin } from '@/lib/supabase-server'
 import Stripe from 'stripe'
 
 // Stripe envia o body como raw — desabilitar body parser
-export const config = { api: { bodyParser: false } }
 
 export async function POST(req: NextRequest) {
   const body = await req.text()
@@ -36,15 +35,31 @@ export async function POST(req: NextRequest) {
         if (!userId) break
 
         if (session.mode === 'subscription' && plano) {
-          // Ativar assinatura do clube
           const subscription = await stripe.subscriptions.retrieve(session.subscription as string)
-          await supabase.from('clubes').update({
+
+          console.log('[WEBHOOK] userId:', userId)
+          console.log('[WEBHOOK] plano:', plano)
+          console.log('[WEBHOOK] subscription status:', subscription.status)
+
+          // Verifica se o clube existe
+          const { data: clubeExistente, error: erroClube } = await supabase
+            .from('clubes')
+            .select('id, user_id')
+            .eq('user_id', userId)
+            .single()
+
+          console.log('[WEBHOOK] clube encontrado:', clubeExistente)
+          console.log('[WEBHOOK] erro ao buscar clube:', erroClube)
+
+          const { error: erroUpdate } = await supabase.from('clubes').update({
             plano,
             stripe_customer_id: session.customer as string,
             stripe_subscription_id: session.subscription as string,
             status_assinatura: subscription.status,
-            assinatura_expira_em: new Date(subscription.current_period_end * 1000).toISOString(),
+            assinatura_expira_em: new Date((subscription as any).current_period_end * 1000).toISOString(),
           }).eq('user_id', userId)
+
+          console.log('[WEBHOOK] erro no update:', erroUpdate)
         }
 
         if (session.mode === 'payment' && tipo === 'destaque') {
@@ -85,7 +100,7 @@ export async function POST(req: NextRequest) {
         if (clube) {
           await supabase.from('clubes').update({
             status_assinatura: sub.status,
-            assinatura_expira_em: new Date(sub.current_period_end * 1000).toISOString(),
+            assinatura_expira_em: new Date((sub as any).current_period_end * 1000).toISOString(),
           }).eq('id', clube.id)
         }
         break

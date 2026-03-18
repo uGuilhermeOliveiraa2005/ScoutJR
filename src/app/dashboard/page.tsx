@@ -19,7 +19,6 @@ export default async function DashboardPage() {
   let profile = initialProfile
 
   if (!profile) {
-    // Tenta "auto-reparar" o perfil via Admin Client (bypass RLS)
     const adminSupabase = createSupabaseAdmin()
     const { data: newProfile, error: insertError } = await adminSupabase
       .from('profiles')
@@ -49,6 +48,16 @@ export default async function DashboardPage() {
 
   const isClube = profile.role === 'clube'
 
+  let clube = null
+  if (isClube) {
+    const { data } = await supabase
+      .from('clubes')
+      .select('*')
+      .eq('user_id', user.id)
+      .single()
+    clube = data
+  }
+
   return (
     <>
       <NavbarDashboard userName={profile.nome} userRole={profile.role} />
@@ -57,7 +66,7 @@ export default async function DashboardPage() {
         {/* Welcome */}
         <div className="mb-8">
           <h1 className="font-display text-4xl text-neutral-900 mb-1">
-            OLÁ, {profile.nome.split(' ')[0].toUpperCase()}
+            OLÁ, {isClube ? profile.nome.toUpperCase() : profile.nome.split(' ')[0].toUpperCase()}
           </h1>
           <p className="text-sm text-neutral-500">
             {isClube ? 'Gerencie suas buscas e interesses.' : 'Acompanhe o perfil do seu atleta.'}
@@ -123,14 +132,23 @@ export default async function DashboardPage() {
               <div className="flex flex-col gap-2 text-sm text-neutral-500">
                 <div className="flex justify-between">
                   <span>Plano</span>
-                  <span className="font-medium text-neutral-700">{isClube ? 'Gratuito' : 'Família'}</span>
+                  <span className="font-medium text-neutral-700">
+                    {isClube
+                      ? (clube?.plano ? clube.plano.charAt(0).toUpperCase() + clube.plano.slice(1) : 'Gratuito')
+                      : 'Família'}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span>Status</span>
-                  <span className="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full font-medium">Ativo</span>
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${clube?.status_assinatura === 'active'
+                      ? 'bg-green-100 text-green-700'
+                      : 'bg-neutral-200 text-neutral-600'
+                    }`}>
+                    {clube?.status_assinatura === 'active' ? 'Ativo' : 'Gratuito'}
+                  </span>
                 </div>
               </div>
-              {isClube && (
+              {isClube && clube?.status_assinatura !== 'active' && (
                 <Link href="/configuracoes" className="mt-4 block">
                   <Button variant="amber" size="sm" className="w-full">Fazer upgrade</Button>
                 </Link>
