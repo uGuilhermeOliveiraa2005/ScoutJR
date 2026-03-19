@@ -1,62 +1,105 @@
+// ============================================
+// CAMINHO: src/app/api/mp/payment/route.ts
+// ============================================
+
 import { NextRequest, NextResponse } from 'next/server'
-import { createSupabaseServer } from '@/lib/supabase-server'
+import { createSupabaseServer, createSupabaseAdmin } from '@/lib/supabase-server'
 import { mpPayment, PLANOS_MP, PRODUTOS_MP } from '@/lib/mercadopago'
 import { checkRateLimit } from '@/lib/mp-security'
 import { z } from 'zod'
 
+// O formulário CardPayment do MP envia só email e identification
+// Os demais campos (first_name, last_name, phone, address) são opcionais
 const paymentSchema = z.object({
     tipo: z.enum(['assinatura', 'destaque', 'verificacao']),
     plano: z.enum(['starter', 'pro', 'enterprise']).optional(),
-    token: z.string().min(1, 'Token do cartão obrigatório').optional(),
-    payment_method_id: z.string().min(1).optional(),
+    token: z.string().optional(),
+    payment_method_id: z.string().optional(),
     installments: z.number().min(1).max(12).optional(),
     issuer_id: z.string().optional(),
     payer: z.object({
         email: z.string().email(),
-        first_name: z.string().min(2),
-        last_name: z.string().min(2),
+        first_name: z.string().optional(),
+        last_name: z.string().optional(),
         identification: z.object({
             type: z.enum(['CPF', 'CNPJ']),
             number: z.string().min(11).max(14),
-        }),
+        }).optional(),
         phone: z.object({
-            area_code: z.string().length(2),
-            number: z.string().min(8).max(9),
-        }),
+            area_code: z.string(),
+            number: z.string(),
+        }).optional(),
         address: z.object({
-            zip_code: z.string().length(8),
-            street_name: z.string().min(3),
-            street_number: z.string().min(1),
-            neighborhood: z.string().min(2),
-            city: z.string().min(2),
-            federal_unit: z.string().length(2),
-        }),
+            zip_code: z.string(),
+            street_name: z.string(),
+            street_number: z.string(),
+            neighborhood: z.string(),
+            city: z.string(),
+            federal_unit: z.string(),
+        }).optional(),
     }),
     payment_type: z.enum(['credit_card', 'debit_card', 'pix']),
 })
 
-export async function POST(req: NextRequest) {
+async function processApprovedPayment(
+    userId: string,
+    tipo: string,
+    plano: string | undefined,
+    paymentId: number
+) {
+    const supabase = createSupabaseAdmin()
+
     try {
-        // Rate limiting
-        const ip = req.headers.get('x-forwarded-for') ?? req.headers.get('x-real-ip') ?? 'unknown'
-        if (!checkRateLimit(ip, 10, 60000)) {
-            return NextResponse.json(
-                { error: 'Muitas requisições. Aguarde um momento.' },
-                { status: 429 }
-            )
+        if (tipo === 'assinatura' && plano) {
+            const expira = new Date()
+            expira.setMonth(expira.getMonth() + 1)
+            await supabase.from('clubes').update({
+                plano,
+                status_assinatura: 'active',
+                assinatura_expira_em: expira.toISOString(),
+                mp_payment_id: String(paymentId),
+            }).eq('user_id', userId)
         }
 
-        // Autenticação
+        if (tipo === 'destaque') {
+            const expira = new Date()
+            expira.setDate(expira.getDate() + 30)
+            await supabase.from('atletas').update({
+                destaque_ativo: true,
+                destaque_expira_em: expira.toISOString(),
+            }).eq('responsavel_id', userId)
+        }
+
+        if (tipo === 'verificacao') {
+            await supabase.from('clubes').update({
+                verificado: true,
+                verificado_em: new Date().toISOString(),
+                mp_payment_id: String(paymentId),
+            }).eq('user_id', userId)
+        }
+    } catch (err) {
+        console.error('[MP PAYMENT] Erro ao processar pagamento aprovado:', err)
+    }
+}
+
+export async function POST(req: NextRequest) {
+    try {
+        const ip = req.headers.get('x-forwarded-for') ?? req.headers.get('x-real-ip') ?? 'unknown'
+        if (!checkRateLimit(ip, 10, 60000)) {
+            return NextResponse.json({ error: 'Muitas requisições. Aguarde um momento.' }, { status: 429 })
+        }
+
         const supabase = await createSupabaseServer()
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) {
             return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
         }
 
-        // Validação do body
         const body = await req.json()
+
         const parsed = paymentSchema.safeParse(body)
         if (!parsed.success) {
+            console.error('[MP PAYMENT] Erro de validação:', parsed.error.flatten())
             return NextResponse.json(
                 { error: 'Dados inválidos', details: parsed.error.flatten() },
                 { status: 400 }
@@ -65,7 +108,6 @@ export async function POST(req: NextRequest) {
 
         const data = parsed.data
 
-        // Busca perfil do usuário
         const { data: profile } = await supabase
             .from('profiles')
             .select('nome, email')
@@ -76,7 +118,6 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Perfil não encontrado' }, { status: 404 })
         }
 
-        // Determina valor e descrição
         let amount: number
         let description: string
 
@@ -94,36 +135,45 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Tipo de pagamento inválido' }, { status: 400 })
         }
 
-        // Monta payload do pagamento
+        // Monta o payer — campos opcionais recebem valores padrão
+        // pois o formulário CardPayment do MP não envia todos os campos
+        const nomeParts = (data.payer.first_name ?? profile.nome ?? 'Usuario').trim().split(' ')
+        const payer = {
+            email: data.payer.email,
+            first_name: data.payer.first_name ?? nomeParts[0],
+            last_name: data.payer.last_name ?? (nomeParts.length > 1 ? nomeParts.slice(1).join(' ') : nomeParts[0]),
+            identification: data.payer.identification ?? { type: 'CPF', number: '00000000000' },
+            phone: data.payer.phone ?? { area_code: '11', number: '999999999' },
+            address: data.payer.address ?? {
+                zip_code: '01310100',
+                street_name: 'Avenida Paulista',
+                street_number: '1',
+                neighborhood: 'Centro',
+                city: 'São Paulo',
+                federal_unit: 'SP',
+            },
+        }
+
         const paymentData: Record<string, unknown> = {
             transaction_amount: amount,
             description,
             external_reference: `${user.id}|${data.tipo}|${data.plano ?? ''}|${Date.now()}`,
-            payer: {
-                email: data.payer.email,
-                first_name: data.payer.first_name,
-                last_name: data.payer.last_name,
-                identification: data.payer.identification,
-                phone: data.payer.phone,
-                address: data.payer.address,
-            },
+            payer,
             metadata: {
                 user_id: user.id,
                 tipo: data.tipo,
                 plano: data.plano ?? null,
             },
-            notification_url: `${process.env.NEXT_PUBLIC_APP_URL}/api/mp/webhook`,
+            notification_url: process.env.MP_WEBHOOK_SECRET
+                ? `${process.env.NEXT_PUBLIC_APP_URL}/api/mp/webhook`
+                : undefined,
         }
 
-        // PIX
         if (data.payment_type === 'pix') {
             paymentData.payment_method_id = 'pix'
-            paymentData.date_of_expiration = new Date(
-                Date.now() + 30 * 60 * 1000 // 30 minutos
-            ).toISOString()
+            paymentData.date_of_expiration = new Date(Date.now() + 30 * 60 * 1000).toISOString()
         }
 
-        // Cartão
         if (data.payment_type === 'credit_card' || data.payment_type === 'debit_card') {
             if (!data.token || !data.payment_method_id) {
                 return NextResponse.json(
@@ -137,16 +187,23 @@ export async function POST(req: NextRequest) {
             if (data.issuer_id) paymentData.issuer_id = data.issuer_id
         }
 
-        // Cria pagamento no MP
         const payment = await mpPayment.create({ body: paymentData })
 
-        // Retorna resposta segura (sem dados sensíveis)
+        console.log('[MP PAYMENT] Resposta:', {
+            id: payment.id,
+            status: payment.status,
+            status_detail: payment.status_detail,
+        })
+
+        if (payment.status === 'approved' && data.payment_type !== 'pix') {
+            await processApprovedPayment(user.id, data.tipo, data.plano, payment.id!)
+        }
+
         return NextResponse.json({
             id: payment.id,
             status: payment.status,
             status_detail: payment.status_detail,
             payment_type: data.payment_type,
-            // PIX QR Code
             pix: data.payment_type === 'pix' ? {
                 qr_code: payment.point_of_interaction?.transaction_data?.qr_code,
                 qr_code_base64: payment.point_of_interaction?.transaction_data?.qr_code_base64,
@@ -154,8 +211,12 @@ export async function POST(req: NextRequest) {
             } : undefined,
         })
 
-    } catch (err) {
-        console.error('[MP PAYMENT]', err)
+    } catch (err: any) {
+        console.error('[MP ERROR]', {
+            message: err?.message,
+            cause: err?.cause,
+            status: err?.status,
+        })
         return NextResponse.json({ error: 'Erro interno ao processar pagamento' }, { status: 500 })
     }
 }

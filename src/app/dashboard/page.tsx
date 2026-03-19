@@ -1,7 +1,11 @@
+// ============================================
+// CAMINHO: src/app/dashboard/page.tsx
+// ============================================
+
 import { createSupabaseServer, createSupabaseAdmin } from '@/lib/supabase-server'
 import { redirect } from 'next/navigation'
 import { NavbarDashboard } from '@/components/layout/Navbar'
-import { Users, Star, MessageCircle, TrendingUp, ArrowRight, Eye } from 'lucide-react'
+import { Users, Star, MessageCircle, TrendingUp, ArrowRight, Eye, ShieldCheck } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
 
@@ -35,12 +39,7 @@ export default async function DashboardPage() {
       .single()
 
     if (insertError) {
-      console.error('Erro detalhado ao auto-criar perfil:', {
-        code: insertError.code,
-        message: insertError.message,
-        details: insertError.details,
-        hint: insertError.hint
-      })
+      console.error('Erro ao auto-criar perfil:', insertError)
       redirect('/login?error=profile_not_found')
     }
     profile = newProfile
@@ -60,15 +59,28 @@ export default async function DashboardPage() {
 
   return (
     <>
-      <NavbarDashboard userName={profile.nome} userRole={profile.role} />
+      <NavbarDashboard
+        userName={profile.nome}
+        userRole={profile.role}
+        verificado={clube?.verificado ?? false}
+      />
       <main className="max-w-7xl mx-auto px-6 py-8">
 
         {/* Welcome */}
         <div className="mb-8">
-          <h1 className="font-display text-4xl text-neutral-900 mb-1">
-            OLÁ, {isClube ? profile.nome.toUpperCase() : profile.nome.split(' ')[0].toUpperCase()}
-          </h1>
-          <p className="text-sm text-neutral-500">
+          <div className="flex items-center gap-3 flex-wrap">
+            <h1 className="font-display text-4xl text-neutral-900">
+              OLÁ, {isClube ? profile.nome.toUpperCase() : profile.nome.split(' ')[0].toUpperCase()}
+            </h1>
+            {/* Selo de verificado no título */}
+            {isClube && clube?.verificado && (
+              <div className="flex items-center gap-1.5 bg-green-100 text-green-700 text-xs font-medium px-3 py-1.5 rounded-full">
+                <ShieldCheck size={13} />
+                Clube Verificado
+              </div>
+            )}
+          </div>
+          <p className="text-sm text-neutral-500 mt-1">
             {isClube ? 'Gerencie suas buscas e interesses.' : 'Acompanhe o perfil do seu atleta.'}
           </p>
         </div>
@@ -147,6 +159,19 @@ export default async function DashboardPage() {
                     {clube?.status_assinatura === 'active' ? 'Ativo' : 'Gratuito'}
                   </span>
                 </div>
+                {/* Linha de verificado na sidebar */}
+                {isClube && (
+                  <div className="flex justify-between">
+                    <span>Verificação</span>
+                    {clube?.verificado ? (
+                      <span className="flex items-center gap-1 text-xs font-medium text-green-700">
+                        <ShieldCheck size={11} /> Verificado
+                      </span>
+                    ) : (
+                      <span className="text-xs text-neutral-400">Não verificado</span>
+                    )}
+                  </div>
+                )}
               </div>
               {isClube && clube?.status_assinatura !== 'active' && (
                 <Link href="/configuracoes" className="mt-4 block">
@@ -160,6 +185,21 @@ export default async function DashboardPage() {
                 <h3 className="text-sm font-medium text-amber-800 mb-2">Destaque seu atleta</h3>
                 <p className="text-xs text-amber-600 leading-relaxed mb-3">Apareça no topo das buscas e receba mais atenção dos clubes por apenas R$ 49/mês.</p>
                 <Link href="/configuracoes"><Button variant="amber" size="sm" className="w-full">Ativar destaque</Button></Link>
+              </div>
+            )}
+
+            {/* Banner verificação para clubes não verificados */}
+            {isClube && !clube?.verificado && (
+              <div className="bg-green-50 border border-green-100 rounded-xl p-5">
+                <h3 className="text-sm font-medium text-green-800 mb-2 flex items-center gap-1.5">
+                  <ShieldCheck size={14} /> Verifique seu clube
+                </h3>
+                <p className="text-xs text-green-600 leading-relaxed mb-3">
+                  Obtenha o selo verificado e aumente a confiança das famílias na plataforma.
+                </p>
+                <Link href="/configuracoes">
+                  <Button variant="dark" size="sm" className="w-full">Verificar agora</Button>
+                </Link>
               </div>
             )}
           </div>

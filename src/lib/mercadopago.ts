@@ -1,11 +1,16 @@
+// ============================================
+// CAMINHO: src/lib/mercadopago.ts
+// ============================================
+
 import { MercadoPagoConfig, Payment, PreApproval } from 'mercadopago'
 
-if (!process.env.MP_ACCESS_TOKEN) {
-    throw new Error('MP_ACCESS_TOKEN não definida')
-}
+// Não jogamos erro aqui pois este arquivo pode ser importado
+// por Client Components (PaymentButton). A validação acontece
+// nas Route Handlers (server-side) onde a variável existe.
+const accessToken = process.env.MP_ACCESS_TOKEN ?? ''
 
 export const mp = new MercadoPagoConfig({
-    accessToken: process.env.MP_ACCESS_TOKEN,
+    accessToken,
     options: {
         timeout: 10000,
     },

@@ -40,7 +40,12 @@ export default function CadastroPage() {
       options: { data: { nome: data.nome, role: 'responsavel', telefone: data.telefone } },
     })
     if (error) {
-      console.error('Erro no cadastro de Responsável:', error)
+      console.error('Erro detalhado no cadastro de Responsável:', {
+        message: error.message,
+        status: error.status,
+        name: error.name,
+        code: (error as any).code // Supabase AuthApiError
+      })
       setServerError(error.message)
       return
     }
@@ -57,7 +62,12 @@ export default function CadastroPage() {
       options: { data: { nome: data.nome, role: 'clube', telefone: data.telefone } },
     })
     if (error) {
-      console.error('Erro no cadastro de Clube:', error)
+      console.error('Erro detalhado no cadastro de Clube:', {
+        message: error.message,
+        status: error.status,
+        name: error.name,
+        code: (error as any).code
+      })
       setServerError(error.message)
       return
     }

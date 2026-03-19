@@ -1,8 +1,12 @@
+// ============================================
+// CAMINHO: src/app/configuracoes/page.tsx
+// ============================================
+
 import { createSupabaseServer } from '@/lib/supabase-server'
 import { redirect } from 'next/navigation'
 import { NavbarDashboard } from '@/components/layout/Navbar'
 import { PaymentButton } from '@/components/shared/PaymentButton'
-import { Shield, CreditCard, Bell, User } from 'lucide-react'
+import { Shield, CreditCard, Bell, User, ShieldCheck } from 'lucide-react'
 
 export default async function ConfiguracoesPage() {
   const supabase = await createSupabaseServer()
@@ -22,9 +26,23 @@ export default async function ConfiguracoesPage() {
 
   return (
     <>
-      <NavbarDashboard userName={profile.nome} userRole={profile.role} />
+      <NavbarDashboard
+        userName={profile.nome}
+        userRole={profile.role}
+        verificado={clube?.verificado ?? false}
+      />
       <main className="max-w-3xl mx-auto px-6 py-8">
-        <h1 className="font-display text-4xl text-neutral-900 mb-6">CONFIGURAÇÕES</h1>
+
+        {/* Header com selo */}
+        <div className="flex items-center gap-4 mb-6">
+          <h1 className="font-display text-4xl text-neutral-900">CONFIGURAÇÕES</h1>
+          {isClube && clube?.verificado && (
+            <div className="flex items-center gap-1.5 bg-green-100 text-green-700 text-sm font-medium px-3 py-1.5 rounded-full">
+              <ShieldCheck size={15} />
+              Clube Verificado
+            </div>
+          )}
+        </div>
 
         <div className="flex flex-col gap-4">
 
@@ -134,7 +152,7 @@ export default async function ConfiguracoesPage() {
             )}
           </Section>
 
-          {/* Verificação de clube */}
+          {/* Verificação de clube — não verificado */}
           {isClube && !clube?.verificado && (
             <Section icon={<Shield size={18} />} title="Verificação de clube">
               <div className="flex items-center gap-4 mb-4">
@@ -157,15 +175,19 @@ export default async function ConfiguracoesPage() {
             </Section>
           )}
 
+          {/* Verificação de clube — já verificado */}
           {isClube && clube?.verificado && (
-            <Section icon={<Shield size={18} />} title="Verificação de clube">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center flex-shrink-0">
-                  <Shield size={18} />
+            <Section icon={<ShieldCheck size={18} />} title="Verificação de clube">
+              <div className="flex items-center gap-4 p-4 bg-green-50 border border-green-100 rounded-xl">
+                <div className="w-12 h-12 rounded-full bg-green-100 text-green-600 flex items-center justify-center flex-shrink-0">
+                  <ShieldCheck size={22} />
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-green-700">Clube verificado ✓</p>
-                  <p className="text-xs text-neutral-400">
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-green-800 flex items-center gap-2">
+                    Clube verificado
+                    <span className="bg-green-600 text-white text-xs px-2 py-0.5 rounded-full">✓ Oficial</span>
+                  </p>
+                  <p className="text-xs text-green-600 mt-0.5">
                     Seu clube possui o selo de verificação oficial.
                     {clube.verificado_em && (
                       <> Verificado em {new Date(clube.verificado_em).toLocaleDateString('pt-BR')}.</>
@@ -173,6 +195,9 @@ export default async function ConfiguracoesPage() {
                   </p>
                 </div>
               </div>
+              <p className="text-xs text-neutral-400 mt-3">
+                O selo aparece no seu perfil e na navbar para todas as famílias verem.
+              </p>
             </Section>
           )}
 

@@ -1,14 +1,18 @@
 'use client'
+// ============================================
+// CAMINHO: src/components/layout/Navbar.tsx
+// ============================================
+
 import Link from 'next/link'
 import { useState } from 'react'
-import { Menu, X, LogOut, Settings, User, LayoutDashboard } from 'lucide-react'
+import { Menu, X, LogOut, Settings, LayoutDashboard, ShieldCheck } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
 import { createSupabaseBrowser } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 
 // -----------------------------------------------
-// Public Navbar (landing)
+// Public Navbar
 // -----------------------------------------------
 export function NavbarPublic() {
   const [open, setOpen] = useState(false)
@@ -19,27 +23,20 @@ export function NavbarPublic() {
         <Link href="/" className="font-display text-2xl tracking-widest text-green-700">
           SCOUT<span className="text-amber-500">JR</span>
         </Link>
-
-        {/* Desktop links */}
         <nav className="hidden md:flex items-center gap-8">
           <Link href="/#como-funciona" className="text-sm text-neutral-500 hover:text-neutral-900 transition-colors">Como funciona</Link>
           <Link href="/#para-quem" className="text-sm text-neutral-500 hover:text-neutral-900 transition-colors">Para quem</Link>
           <Link href="/busca" className="text-sm text-neutral-500 hover:text-neutral-900 transition-colors">Explorar talentos</Link>
           <Link href="/#clubes" className="text-sm text-neutral-500 hover:text-neutral-900 transition-colors">Para clubes</Link>
         </nav>
-
         <div className="hidden md:flex items-center gap-3">
           <Link href="/login"><Button variant="outline" size="sm">Entrar</Button></Link>
           <Link href="/cadastro"><Button size="sm">Criar conta</Button></Link>
         </div>
-
-        {/* Mobile toggle */}
         <button className="md:hidden p-2 rounded-lg hover:bg-neutral-100" onClick={() => setOpen(!open)}>
           {open ? <X size={20} /> : <Menu size={20} />}
         </button>
       </div>
-
-      {/* Mobile menu */}
       {open && (
         <div className="md:hidden border-t border-neutral-100 bg-white px-6 py-4 flex flex-col gap-3">
           <Link href="/#como-funciona" className="text-sm py-2 text-neutral-600" onClick={() => setOpen(false)}>Como funciona</Link>
@@ -58,7 +55,15 @@ export function NavbarPublic() {
 // -----------------------------------------------
 // Dashboard Navbar
 // -----------------------------------------------
-export function NavbarDashboard({ userName, userRole }: { userName: string; userRole: string }) {
+export function NavbarDashboard({
+  userName,
+  userRole,
+  verificado,
+}: {
+  userName: string
+  userRole: string
+  verificado?: boolean
+}) {
   const [menuOpen, setMenuOpen] = useState(false)
   const router = useRouter()
   const supabase = createSupabaseBrowser()
@@ -94,6 +99,13 @@ export function NavbarDashboard({ userName, userRole }: { userName: string; user
               {userName?.slice(0, 2).toUpperCase()}
             </div>
             <span className="font-medium">{userName?.split(' ')[0]}</span>
+            {/* Selo de verificado na navbar */}
+            {verificado && (
+              <div className="flex items-center gap-1 bg-green-100 text-green-700 text-xs font-medium px-2 py-0.5 rounded-full">
+                <ShieldCheck size={11} />
+                Verificado
+              </div>
+            )}
           </div>
           <Button variant="ghost" size="sm" onClick={handleLogout} className="hidden md:flex">
             <LogOut size={14} /> Sair

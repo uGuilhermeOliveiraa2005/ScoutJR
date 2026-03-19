@@ -1,13 +1,12 @@
 // ============================================
-// ScoutJR — Proxy (antigo middleware)
-// Proteção de rotas + refresh de sessão + headers
-// Next.js 16+ usa proxy.ts em vez de middleware.ts
+// ScoutJR — Proxy (Next.js 16+)
+// CAMINHO: src/proxy.ts
 // ============================================
 
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-const PROTECTED_ROUTES = ['/dashboard', '/perfil', '/busca', '/configuracoes', '/admin']
+const PROTECTED_ROUTES = ['/dashboard', '/perfil', '/busca', '/configuracoes', '/admin', '/checkout']
 const AUTH_ROUTES = ['/login', '/cadastro', '/recuperar-senha']
 const ADMIN_ROUTES = ['/admin']
 
@@ -20,7 +19,9 @@ export async function proxy(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() { return request.cookies.getAll() },
+        getAll() {
+          return request.cookies.getAll()
+        },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
           supabaseResponse = NextResponse.next({ request })
@@ -35,7 +36,7 @@ export async function proxy(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
 
   const isProtected = PROTECTED_ROUTES.some(r => pathname.startsWith(r))
-  const isAuthRoute  = AUTH_ROUTES.some(r => pathname.startsWith(r))
+  const isAuthRoute = AUTH_ROUTES.some(r => pathname.startsWith(r))
   const isAdminRoute = ADMIN_ROUTES.some(r => pathname.startsWith(r))
 
   if (isProtected && !user) {
