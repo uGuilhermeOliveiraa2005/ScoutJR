@@ -103,10 +103,6 @@ export interface Clube {
   verificado: boolean
   verificado_em: string | null
   plano: PlanoClube | null
-  stripe_customer_id: string | null
-  stripe_subscription_id: string | null
-  status_assinatura: StatusAssinatura | null
-  assinatura_expira_em: string | null
   creditos_contato: number
   created_at: string
   updated_at: string
