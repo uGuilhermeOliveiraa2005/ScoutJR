@@ -27,6 +27,7 @@ export function NavbarPublic() {
           <Link href="/#como-funciona" className="text-sm text-neutral-500 hover:text-neutral-900 transition-colors">Como funciona</Link>
           <Link href="/#para-quem" className="text-sm text-neutral-500 hover:text-neutral-900 transition-colors">Para quem</Link>
           <Link href="/busca" className="text-sm text-neutral-500 hover:text-neutral-900 transition-colors">Explorar talentos</Link>
+          <Link href="/ranking" className="text-sm text-neutral-500 hover:text-neutral-900 transition-colors font-medium">Ranking</Link>
           <Link href="/#clubes" className="text-sm text-neutral-500 hover:text-neutral-900 transition-colors">Para clubes</Link>
         </nav>
         <div className="hidden md:flex items-center gap-3">
@@ -38,14 +39,17 @@ export function NavbarPublic() {
         </button>
       </div>
       {open && (
-        <div className="md:hidden border-t border-neutral-100 bg-white px-6 py-4 flex flex-col gap-3">
-          <Link href="/#como-funciona" className="text-sm py-2 text-neutral-600" onClick={() => setOpen(false)}>Como funciona</Link>
-          <Link href="/#para-quem" className="text-sm py-2 text-neutral-600" onClick={() => setOpen(false)}>Para quem</Link>
-          <Link href="/busca" className="text-sm py-2 text-neutral-600" onClick={() => setOpen(false)}>Explorar talentos</Link>
-          <Link href="/#clubes" className="text-sm py-2 text-neutral-600" onClick={() => setOpen(false)}>Para clubes</Link>
+        <div className="md:hidden border-t border-neutral-100 bg-white px-6 py-8 flex flex-col gap-4 animate-in fade-in slide-in-from-top-4 duration-300 shadow-xl">
+          <Link href="/#como-funciona" className="text-sm font-medium py-2 text-neutral-600 active:text-green-600" onClick={() => setOpen(false)}>Como funciona</Link>
+          <Link href="/#para-quem" className="text-sm font-medium py-2 text-neutral-600" onClick={() => setOpen(false)}>Para quem</Link>
+          <Link href="/busca" className="text-sm font-medium py-2 text-neutral-600" onClick={() => setOpen(false)}>Explorar talentos</Link>
+          <Link href="/ranking" className="text-sm font-medium py-2 text-green-600" onClick={() => setOpen(false)}>Ranking</Link>
+          <Link href="/#clubes" className="text-sm font-medium py-2 text-neutral-600" onClick={() => setOpen(false)}>Para clubes</Link>
           <hr className="border-neutral-100" />
-          <Link href="/login" onClick={() => setOpen(false)}><Button variant="outline" className="w-full">Entrar</Button></Link>
-          <Link href="/cadastro" onClick={() => setOpen(false)}><Button className="w-full">Criar conta</Button></Link>
+          <div className="flex flex-col gap-3 pt-2">
+            <Link href="/login" onClick={() => setOpen(false)}><Button variant="outline" className="w-full h-12">Entrar</Button></Link>
+            <Link href="/cadastro" onClick={() => setOpen(false)}><Button className="w-full h-12 bg-green-600">Criar conta</Button></Link>
+          </div>
         </div>
       )}
     </header>
@@ -88,6 +92,9 @@ export function NavbarDashboard({
           <Link href="/busca" className="text-sm text-neutral-500 hover:text-neutral-900 flex items-center gap-1.5 transition-colors">
             Explorar
           </Link>
+          <Link href="/ranking" className="text-sm text-neutral-500 hover:text-neutral-900 flex items-center gap-1.5 transition-colors">
+            Ranking
+          </Link>
           <Link href="/configuracoes" className="text-sm text-neutral-500 hover:text-neutral-900 flex items-center gap-1.5 transition-colors">
             <Settings size={15} /> Configurações
           </Link>
@@ -117,12 +124,22 @@ export function NavbarDashboard({
       </div>
 
       {menuOpen && (
-        <div className="md:hidden border-t border-neutral-100 bg-white px-6 py-4 flex flex-col gap-3">
-          <Link href="/dashboard" className="text-sm py-2" onClick={() => setMenuOpen(false)}>Dashboard</Link>
-          <Link href="/busca" className="text-sm py-2" onClick={() => setMenuOpen(false)}>Explorar</Link>
-          <Link href="/configuracoes" className="text-sm py-2" onClick={() => setMenuOpen(false)}>Configurações</Link>
+        <div className="md:hidden border-t border-neutral-100 bg-white px-6 py-8 flex flex-col gap-4 animate-in fade-in slide-in-from-top-4 duration-300 shadow-xl">
+          <div className="flex items-center gap-3 mb-2 pb-4 border-b border-neutral-50">
+            <div className="w-10 h-10 rounded-full bg-green-100 text-green-700 flex items-center justify-center font-display">
+              {userName?.slice(0, 2).toUpperCase()}
+            </div>
+            <div>
+              <div className="text-sm font-bold text-neutral-900 leading-none mb-1">{userName}</div>
+              <div className="text-[10px] text-neutral-400 uppercase tracking-widest font-bold">{userRole}</div>
+            </div>
+          </div>
+          <Link href="/dashboard" className="text-sm font-medium py-2 flex items-center gap-2" onClick={() => setMenuOpen(false)}><LayoutDashboard size={16} /> Dashboard</Link>
+          <Link href="/busca" className="text-sm font-medium py-2 flex items-center gap-2" onClick={() => setMenuOpen(false)}>Explorar</Link>
+          <Link href="/ranking" className="text-sm font-bold py-2 flex items-center gap-2 text-green-600" onClick={() => setMenuOpen(false)}>🏆 Ranking</Link>
+          <Link href="/configuracoes" className="text-sm font-medium py-2 flex items-center gap-2" onClick={() => setMenuOpen(false)}><Settings size={16} /> Configurações</Link>
           <hr className="border-neutral-100" />
-          <Button variant="outline" onClick={handleLogout} className="w-full">Sair</Button>
+          <Button variant="outline" onClick={handleLogout} className="w-full h-12 text-red-500 border-red-100 hover:bg-red-50">Sair da conta</Button>
         </div>
       )}
     </header>

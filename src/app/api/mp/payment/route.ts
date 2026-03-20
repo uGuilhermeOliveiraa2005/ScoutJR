@@ -62,12 +62,21 @@ async function processApprovedPayment(
         }
 
         if (tipo === 'destaque') {
-            const expira = new Date()
-            expira.setDate(expira.getDate() + 30)
-            await supabase.from('atletas').update({
-                destaque_ativo: true,
-                destaque_expira_em: expira.toISOString(),
-            }).eq('responsavel_id', userId)
+            // Busca o ID do profile real para usar como responsavel_id
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('id')
+                .eq('user_id', userId)
+                .single()
+
+            if (profile) {
+                const expira = new Date()
+                expira.setDate(expira.getDate() + 30)
+                await supabase.from('atletas').update({
+                    destaque_ativo: true,
+                    destaque_expira_em: expira.toISOString(),
+                }).eq('responsavel_id', profile.id)
+            }
         }
 
         if (tipo === 'verificacao') {
@@ -188,12 +197,6 @@ export async function POST(req: NextRequest) {
         }
 
         const payment = await mpPayment.create({ body: paymentData })
-
-        console.log('[MP PAYMENT] Resposta:', {
-            id: payment.id,
-            status: payment.status,
-            status_detail: payment.status_detail,
-        })
 
         if (payment.status === 'approved' && data.payment_type !== 'pix') {
             await processApprovedPayment(user.id, data.tipo, data.plano, payment.id!)

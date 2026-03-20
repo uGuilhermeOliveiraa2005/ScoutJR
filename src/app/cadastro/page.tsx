@@ -1,4 +1,8 @@
 'use client'
+// ============================================
+// CAMINHO: src/app/cadastro/page.tsx
+// ============================================
+
 import Link from 'next/link'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
@@ -14,16 +18,31 @@ import { cn } from '@/lib/utils'
 
 type Tipo = 'responsavel' | 'clube'
 
-const STEP_LABELS_RESP = ['Tipo','Conta','Atleta','Habilidades','Mídia','Privacidade']
-const STEP_LABELS_CLUBE = ['Tipo','Conta','Verificação']
+const STEP_LABELS_RESP = ['Tipo', 'Conta', 'Atleta', 'Habilidades', 'Mídia', 'Privacidade']
+const STEP_LABELS_CLUBE = ['Tipo', 'Conta', 'Verificação']
 
 export default function CadastroPage() {
   const [tipo, setTipo] = useState<Tipo>('responsavel')
   const [step, setStep] = useState(1)
   const [done, setDone] = useState(false)
   const [serverError, setServerError] = useState('')
-  const router = useRouter()
   const supabase = createSupabaseBrowser()
+
+  // --- Athlete data lifted state ---
+  const [atletaData, setAtletaData] = useState({
+    nomeAtleta: '',
+    dataNascimento: '',
+    estado: '',
+    cidade: '',
+    posicao: 'MEI',
+    peDominante: 'destro',
+    clubeAtual: '',
+    habilidades: [75, 68, 82, 60, 71, 79],
+    videos: [] as string[],
+    visivel: true,
+    exibirCidade: true,
+    mensagens: false
+  })
 
   const totalSteps = tipo === 'responsavel' ? 6 : 3
   const labels = tipo === 'responsavel' ? STEP_LABELS_RESP : STEP_LABELS_CLUBE
@@ -32,46 +51,52 @@ export default function CadastroPage() {
   const formClube = useForm<CadastroClubeInput>({ resolver: zodResolver(cadastroClubeSchema) })
 
   async function submitResponsavel(data: CadastroResponsavelInput) {
-    console.log('Iniciando cadastro de Responsável...', data.email)
     setServerError('')
     const { error } = await supabase.auth.signUp({
       email: data.email,
       password: data.password,
-      options: { data: { nome: data.nome, role: 'responsavel', telefone: data.telefone } },
+      options: {
+        data: {
+          nome: data.nome,
+          role: 'responsavel',
+          telefone: data.telefone,
+          // --- Dados do Atleta ---
+          atleta_nome: atletaData.nomeAtleta,
+          atleta_nascimento: atletaData.dataNascimento,
+          atleta_estado: atletaData.estado,
+          atleta_cidade: atletaData.cidade,
+          atleta_posicao: atletaData.posicao,
+          atleta_pe: atletaData.peDominante,
+          atleta_clube: atletaData.clubeAtual,
+          atleta_habilidades: atletaData.habilidades,
+          atleta_visivel: atletaData.visivel,
+          atleta_exibir_cidade: atletaData.exibirCidade,
+          atleta_mensagens: atletaData.mensagens,
+        },
+      },
     })
-    if (error) {
-      console.error('Erro detalhado no cadastro de Responsável:', {
-        message: error.message,
-        status: error.status,
-        name: error.name,
-        code: (error as any).code // Supabase AuthApiError
-      })
-      setServerError(error.message)
-      return
-    }
-    console.log('Cadastro de Responsável concluído com sucesso.')
+    if (error) { setServerError(error.message); return }
     setDone(true)
   }
 
   async function submitClube(data: CadastroClubeInput) {
-    console.log('Iniciando cadastro de Clube...', data.email)
     setServerError('')
     const { error } = await supabase.auth.signUp({
       email: data.email,
       password: data.password,
-      options: { data: { nome: data.nome, role: 'clube', telefone: data.telefone } },
+      options: {
+        data: {
+          nome: data.nome,
+          role: 'clube',
+          telefone: data.telefone,
+          // Todos os campos passados para o trigger criar a row em clubes
+          estado: data.estado,
+          cidade: data.cidade,
+          cnpj: data.cnpj ?? null,
+        },
+      },
     })
-    if (error) {
-      console.error('Erro detalhado no cadastro de Clube:', {
-        message: error.message,
-        status: error.status,
-        name: error.name,
-        code: (error as any).code
-      })
-      setServerError(error.message)
-      return
-    }
-    console.log('Cadastro de Clube concluído com sucesso.')
+    if (error) { setServerError(error.message); return }
     setDone(true)
   }
 
@@ -135,7 +160,7 @@ export default function CadastroPage() {
             </div>
           )}
 
-          {/* STEP 2 — Dados da conta (responsável) */}
+          {/* STEP 2 — Dados responsável */}
           {step === 2 && tipo === 'responsavel' && (
             <form onSubmit={formResp.handleSubmit(() => setStep(3))}>
               <div className="font-display text-4xl text-neutral-400 mb-2 leading-none">02</div>
@@ -167,13 +192,17 @@ export default function CadastroPage() {
                   </FieldGroup>
                 </div>
                 <div className="bg-amber-50 border border-amber-100 rounded-lg p-4 text-xs text-amber-700 leading-relaxed">
-                  Ao criar uma conta você confirma ser o responsável legal pelo atleta e concorda com os <Link href="/termos" className="underline">Termos de Uso</Link> e <Link href="/privacidade" className="underline">Política de Privacidade</Link>.
+                  Ao criar uma conta você confirma ser o responsável legal pelo atleta e concorda com os{' '}
+                  <Link href="/termos" className="underline">Termos de Uso</Link> e{' '}
+                  <Link href="/privacidade" className="underline">Política de Privacidade</Link>.
                 </div>
                 <label className="flex items-start gap-3 cursor-pointer">
                   <input type="checkbox" className="mt-0.5 accent-green-500" {...formResp.register('aceito_termos')} />
                   <span className="text-xs text-neutral-500">Li e aceito os termos de uso e política de privacidade</span>
                 </label>
-                {formResp.formState.errors.aceito_termos && <p className="text-xs text-red-500">{formResp.formState.errors.aceito_termos.message}</p>}
+                {formResp.formState.errors.aceito_termos && (
+                  <p className="text-xs text-red-500">{formResp.formState.errors.aceito_termos.message}</p>
+                )}
               </div>
               <div className="flex justify-between mt-6">
                 <Button variant="outline" type="button" onClick={() => setStep(1)}><ArrowLeft size={15} /> Voltar</Button>
@@ -182,14 +211,15 @@ export default function CadastroPage() {
             </form>
           )}
 
-          {/* STEP 3–5 — Atleta info */}
           {step >= 3 && step <= 5 && tipo === 'responsavel' && (
-            <AtletaSteps step={step} setStep={setStep} />
+            <AtletaSteps step={step} setStep={setStep} data={atletaData} setData={setAtletaData} />
           )}
 
           {/* STEP 6 — Privacidade */}
           {step === 6 && tipo === 'responsavel' && (
             <PrivacidadeStep
+              data={atletaData}
+              setData={setAtletaData}
               onBack={() => setStep(5)}
               onSubmit={formResp.handleSubmit(submitResponsavel)}
               loading={formResp.formState.isSubmitting}
@@ -246,7 +276,9 @@ export default function CadastroPage() {
                   <input type="checkbox" className="mt-0.5 accent-green-500" {...formClube.register('aceito_termos')} />
                   <span className="text-xs text-neutral-500">Li e aceito os termos de uso e política de privacidade</span>
                 </label>
-                {formClube.formState.errors.aceito_termos && <p className="text-xs text-red-500">{formClube.formState.errors.aceito_termos.message}</p>}
+                {formClube.formState.errors.aceito_termos && (
+                  <p className="text-xs text-red-500">{formClube.formState.errors.aceito_termos.message}</p>
+                )}
               </div>
               <div className="flex justify-between mt-6">
                 <Button variant="outline" type="button" onClick={() => setStep(1)}><ArrowLeft size={15} /> Voltar</Button>
@@ -276,7 +308,9 @@ export default function CadastroPage() {
                   </div>
                 ))}
               </div>
-              {serverError && <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg px-4 py-3 mb-4">{serverError}</div>}
+              {serverError && (
+                <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg px-4 py-3 mb-4">{serverError}</div>
+              )}
               <div className="flex justify-between">
                 <Button variant="outline" type="button" onClick={() => setStep(2)}><ArrowLeft size={15} /> Voltar</Button>
                 <Button variant="dark" loading={formClube.formState.isSubmitting} onClick={formClube.handleSubmit(submitClube)}>
@@ -288,7 +322,8 @@ export default function CadastroPage() {
         </div>
 
         <p className="text-center text-sm text-neutral-400 mt-6">
-          Já tem conta? <Link href="/login" className="text-green-600 hover:text-green-700 font-medium">Entrar</Link>
+          Já tem conta?{' '}
+          <Link href="/login" className="text-green-600 hover:text-green-700 font-medium">Entrar</Link>
         </p>
       </div>
     </div>
@@ -296,9 +331,19 @@ export default function CadastroPage() {
 }
 
 // -----------------------------------------------
-// Atleta steps (3-5) — simplified inline
+// Atleta steps (3-5)
 // -----------------------------------------------
-function AtletaSteps({ step, setStep }: { step: number; setStep: (n: number) => void }) {
+function AtletaSteps({
+  step,
+  setStep,
+  data,
+  setData
+}: {
+  step: number
+  setStep: (n: number) => void
+  data: any
+  setData: (d: any) => void
+}) {
   const posicoes = [
     { value: 'GK', label: 'GK', sub: 'Goleiro' },
     { value: 'LD', label: 'LD', sub: 'Lat. Dir.' },
@@ -310,9 +355,7 @@ function AtletaSteps({ step, setStep }: { step: number; setStep: (n: number) => 
     { value: 'SA', label: 'SA', sub: '2° Ataq.' },
     { value: 'CA', label: 'CA', sub: 'C. Avante' },
   ]
-  const [selectedPos, setSelectedPos] = useState('MEI')
-  const habilidades = ['Técnica','Velocidade','Visão de jogo','Físico','Finalização','Passes']
-  const [skills, setSkills] = useState([75,68,82,60,71,79])
+  const habilidades = ['Técnica', 'Velocidade', 'Visão de jogo', 'Físico', 'Finalização', 'Passes']
 
   if (step === 3) return (
     <div>
@@ -321,26 +364,68 @@ function AtletaSteps({ step, setStep }: { step: number; setStep: (n: number) => 
       <p className="text-sm text-neutral-500 mb-6">Localização exata nunca é exibida — apenas cidade e estado.</p>
       <div className="flex flex-col gap-4">
         <div className="grid grid-cols-2 gap-3">
-          <FieldGroup><Label>Nome do atleta</Label><Input placeholder="Gabriel Silva" /></FieldGroup>
-          <FieldGroup><Label>Data de nascimento</Label><Input type="date" /></FieldGroup>
+          <FieldGroup>
+            <Label>Nome do atleta</Label>
+            <Input
+              placeholder="Gabriel Silva"
+              value={data.nomeAtleta}
+              onChange={e => setData({ ...data, nomeAtleta: e.target.value })}
+            />
+          </FieldGroup>
+          <FieldGroup>
+            <Label>Data de nascimento</Label>
+            <Input
+              type="date"
+              value={data.dataNascimento}
+              onChange={e => setData({ ...data, dataNascimento: e.target.value })}
+            />
+          </FieldGroup>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <FieldGroup><Label>Estado</Label><Select options={ESTADOS} placeholder="Selecione" /></FieldGroup>
-          <FieldGroup><Label>Cidade</Label><Input placeholder="Porto Alegre" /></FieldGroup>
+          <FieldGroup>
+            <Label>Estado</Label>
+            <Select
+              options={ESTADOS}
+              placeholder="Selecione"
+              value={data.estado}
+              onChange={e => setData({ ...data, estado: e.target.value })}
+            />
+          </FieldGroup>
+          <FieldGroup>
+            <Label>Cidade</Label>
+            <Input
+              placeholder="Porto Alegre"
+              value={data.cidade}
+              onChange={e => setData({ ...data, cidade: e.target.value })}
+            />
+          </FieldGroup>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <FieldGroup>
             <Label>Pé dominante</Label>
-            <Select options={[{value:'destro',label:'Destro'},{value:'canhoto',label:'Canhoto'},{value:'ambidestro',label:'Ambidestro'}]} />
+            <Select
+              options={[{ value: 'destro', label: 'Destro' }, { value: 'canhoto', label: 'Canhoto' }, { value: 'ambidestro', label: 'Ambidestro' }]}
+              value={data.peDominante}
+              onChange={e => setData({ ...data, peDominante: e.target.value })}
+            />
           </FieldGroup>
-          <FieldGroup><Label>Clube / Escolinha atual</Label><Input placeholder="Opcional" /></FieldGroup>
+          <FieldGroup>
+            <Label>Clube / Escolinha atual</Label>
+            <Input
+              placeholder="Opcional"
+              value={data.clubeAtual}
+              onChange={e => setData({ ...data, clubeAtual: e.target.value })}
+            />
+          </FieldGroup>
         </div>
         <FieldGroup>
           <Label>Posição em campo</Label>
           <div className="grid grid-cols-3 gap-2 mt-1">
             {posicoes.map(p => (
-              <button key={p.value} type="button" onClick={() => setSelectedPos(p.value)}
-                className={cn('p-2 border rounded-lg text-center transition-all', selectedPos === p.value ? 'border-green-400 bg-green-50 text-green-700' : 'border-neutral-200 hover:border-neutral-300')}>
+              <button key={p.value} type="button" onClick={() => setData({ ...data, posicao: p.value })}
+                className={cn('p-2 border rounded-lg text-center transition-all',
+                  data.posicao === p.value ? 'border-green-400 bg-green-50 text-green-700' : 'border-neutral-200 hover:border-neutral-300'
+                )}>
                 <div className="text-sm font-medium">{p.label}</div>
                 <div className="text-[10px] text-neutral-400">{p.sub}</div>
               </button>
@@ -363,14 +448,16 @@ function AtletaSteps({ step, setStep }: { step: number; setStep: (n: number) => 
       <div className="flex flex-col gap-5">
         {habilidades.map((h, i) => (
           <div key={h} className="flex items-center gap-4">
-            <div className="w-28 flex-shrink-0">
-              <div className="text-sm font-medium">{h}</div>
-            </div>
-            <input type="range" min={1} max={99} value={skills[i]}
-              onChange={e => { const n = [...skills]; n[i] = +e.target.value; setSkills(n) }}
+            <div className="w-28 flex-shrink-0 text-sm font-medium">{h}</div>
+            <input type="range" min={1} max={99} value={data.habilidades[i]}
+              onChange={e => {
+                const n = [...data.habilidades]
+                n[i] = +e.target.value
+                setData({ ...data, habilidades: n })
+              }}
               className="flex-1 accent-green-500" />
             <div className="w-9 h-8 bg-green-100 text-green-700 rounded-lg flex items-center justify-center text-sm font-medium flex-shrink-0">
-              {skills[i]}
+              {data.habilidades[i]}
             </div>
           </div>
         ))}
@@ -388,9 +475,7 @@ function AtletaSteps({ step, setStep }: { step: number; setStep: (n: number) => 
       <h2 className="text-xl font-medium mb-1">Fotos e vídeos</h2>
       <p className="text-sm text-neutral-500 mb-6">Perfis com vídeos recebem até 8× mais interesse de clubes.</p>
       <div className="border-2 border-dashed border-neutral-200 rounded-xl p-8 text-center mb-4 hover:border-green-400 transition-colors cursor-pointer">
-        <div className="text-neutral-300 mb-2 flex justify-center">
-          <Video size={32} />
-        </div>
+        <div className="text-neutral-300 mb-2 flex justify-center"><Video size={32} /></div>
         <div className="text-sm font-medium text-neutral-600 mb-1">Foto do atleta</div>
         <div className="text-xs text-neutral-400">Clique para selecionar · JPG, PNG — máx. 5MB</div>
       </div>
@@ -413,15 +498,29 @@ function AtletaSteps({ step, setStep }: { step: number; setStep: (n: number) => 
 // -----------------------------------------------
 // Privacy step
 // -----------------------------------------------
-function PrivacidadeStep({ onBack, onSubmit, loading, error }: { onBack: () => void; onSubmit: () => void; loading: boolean; error: string }) {
-  const [settings, setSettings] = useState({ visivel: true, exibirCidade: true, videos: true, mensagens: false })
-  const toggle = (key: keyof typeof settings) => setSettings(s => ({ ...s, [key]: !s[key] }))
+function PrivacidadeStep({
+  data,
+  setData,
+  onBack,
+  onSubmit,
+  loading,
+  error
+}: {
+  data: any
+  setData: (d: any) => void
+  onBack: () => void
+  onSubmit: () => void
+  loading: boolean
+  error: string
+}) {
+  const toggle = (key: string) => {
+    setData({ ...data, [key]: !data[key] })
+  }
 
   const items = [
-    { key: 'visivel' as const, icon: <Eye size={16} />, title: 'Perfil visível para clubes verificados', sub: 'Apenas clubes aprovados podem ver o perfil completo' },
-    { key: 'exibirCidade' as const, icon: <MapPin size={16} />, title: 'Exibir cidade e estado', sub: 'Nunca endereço completo — apenas cidade e UF' },
-    { key: 'videos' as const, icon: <Video size={16} />, title: 'Vídeos visíveis para clubes', sub: 'Clubes podem assistir os vídeos cadastrados' },
-    { key: 'mensagens' as const, icon: <MessageCircle size={16} />, title: 'Receber mensagens de clubes', sub: 'Quando desativado, clubes apenas marcam interesse' },
+    { key: 'visivel', icon: <Eye size={16} />, title: 'Perfil visível para clubes verificados', sub: 'Apenas clubes aprovados podem ver o perfil completo' },
+    { key: 'exibirCidade', icon: <MapPin size={16} />, title: 'Exibir cidade e estado', sub: 'Nunca endereço completo — apenas cidade e UF' },
+    { key: 'mensagens', icon: <MessageCircle size={16} />, title: 'Receber mensagens de clubes', sub: 'Quando desativado, clubes apenas marcam interesse' },
   ]
 
   return (
@@ -438,8 +537,8 @@ function PrivacidadeStep({ onBack, onSubmit, loading, error }: { onBack: () => v
               <div className="text-xs text-neutral-400 mt-0.5">{item.sub}</div>
             </div>
             <button type="button" onClick={() => toggle(item.key)}
-              className={cn('relative w-10 h-6 rounded-full transition-colors flex-shrink-0', settings[item.key] ? 'bg-green-400' : 'bg-neutral-300')}>
-              <span className={cn('absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all', settings[item.key] ? 'left-5' : 'left-1')} />
+              className={cn('relative w-10 h-6 rounded-full transition-colors flex-shrink-0', data[item.key] ? 'bg-green-400' : 'bg-neutral-300')}>
+              <span className={cn('absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all', data[item.key] ? 'left-5' : 'left-1')} />
             </button>
           </div>
         ))}
@@ -460,7 +559,7 @@ function SuccessScreen({ tipo }: { tipo: Tipo }) {
   return (
     <div className="min-h-screen bg-neutral-100 flex items-center justify-center px-4">
       <div className="w-full max-w-md bg-white border border-neutral-200 rounded-2xl p-10 text-center shadow-sm">
-        <div className="text-green-400 flex justify-center mb-4 animate-bounce">
+        <div className="text-green-400 flex justify-center mb-4">
           <CircleCheckBig size={56} />
         </div>
         <h2 className="font-display text-4xl text-green-700 mb-3">
@@ -468,8 +567,8 @@ function SuccessScreen({ tipo }: { tipo: Tipo }) {
         </h2>
         <p className="text-sm text-neutral-500 leading-relaxed mb-2">
           {tipo === 'responsavel'
-            ? 'O atleta já está visível para os clubes verificados. Você receberá uma notificação quando houver interesse.'
-            : 'Sua conta de clube foi criada. Confirme seu e-mail para acessar a plataforma.'}
+            ? 'O atleta já está visível para os clubes verificados.'
+            : 'Sua conta de clube foi criada com sucesso.'}
         </p>
         <p className="text-xs text-neutral-400 mb-8">Verifique sua caixa de entrada para confirmar o e-mail.</p>
         <div className="flex flex-col gap-3">

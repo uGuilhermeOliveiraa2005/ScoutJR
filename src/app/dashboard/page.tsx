@@ -48,6 +48,8 @@ export default async function DashboardPage() {
   const isClube = profile.role === 'clube'
 
   let clube = null
+  let athlete = null
+
   if (isClube) {
     const { data } = await supabase
       .from('clubes')
@@ -55,6 +57,25 @@ export default async function DashboardPage() {
       .eq('user_id', user.id)
       .single()
     clube = data
+  } else {
+    // Busca o primeiro atleta deste responsável
+    const { data } = await supabase
+      .from('atletas')
+      .select('*')
+      .eq('responsavel_id', profile.id)
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .single()
+    athlete = data
+
+    // Busca posição no ranking
+    if (athlete) {
+      const { count } = await supabase
+        .from('atletas')
+        .select('*', { count: 'exact', head: true })
+        .gt('ranking_score', athlete.ranking_score)
+      athlete.ranking_position = (count || 0) + 1
+    }
   }
 
   return (
@@ -64,42 +85,41 @@ export default async function DashboardPage() {
         userRole={profile.role}
         verificado={clube?.verificado ?? false}
       />
-      <main className="max-w-7xl mx-auto px-6 py-8">
-
+      <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
         {/* Welcome */}
-        <div className="mb-8">
+        <div className="mb-8 animate-in fade-in slide-in-from-left duration-500">
           <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="font-display text-4xl text-neutral-900">
+            <h1 className="font-display text-3xl md:text-4xl text-neutral-900 tracking-tight leading-tight">
               OLÁ, {isClube ? profile.nome.toUpperCase() : profile.nome.split(' ')[0].toUpperCase()}
             </h1>
             {/* Selo de verificado no título */}
             {isClube && clube?.verificado && (
-              <div className="flex items-center gap-1.5 bg-green-100 text-green-700 text-xs font-medium px-3 py-1.5 rounded-full">
+              <div className="flex items-center gap-1.5 bg-green-100 text-green-700 text-[10px] md:text-xs font-bold px-3 py-1.5 rounded-full border border-green-200 shadow-sm">
                 <ShieldCheck size={13} />
-                Clube Verificado
+                CLUBE VERIFICADO
               </div>
             )}
           </div>
-          <p className="text-sm text-neutral-500 mt-1">
-            {isClube ? 'Gerencie suas buscas e interesses.' : 'Acompanhe o perfil do seu atleta.'}
+          <p className="text-sm md:text-base text-neutral-500 mt-1 max-w-lg">
+            {isClube ? 'Gerencie suas buscas e acompanhe novos talentos em tempo real.' : 'Acompanhe o desempenho e a visibilidade do seu perfil profissional.'}
           </p>
         </div>
 
         {/* Stats cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
           {isClube ? (
             <>
-              <StatCard icon={<Eye size={18} />} label="Perfis visualizados" value="—" color="green" />
+              <StatCard icon={<Eye size={18} />} label="Perfis vistos" value="—" color="green" />
               <StatCard icon={<Star size={18} />} label="Favoritos" value="—" color="amber" />
-              <StatCard icon={<MessageCircle size={18} />} label="Interesses enviados" value="—" color="blue" />
-              <StatCard icon={<TrendingUp size={18} />} label="Novos atletas" value="—" color="green" />
+              <StatCard icon={<MessageCircle size={18} />} label="Interesses" value="—" color="blue" />
+              <StatCard icon={<TrendingUp size={18} />} label="Novos Atletas" value="—" color="green" />
             </>
           ) : (
             <>
-              <StatCard icon={<Eye size={18} />} label="Visualizações" value="—" color="green" />
-              <StatCard icon={<Star size={18} />} label="Clubes interessados" value="—" color="amber" />
-              <StatCard icon={<MessageCircle size={18} />} label="Mensagens" value="—" color="blue" />
-              <StatCard icon={<TrendingUp size={18} />} label="Posição no ranking" value="—" color="green" />
+              <StatCard icon={<Eye size={18} />} label="Visitas" value="—" color="green" />
+              <StatCard icon={<Star size={18} />} label="Favoritos" value={athlete?.favoritos_count || '0'} color="amber" />
+              <StatCard icon={<MessageCircle size={18} />} label="Interesses" value={athlete?.interesses_count || '0'} color="blue" />
+              <StatCard icon={<TrendingUp size={18} />} label="Ranking" value={athlete ? `#${athlete.ranking_position}` : '—'} color="green" />
             </>
           )}
         </div>
@@ -121,10 +141,29 @@ export default async function DashboardPage() {
               <div className="bg-white border border-neutral-200 rounded-xl p-6">
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="font-medium text-neutral-900">Meu atleta</h2>
-                  <Link href="/perfil"><Button size="sm" variant="outline">Ver perfil <ArrowRight size={13} /></Button></Link>
+                  {athlete && (
+                    <Link href={`/perfil/${athlete.id}`}>
+                      <Button size="sm" variant="outline">Ver perfil <ArrowRight size={13} /></Button>
+                    </Link>
+                  )}
                 </div>
-                <p className="text-sm text-neutral-500 mb-4">Nenhum atleta cadastrado ainda. Crie o perfil do seu filho para aparecer para os clubes.</p>
-                <Link href="/perfil/novo"><Button variant="dark">Cadastrar atleta</Button></Link>
+                
+                {athlete ? (
+                  <div className="flex items-center gap-4">
+                    <div className="w-16 h-16 bg-neutral-100 rounded-xl flex items-center justify-center text-neutral-400">
+                      <Users size={24} />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-display text-green-700">{athlete.nome.toUpperCase()}</h3>
+                      <p className="text-sm text-neutral-500">{athlete.posicao} • {athlete.cidade}/{athlete.estado}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-sm text-neutral-500 mb-4">Nenhum atleta cadastrado ainda. Crie o perfil do seu filho para aparecer para os clubes.</p>
+                    <Link href="/perfil/novo"><Button variant="dark">Cadastrar atleta</Button></Link>
+                  </>
+                )}
               </div>
             )}
 
@@ -180,11 +219,20 @@ export default async function DashboardPage() {
               )}
             </div>
 
-            {!isClube && (
+            {!isClube && !athlete?.destaque_ativo && (
               <div className="bg-amber-50 border border-amber-100 rounded-xl p-5">
                 <h3 className="text-sm font-medium text-amber-800 mb-2">Destaque seu atleta</h3>
                 <p className="text-xs text-amber-600 leading-relaxed mb-3">Apareça no topo das buscas e receba mais atenção dos clubes por apenas R$ 49/mês.</p>
                 <Link href="/configuracoes"><Button variant="amber" size="sm" className="w-full">Ativar destaque</Button></Link>
+              </div>
+            )}
+            
+            {athlete?.destaque_ativo && (
+              <div className="bg-green-50 border border-green-100 rounded-xl p-5">
+                <h3 className="text-sm font-medium text-green-800 mb-2 flex items-center gap-2">
+                  <Star size={14} fill="currentColor" /> Perfil em Destaque
+                </h3>
+                <p className="text-xs text-green-600 leading-relaxed">Seu atleta está aparecendo no topo das buscas dos clubes! 🔥</p>
               </div>
             )}
 

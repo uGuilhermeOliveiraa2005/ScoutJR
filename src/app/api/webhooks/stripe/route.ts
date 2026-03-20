@@ -37,29 +37,25 @@ export async function POST(req: NextRequest) {
         if (session.mode === 'subscription' && plano) {
           const subscription = await stripe.subscriptions.retrieve(session.subscription as string)
 
-          console.log('[WEBHOOK] userId:', userId)
-          console.log('[WEBHOOK] plano:', plano)
-          console.log('[WEBHOOK] subscription status:', subscription.status)
-
           // Verifica se o clube existe
-          const { data: clubeExistente, error: erroClube } = await supabase
+          const { data: clubeExistente } = await supabase
             .from('clubes')
             .select('id, user_id')
             .eq('user_id', userId)
             .single()
-
-          console.log('[WEBHOOK] clube encontrado:', clubeExistente)
-          console.log('[WEBHOOK] erro ao buscar clube:', erroClube)
-
-          const { error: erroUpdate } = await supabase.from('clubes').update({
+  
+          if (!clubeExistente) {
+            console.error('[WEBHOOK] Clube não encontrado para o usuário:', userId)
+            break
+          }
+  
+          await supabase.from('clubes').update({
             plano,
             stripe_customer_id: session.customer as string,
             stripe_subscription_id: session.subscription as string,
             status_assinatura: subscription.status,
             assinatura_expira_em: new Date((subscription as any).current_period_end * 1000).toISOString(),
           }).eq('user_id', userId)
-
-          console.log('[WEBHOOK] erro no update:', erroUpdate)
         }
 
         if (session.mode === 'payment' && tipo === 'destaque') {

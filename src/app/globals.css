@@ -72,6 +72,12 @@
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: #d1d0c8; border-radius: 3px; }
   ::-webkit-scrollbar-thumb:hover { background: #888780; }
+
+  button, 
+  [role="button"],
+  a {
+    cursor: pointer;
+  }
 }
 
 @layer utilities {

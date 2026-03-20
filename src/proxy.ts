@@ -65,6 +65,22 @@ export async function proxy(request: NextRequest) {
   h.set('X-XSS-Protection', '1; mode=block')
   h.set('Referrer-Policy', 'strict-origin-when-cross-origin')
   h.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
+  
+  const cspHeader = `
+    default-src 'self';
+    script-src 'self' 'unsafe-inline' 'unsafe-eval' https://sdk.mercadopago.com https://www.google-analytics.com;
+    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+    img-src 'self' data: https://*.mercadopago.com https://*.mercadopago.com.br;
+    font-src 'self' https://fonts.gstatic.com;
+    frame-src 'self' https://*.mercadopago.com https://*.mercadopago.com.br;
+    connect-src 'self' https://*.supabase.co https://*.mercadopago.com https://*.mercadopago.com.br;
+    object-src 'none';
+    base-uri 'self';
+    form-action 'self';
+    frame-ancestors 'none';
+    upgrade-insecure-requests;
+  `.replace(/\s{2,}/g, ' ').trim()
+  h.set('Content-Security-Policy', cspHeader)
 
   return supabaseResponse
 }

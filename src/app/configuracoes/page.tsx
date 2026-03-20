@@ -6,6 +6,7 @@ import { createSupabaseServer } from '@/lib/supabase-server'
 import { redirect } from 'next/navigation'
 import { NavbarDashboard } from '@/components/layout/Navbar'
 import { PaymentButton } from '@/components/shared/PaymentButton'
+import { updateProfile } from './actions'
 import { Shield, CreditCard, Bell, User, ShieldCheck } from 'lucide-react'
 
 export default async function ConfiguracoesPage() {
@@ -48,35 +49,40 @@ export default async function ConfiguracoesPage() {
 
           {/* Dados da conta */}
           <Section icon={<User size={18} />} title="Dados da conta">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-medium text-neutral-400 uppercase tracking-wide mb-1.5">Nome</label>
-                <input
-                  defaultValue={profile.nome}
-                  className="w-full px-3 py-2.5 text-sm border border-neutral-200 rounded-lg bg-white outline-none focus:border-green-400"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-neutral-400 uppercase tracking-wide mb-1.5">E-mail</label>
-                <input
-                  defaultValue={profile.email}
-                  disabled
-                  className="w-full px-3 py-2.5 text-sm border border-neutral-200 rounded-lg bg-neutral-50 text-neutral-400 cursor-not-allowed"
-                />
-              </div>
-              {profile.telefone && (
+            <form action={updateProfile}>
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-neutral-400 uppercase tracking-wide mb-1.5">Telefone</label>
+                  <label className="block text-xs font-medium text-neutral-400 uppercase tracking-wide mb-1.5">Nome</label>
                   <input
-                    defaultValue={profile.telefone}
+                    name="nome"
+                    defaultValue={profile.nome}
                     className="w-full px-3 py-2.5 text-sm border border-neutral-200 rounded-lg bg-white outline-none focus:border-green-400"
                   />
                 </div>
-              )}
-            </div>
-            <button className="mt-4 px-5 py-2.5 text-sm bg-green-700 text-white rounded-lg hover:bg-green-800 transition-colors font-medium">
-              Salvar alterações
-            </button>
+                <div>
+                  <label className="block text-xs font-medium text-neutral-400 uppercase tracking-wide mb-1.5">E-mail</label>
+                  <input
+                    defaultValue={profile.email}
+                    disabled
+                    className="w-full px-3 py-2.5 text-sm border border-neutral-200 rounded-lg bg-neutral-50 text-neutral-400 cursor-not-allowed"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-neutral-400 uppercase tracking-wide mb-1.5">Telefone</label>
+                  <input
+                    name="telefone"
+                    defaultValue={profile.telefone || ''}
+                    className="w-full px-3 py-2.5 text-sm border border-neutral-200 rounded-lg bg-white outline-none focus:border-green-400"
+                  />
+                </div>
+              </div>
+              <button 
+                type="submit"
+                className="mt-4 px-5 py-2.5 text-sm bg-green-700 text-white rounded-lg hover:bg-green-800 transition-colors font-medium"
+              >
+                Salvar alterações
+              </button>
+            </form>
           </Section>
 
           {/* Plano e pagamento */}

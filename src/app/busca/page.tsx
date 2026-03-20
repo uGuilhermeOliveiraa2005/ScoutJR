@@ -15,9 +15,15 @@ export default async function BuscaPage({
   const params = await searchParams
 
   let profile = null
+  let clube = null
   if (user) {
-    const { data } = await supabase.from('profiles').select('*').eq('user_id', user.id).single()
-    profile = data
+    const { data: profileData } = await supabase.from('profiles').select('*').eq('user_id', user.id).single()
+    profile = profileData
+
+    if (profile?.role === 'clube') {
+      const { data: clubeData } = await supabase.from('clubes').select('verificado').eq('user_id', user.id).single()
+      clube = clubeData
+    }
   }
 
   // Build query
@@ -34,22 +40,27 @@ export default async function BuscaPage({
     .order('habilidade_visao', { ascending: false })
     .limit(48)
 
+  if (params.nome) query = query.ilike('nome', `%${params.nome}%`)
   if (params.posicao) query = query.eq('posicao', params.posicao)
   if (params.estado) query = query.eq('estado', params.estado)
 
   const { data: atletas } = await query
 
   const Navbar = user && profile ? (
-    <NavbarDashboard userName={profile.nome} userRole={profile.role} />
+    <NavbarDashboard
+      userName={profile.nome}
+      userRole={profile.role}
+      verificado={clube?.verificado ?? false}
+    />
   ) : <NavbarPublic />
 
   return (
     <>
       {Navbar}
-      <main className="max-w-7xl mx-auto px-6 py-8">
-        <div className="mb-6">
-          <h1 className="font-display text-4xl text-neutral-900 mb-1">EXPLORAR TALENTOS</h1>
-          <p className="text-sm text-neutral-500">Encontre o próximo craque do futebol brasileiro.</p>
+      <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
+        <div className="mb-8 animate-in fade-in slide-in-from-top duration-500">
+          <h1 className="font-display text-3xl md:text-5xl text-neutral-900 mb-1 tracking-tight">EXPLORAR TALENTOS</h1>
+          <p className="text-sm md:text-base text-neutral-500">Encontre o próximo craque do futebol brasileiro.</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -114,7 +125,7 @@ export default async function BuscaPage({
             )}
 
             {atletas && atletas.length > 0 ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                 {atletas.map((a, i) => (
                   <AtletaCard key={a.id} atleta={a} index={i} loggedIn={!!user} />
                 ))}

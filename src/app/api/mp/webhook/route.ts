@@ -80,13 +80,21 @@ export async function POST(req: NextRequest) {
         }
 
         if (tipo === 'destaque') {
-            const expira = new Date()
-            expira.setDate(expira.getDate() + 30)
+            // Busca o ID do profile real para usar como responsavel_id
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('id')
+                .eq('user_id', userId)
+                .single()
 
-            await supabase.from('atletas').update({
-                destaque_ativo: true,
-                destaque_expira_em: expira.toISOString(),
-            }).eq('responsavel_id', userId)
+            if (profile) {
+                const expira = new Date()
+                expira.setDate(expira.getDate() + 30)
+                await supabase.from('atletas').update({
+                    destaque_ativo: true,
+                    destaque_expira_em: expira.toISOString(),
+                }).eq('responsavel_id', profile.id)
+            }
         }
 
         if (tipo === 'verificacao') {
