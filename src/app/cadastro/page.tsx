@@ -19,10 +19,11 @@ import {
   Trophy, Youtube, Image as ImageIcon
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { AthleteProfilePreview } from '@/components/atletas/AthleteProfilePreview'
 
 type Tipo = 'responsavel' | 'clube'
 
-const STEP_LABELS_RESP = ['Tipo', 'Conta', 'Atleta', 'Habilidades', 'Mídia', 'Conquistas', 'Privacidade']
+const STEP_LABELS_RESP = ['Tipo', 'Conta', 'Atleta', 'Habilidades', 'Mídia', 'Conquistas', 'Visualizar', 'Privacidade']
 const STEP_LABELS_CLUBE = ['Tipo', 'Conta', 'Verificação']
 
 export default function CadastroPage() {
@@ -225,18 +226,15 @@ export default function CadastroPage() {
             </form>
           )}
 
-          {step >= 3 && step <= 6 && tipo === 'responsavel' && (
-            <AtletaSteps step={step} setStep={setStep} data={atletaData} setData={setAtletaData} />
-          )}
-
-          {step === 7 && tipo === 'responsavel' && (
-            <PrivacidadeStep
-              data={atletaData}
-              setData={setAtletaData}
-              onBack={() => setStep(6)}
-              onSubmit={formResp.handleSubmit(submitResponsavel)}
+          {step >= 3 && step <= 8 && tipo === 'responsavel' && (
+            <AtletaSteps 
+              step={step} 
+              setStep={setStep} 
+              data={atletaData} 
+              setData={setAtletaData} 
               loading={formResp.formState.isSubmitting}
-              error={serverError}
+              serverError={serverError}
+              onSubmit={formResp.handleSubmit(submitResponsavel)}
             />
           )}
 
@@ -346,7 +344,7 @@ export default function CadastroPage() {
   )
 }
 
-function AtletaSteps({ step, setStep, data, setData }: any) {
+function AtletaSteps({ step, setStep, data, setData, loading, serverError, onSubmit }: any) {
   const posicoes = [
     { value: 'GK', label: 'GK', sub: 'Goleiro' }, { value: 'LD', label: 'LD', sub: 'Lat. Dir.' },
     { value: 'LE', label: 'LE', sub: 'Lat. Esq.' }, { value: 'ZAG', label: 'ZAG', sub: 'Zagueiro' },
@@ -472,8 +470,9 @@ function AtletaSteps({ step, setStep, data, setData }: any) {
         </div>
 
         <FieldGroup>
-          <Label className="flex items-center gap-2"><ImageIcon size={14} /> Foto de Perfil (URL)</Label>
+          <Label className="flex items-center gap-2"><ImageIcon size={14} /> Foto de Capa / Perfil (URL)</Label>
           <Input placeholder="URL da foto..." value={data.fotoUrl} onChange={e => setData({ ...data, fotoUrl: e.target.value })} />
+          <p className="text-[10px] text-neutral-400 italic">Resolução recomendada: 1280x720 (16:9).</p>
         </FieldGroup>
 
         <div className="space-y-2">
@@ -593,6 +592,36 @@ function AtletaSteps({ step, setStep, data, setData }: any) {
       </div>
     </div>
   )
+
+  if (step === 7) return (
+    <div className="flex flex-col gap-5 sm:gap-6">
+      <div>
+        <div className="font-display text-3xl sm:text-4xl text-neutral-400 mb-1.5 sm:mb-2 leading-none">07</div>
+        <h2 className="text-lg sm:text-xl font-medium mb-1">Visualizar Perfil</h2>
+        <p className="text-xs sm:text-sm text-neutral-500 mb-4 sm:mb-6">Veja como os clubes verão seu perfil.</p>
+      </div>
+
+      <div className="border border-neutral-200 rounded-2xl p-3 sm:p-4 bg-neutral-50/50">
+        <AthleteProfilePreview data={data} />
+      </div>
+
+      <div className="flex justify-between mt-4">
+        <Button variant="outline" onClick={() => setStep(6)}><ArrowLeft size={14} /> Voltar e Editar</Button>
+        <Button variant="dark" onClick={() => setStep(8)}>Tudo certo! Continuar <ArrowRight size={14} /></Button>
+      </div>
+    </div>
+  )
+
+  if (step === 8) return (
+    <PrivacidadeStep 
+      data={data} 
+      setData={setData} 
+      onBack={() => setStep(7)} 
+      onSubmit={onSubmit} 
+      loading={loading} 
+      error={serverError}
+    />
+  )
 }
 
 function PrivacidadeStep({ data, setData, onBack, onSubmit, loading, error }: any) {
@@ -605,7 +634,7 @@ function PrivacidadeStep({ data, setData, onBack, onSubmit, loading, error }: an
 
   return (
     <div>
-      <div className="font-display text-3xl sm:text-4xl text-neutral-400 mb-1.5 sm:mb-2 leading-none">07</div>
+      <div className="font-display text-3xl sm:text-4xl text-neutral-400 mb-1.5 sm:mb-2 leading-none">08</div>
       <h2 className="text-lg sm:text-xl font-medium mb-1">Privacidade</h2>
       <p className="text-xs sm:text-sm text-neutral-500 mb-4 sm:mb-6">Você controla tudo. Pode alterar a qualquer momento.</p>
       <div className="border border-neutral-200 rounded-xl overflow-hidden mb-5 sm:mb-6">
