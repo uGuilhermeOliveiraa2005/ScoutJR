@@ -28,7 +28,7 @@ export function NotificationsBell({ userId }: { userId: string }) {
 
       if (data) {
         setNotifications(data)
-        setUnreadCount(data.filter(n => !n.lida).length)
+        setUnreadCount(data.filter((n: any) => !n.lida).length)
       }
     }
 
@@ -45,7 +45,7 @@ export function NotificationsBell({ userId }: { userId: string }) {
           table: 'notificacoes',
           filter: `user_id=eq.${userId}`
         },
-        (payload) => {
+        (payload: any) => {
           setNotifications(prev => [payload.new, ...prev].slice(0, 10))
           setUnreadCount(prev => prev + 1)
         }
@@ -68,7 +68,7 @@ export function NotificationsBell({ userId }: { userId: string }) {
 
     if (!error) {
       setUnreadCount(0)
-      setNotifications(prev => prev.map(n => ({ ...n, lida: true })))
+      setNotifications(prev => prev.map((n: any) => ({ ...n, lida: true })))
     }
   }
 
@@ -107,7 +107,7 @@ export function NotificationsBell({ userId }: { userId: string }) {
 
             <div className="max-h-96 overflow-y-auto scrollbar-hide">
               {notifications.length > 0 ? (
-                notifications.map((n) => (
+                notifications.map((n: any) => (
                   <div
                     key={n.id}
                     className={cn(
@@ -119,8 +119,8 @@ export function NotificationsBell({ userId }: { userId: string }) {
                       <div className={cn(
                         "w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0",
                         n.tipo === 'favorito' ? 'bg-amber-100 text-amber-600' :
-                        n.tipo === 'interesse' ? 'bg-blue-100 text-blue-600' :
-                        'bg-green-100 text-green-600'
+                          n.tipo === 'interesse' ? 'bg-blue-100 text-blue-600' :
+                            'bg-green-100 text-green-600'
                       )}>
                         {n.tipo === 'favorito' && <Star size={14} fill="currentColor" />}
                         {n.tipo === 'interesse' && <Send size={14} />}
