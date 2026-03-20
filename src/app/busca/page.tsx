@@ -252,7 +252,7 @@ export default async function BuscaPage({
 
             {atletas && atletas.length > 0 ? (
               <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
-                {atletas.map((a, i) => (
+                {atletas.map((a: any, i: number) => (
                   <AtletaCard key={a.id} atleta={a} index={i} loggedIn={!!user} />
                 ))}
               </div>

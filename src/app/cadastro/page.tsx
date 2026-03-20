@@ -4,7 +4,7 @@
 // ============================================
 
 import Link from 'next/link'
-import { useState } from 'react'
+import React, { Suspense, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { cadastroResponsavelSchema, cadastroClubeSchema, type CadastroResponsavelInput, type CadastroClubeInput } from '@/lib/validations'
@@ -26,7 +26,17 @@ type Tipo = 'responsavel' | 'clube'
 const STEP_LABELS_RESP = ['Tipo', 'Conta', 'Atleta', 'Habilidades', 'Mídia', 'Conquistas', 'Visualizar', 'Privacidade']
 const STEP_LABELS_CLUBE = ['Tipo', 'Conta', 'Verificação']
 
+
+
 export default function CadastroPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-neutral-100 flex items-center justify-center">Carregando...</div>}>
+      <CadastroForm />
+    </Suspense>
+  )
+}
+
+function CadastroForm() {
   const [tipo, setTipo] = useState<Tipo>('responsavel')
   const [step, setStep] = useState(1)
   const [done, setDone] = useState(false)

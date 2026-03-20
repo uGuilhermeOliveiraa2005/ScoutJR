@@ -1,16 +1,18 @@
 'use client'
+
 import Link from 'next/link'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { loginSchema, type LoginInput } from '@/lib/validations'
 import { createSupabaseBrowser } from '@/lib/supabase'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 import { Mail, Lock, LogIn } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input, Label, FieldGroup } from '@/components/ui/Form'
 
-export default function LoginPage() {
+// 1. Movemos a lógica principal para este componente interno
+function LoginContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const supabase = createSupabaseBrowser()
@@ -120,5 +122,14 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+// 2. Exportamos a página com o Suspense englobando o componente
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-neutral-100 flex items-center justify-center">Carregando...</div>}>
+      <LoginContent />
+    </Suspense>
   )
 }
