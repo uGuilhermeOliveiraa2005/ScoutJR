@@ -10,7 +10,7 @@ const PROTECTED_ROUTES = ['/dashboard', '/perfil', '/busca', '/configuracoes', '
 const AUTH_ROUTES = ['/login', '/cadastro', '/recuperar-senha']
 const ADMIN_ROUTES = ['/admin']
 
-export async function proxy(request: NextRequest) {
+export default async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
   let supabaseResponse = NextResponse.next({ request })
 
