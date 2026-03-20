@@ -28,6 +28,7 @@ export async function createAthlete(data: any) {
     .insert({
       responsavel_id: profile.id,
       nome: data.nomeAtleta,
+      descricao: data.descricao || '',
       data_nascimento: data.dataNascimento,
       estado: data.estado,
       cidade: data.cidade,
@@ -43,6 +44,8 @@ export async function createAthlete(data: any) {
       visivel: data.visivel,
       exibir_cidade: data.exibirCidade,
       aceitar_mensagens: data.mensagens,
+      foto_url: data.fotoUrl,
+      fotos_adicionais: data.fotosAdicionais || [],
     })
     .select()
     .single()
@@ -52,8 +55,31 @@ export async function createAthlete(data: any) {
     return { error: 'Erro ao salvar os dados do atleta: ' + error.message }
   }
 
+  // Insert Videos
+  if (data.videos && data.videos.length > 0) {
+    const videoInserts = data.videos.map((v: any) => ({
+      atleta_id: athlete.id,
+      titulo: v.titulo || 'Destaque',
+      url: v.url
+    }))
+    await supabase.from('atleta_videos').insert(videoInserts)
+  }
+
+  // Insert Conquests
+  if (data.conquistas && data.conquistas.length > 0) {
+    const conquestInserts = data.conquistas.map((c: any) => ({
+      atleta_id: athlete.id,
+      titulo: c.titulo,
+      ano: parseInt(c.ano),
+      descricao: c.descricao
+    }))
+    await supabase.from('atleta_conquistas').insert(conquestInserts)
+  }
+
   revalidatePath('/dashboard')
   revalidatePath('/perfil')
+  revalidatePath('/ranking')
+  revalidatePath('/busca')
   
   return { success: true, id: athlete.id }
 }
