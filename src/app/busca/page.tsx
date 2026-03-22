@@ -5,6 +5,7 @@ import { NavbarPublic } from '@/components/layout/Navbar'
 import { Search, SlidersHorizontal, X } from 'lucide-react'
 import { POSICOES, ESTADOS } from '@/lib/utils'
 import { PositionAlertButton } from '@/components/busca/PositionAlertButton'
+import { Avatar } from '@/components/ui/Avatar'
 
 export default async function BuscaPage({
   searchParams,
@@ -22,7 +23,7 @@ export default async function BuscaPage({
     profile = profileData
 
     if (profile?.role === 'escolinha') {
-      const { data: escolinhaData } = await supabase.from('escolinhas').select('id, verificado').eq('user_id', user.id).single()
+      const { data: escolinhaData } = await supabase.from('escolinhas').select('id, verificado, foto_url').eq('user_id', user.id).single()
       escolinha = escolinhaData
     }
   }
@@ -50,12 +51,17 @@ export default async function BuscaPage({
 
   const hasFilters = params.nome || params.posicao || params.estado
 
+  const userFotoUrl = profile?.role === 'escolinha'
+    ? (escolinha?.foto_url ?? profile?.foto_url ?? null)
+    : (profile?.foto_url ?? null)
+
   const Navbar = user && profile ? (
     <NavbarDashboard
       userName={profile.nome}
       userRole={profile.role}
       verificado={escolinha?.verificado ?? false}
       userId={user.id}
+      userFotoUrl={userFotoUrl}
     />
   ) : <NavbarPublic />
 
@@ -99,8 +105,8 @@ export default async function BuscaPage({
             <a
               href="/busca"
               className={`flex-shrink-0 px-3 py-1.5 text-xs font-medium rounded-full border transition-colors ${!params.posicao && !params.estado
-                  ? 'bg-green-700 text-white border-green-700'
-                  : 'bg-white border-neutral-200 text-neutral-600'
+                ? 'bg-green-700 text-white border-green-700'
+                : 'bg-white border-neutral-200 text-neutral-600'
                 }`}
             >
               Todos
@@ -110,8 +116,8 @@ export default async function BuscaPage({
                 key={p.value}
                 href={`/busca?${new URLSearchParams({ ...params, posicao: p.value }).toString()}`}
                 className={`flex-shrink-0 px-3 py-1.5 text-xs font-medium rounded-full border transition-colors ${params.posicao === p.value
-                    ? 'bg-green-700 text-white border-green-700'
-                    : 'bg-white border-neutral-200 text-neutral-600'
+                  ? 'bg-green-700 text-white border-green-700'
+                  : 'bg-white border-neutral-200 text-neutral-600'
                   }`}
               >
                 {p.value}
@@ -223,7 +229,6 @@ export default async function BuscaPage({
                 <strong className="text-neutral-900">{atletas?.length ?? 0}</strong> atletas
               </span>
 
-              {/* Alert Button for Clubs */}
               {escolinhaId && params.posicao && (
                 <div className="hidden sm:block ml-4">
                   <PositionAlertButton escolinhaId={escolinhaId} posicao={params.posicao} />
@@ -236,7 +241,6 @@ export default async function BuscaPage({
               </select>
             </div>
 
-            {/* Alert Button for Clubs (Mobile) */}
             {escolinhaId && params.posicao && (
               <div className="sm:hidden mb-4">
                 <PositionAlertButton escolinhaId={escolinhaId} posicao={params.posicao} />
@@ -272,31 +276,39 @@ export default async function BuscaPage({
   )
 }
 
-const CARD_COLORS = ['bg-green-400', 'bg-blue-400', 'bg-amber-500', 'bg-red-400', 'bg-purple-400']
+const CARD_COLORS = [
+  { bg: 'bg-green-400', hex: '#1D9E75', light: 'bg-green-50' },
+  { bg: 'bg-blue-400', hex: '#378ADD', light: 'bg-blue-50' },
+  { bg: 'bg-amber-500', hex: '#EF9F27', light: 'bg-amber-50' },
+  { bg: 'bg-red-400', hex: '#E24B4A', light: 'bg-red-50' },
+  { bg: 'bg-purple-400', hex: '#8B5CF6', light: 'bg-purple-50' },
+]
 
 function AtletaCard({ atleta, index, loggedIn }: { atleta: any; index: number; loggedIn: boolean }) {
   const color = CARD_COLORS[index % CARD_COLORS.length]
-  const initials = atleta.nome.split(' ').map((p: string) => p[0]).slice(0, 2).join('').toUpperCase()
   const nota = Math.round((atleta.habilidade_tecnica + atleta.habilidade_visao + atleta.habilidade_passes) / 3)
-
-  const colorHex = color.includes('green') ? '#1D9E75' : color.includes('blue') ? '#378ADD' : color.includes('amber') ? '#EF9F27' : color.includes('red') ? '#E24B4A' : '#8B5CF6'
 
   return (
     <a
       href={loggedIn ? `/perfil/${atleta.id}` : '/login'}
       className="bg-white border border-neutral-200 rounded-xl overflow-hidden hover:-translate-y-0.5 hover:shadow-md transition-all duration-150 block active:scale-95"
     >
+      {/* Header com foto ou iniciais */}
       <div
         className="px-3 sm:px-4 pt-3 sm:pt-4 pb-2 flex items-end justify-between relative"
-        style={{ background: `color-mix(in srgb, ${colorHex} 12%, white)` }}
+        style={{ background: `color-mix(in srgb, ${color.hex} 12%, white)` }}
       >
-        <div className={`w-9 h-9 sm:w-11 sm:h-11 rounded-full ${color} text-white flex items-center justify-center font-display text-sm sm:text-base`}>
-          {initials}
-        </div>
+        <Avatar
+          src={atleta.foto_url}
+          nome={atleta.nome}
+          size="md"
+          colorClass={`${color.bg} text-white`}
+        />
         <div className="font-display text-3xl sm:text-5xl opacity-20 leading-none text-neutral-600">
           {atleta.posicao}
         </div>
       </div>
+
       <div className="p-2.5 sm:p-3">
         <div className="text-xs sm:text-sm font-medium text-neutral-900 mb-0.5 truncate">{atleta.nome}</div>
         <div className="text-[10px] sm:text-xs text-neutral-400 mb-2 sm:mb-3 truncate">

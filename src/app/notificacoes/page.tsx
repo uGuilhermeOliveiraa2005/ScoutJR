@@ -4,7 +4,6 @@ import { NavbarDashboard } from '@/components/layout/Navbar'
 import { RecentActivity } from '@/components/notifications/RecentActivity'
 import { Bell, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
-import { Button } from '@/components/ui/Button'
 
 export default async function NotificacoesPage() {
   const supabase = await createSupabaseServer()
@@ -29,6 +28,10 @@ export default async function NotificacoesPage() {
     escolinha = data
   }
 
+  const userFotoUrl = profile.role === 'escolinha'
+    ? (escolinha?.foto_url ?? profile?.foto_url ?? null)
+    : (profile?.foto_url ?? null)
+
   return (
     <>
       <NavbarDashboard
@@ -36,8 +39,9 @@ export default async function NotificacoesPage() {
         userRole={profile.role}
         verificado={escolinha?.verificado ?? false}
         userId={user.id}
+        userFotoUrl={userFotoUrl}
       />
-      
+
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-5 sm:py-8 pb-24 md:pb-8">
         <div className="mb-6 sm:mb-8 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -55,13 +59,13 @@ export default async function NotificacoesPage() {
             <Bell size={18} />
             <span className="text-sm font-medium">Histórico de interações</span>
           </div>
-          
+
           <RecentActivity userId={user.id} limit={20} />
-          
+
           <div className="mt-8 pt-6 border-t border-neutral-100 text-center">
-             <p className="text-xs text-neutral-400 italic">
-               As notificações são atualizadas em tempo real.
-             </p>
+            <p className="text-xs text-neutral-400 italic">
+              As notificações são atualizadas em tempo real.
+            </p>
           </div>
         </div>
       </main>

@@ -24,7 +24,7 @@ export async function updateProfile(formData: FormData) {
     const admin = createSupabaseAdmin()
     const fileExt = foto_file.name.split('.').pop()
     const fileName = `configuracoes/${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`
-    
+
     const { data: uploadData, error: uploadError } = await admin.storage.from('media').upload(fileName, foto_file)
     if (!uploadError) {
       const { data: { publicUrl } } = admin.storage.from('media').getPublicUrl(fileName)
@@ -35,14 +35,14 @@ export async function updateProfile(formData: FormData) {
     }
   }
 
-  // update on profiles
+  // Atualiza profiles
   const { data: updatedProfile, error } = await supabase
     .from('profiles')
-    .update({ 
-      nome, 
-      telefone, 
+    .update({
+      nome,
+      telefone,
       foto_url: final_foto_url,
-      avatar_url: final_foto_url // Sync with avatar_url
+      avatar_url: final_foto_url
     })
     .eq('user_id', user.id)
     .select('id')
@@ -53,17 +53,37 @@ export async function updateProfile(formData: FormData) {
     return { error: 'Perfil não encontrado ou erro de permissão. Tente novamente.' }
   }
 
-  // update on escolinhas if needed
-  const { data: profileCheck } = await supabase.from('profiles').select('role').eq('user_id', user.id).single()
+  // Verifica se é escolinha
+  const { data: profileCheck } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('user_id', user.id)
+    .single()
+
   if (profileCheck?.role === 'escolinha') {
+    // Busca dados existentes da escolinha para preservar campos obrigatórios
+    const { data: escolinhaExistente } = await supabase
+      .from('escolinhas')
+      .select('estado, cidade, cnpj')
+      .eq('user_id', user.id)
+      .maybeSingle()
+
+    // Garante que estado e cidade nunca sejam nulos no upsert
+    const estado = escolinhaExistente?.estado ?? ''
+    const cidade = escolinhaExistente?.cidade ?? ''
+    const cnpj = escolinhaExistente?.cnpj ?? null
+
     const { data: updatedEsc, error: escError } = await supabase
       .from('escolinhas')
-      .upsert({ 
-        user_id: user.id, // Explicitly provide user_id for upsert
-        nome, 
-        foto_url: final_foto_url, 
-        logo_url: final_foto_url, // Sync with logo_url
-        descricao 
+      .upsert({
+        user_id: user.id,
+        nome,
+        foto_url: final_foto_url,
+        logo_url: final_foto_url,
+        descricao,
+        estado,
+        cidade,
+        cnpj,
       }, { onConflict: 'user_id' })
       .select('id')
       .maybeSingle()
@@ -76,7 +96,7 @@ export async function updateProfile(formData: FormData) {
 
   revalidatePath('/configuracoes')
   revalidatePath('/dashboard')
-  
+
   return { success: true }
 }
 
@@ -85,8 +105,12 @@ export async function cancelSubscription(formData?: FormData): Promise<void> {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Não autorizado')
 
-  const { data: escolinha } = await supabase.from('escolinhas').select('mp_payment_id').eq('user_id', user.id).single()
-  
+  const { data: escolinha } = await supabase
+    .from('escolinhas')
+    .select('mp_payment_id')
+    .eq('user_id', user.id)
+    .single()
+
   if (escolinha?.mp_payment_id) {
     try {
       await (mpPreApproval as any).update({
@@ -107,8 +131,12 @@ export async function deleteAccount() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Não autorizado' }
 
-  const { data: escolinha } = await supabase.from('escolinhas').select('mp_payment_id, status_assinatura').eq('user_id', user.id).single()
-  
+  const { data: escolinha } = await supabase
+    .from('escolinhas')
+    .select('mp_payment_id, status_assinatura')
+    .eq('user_id', user.id)
+    .single()
+
   if (escolinha?.status_assinatura === 'active' && escolinha.mp_payment_id) {
     try {
       await (mpPreApproval as any).update({
@@ -122,10 +150,10 @@ export async function deleteAccount() {
 
   const admin = createSupabaseAdmin()
   const { error } = await admin.auth.admin.deleteUser(user.id)
-  
+
   if (error) {
-     console.error('Erro ao deletar usuário:', error)
-     return { error: 'Falha ao excluir conta no Supabase.' }
+    console.error('Erro ao deletar usuário:', error)
+    return { error: 'Falha ao excluir conta no Supabase.' }
   }
 
   return { success: true }

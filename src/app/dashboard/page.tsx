@@ -1,7 +1,3 @@
-// ============================================
-// CAMINHO: src/app/dashboard/page.tsx
-// ============================================
-
 import { createSupabaseServer, createSupabaseAdmin } from '@/lib/supabase-server'
 import { redirect } from 'next/navigation'
 import { NavbarDashboard } from '@/components/layout/Navbar'
@@ -9,6 +5,7 @@ import { Users, Star, MessageCircle, TrendingUp, ArrowRight, Eye, ShieldCheck } 
 import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
 import { RecentActivity } from '@/components/notifications/RecentActivity'
+import { Avatar } from '@/components/ui/Avatar'
 
 export default async function DashboardPage() {
   const supabase = await createSupabaseServer()
@@ -77,6 +74,11 @@ export default async function DashboardPage() {
     }
   }
 
+  // Foto: para escolinha usa foto da escolinha, para responsável usa foto do profile
+  const userFotoUrl = isEscolinha
+    ? (escolinha?.foto_url ?? profile?.foto_url ?? null)
+    : (profile?.foto_url ?? null)
+
   return (
     <>
       <NavbarDashboard
@@ -84,8 +86,8 @@ export default async function DashboardPage() {
         userRole={profile.role}
         verificado={escolinha?.verificado ?? false}
         userId={user.id}
+        userFotoUrl={userFotoUrl}
       />
-      {/* Extra padding bottom for mobile bottom nav */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-5 sm:py-8 pb-24 md:pb-8">
 
         {/* Welcome */}
@@ -161,9 +163,12 @@ export default async function DashboardPage() {
 
                 {athlete ? (
                   <div className="flex items-center gap-3 sm:gap-4">
-                    <div className="w-12 h-12 sm:w-16 sm:h-16 bg-neutral-100 rounded-xl flex items-center justify-center text-neutral-400 flex-shrink-0">
-                      <Users size={20} />
-                    </div>
+                    <Avatar
+                      src={athlete.foto_url}
+                      nome={athlete.nome}
+                      size="xl"
+                      colorClass="bg-green-100 text-green-700"
+                    />
                     <div>
                       <h3 className="text-base sm:text-lg font-display text-green-700">{athlete.nome.toUpperCase()}</h3>
                       <p className="text-xs sm:text-sm text-neutral-500">{athlete.posicao} • {athlete.cidade}/{athlete.estado}</p>
@@ -202,8 +207,8 @@ export default async function DashboardPage() {
                 <div className="flex justify-between items-center">
                   <span>Status</span>
                   <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${escolinha?.status_assinatura === 'active'
-                      ? 'bg-green-100 text-green-700'
-                      : 'bg-neutral-200 text-neutral-600'
+                    ? 'bg-green-100 text-green-700'
+                    : 'bg-neutral-200 text-neutral-600'
                     }`}>
                     {escolinha?.status_assinatura === 'active' ? 'Ativo' : 'Gratuito'}
                   </span>

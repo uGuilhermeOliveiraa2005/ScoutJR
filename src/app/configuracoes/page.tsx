@@ -1,14 +1,9 @@
-// ============================================
-// CAMINHO: src/app/configuracoes/page.tsx
-// ============================================
-
 import { createSupabaseServer } from '@/lib/supabase-server'
 import { redirect } from 'next/navigation'
 import { NavbarDashboard } from '@/components/layout/Navbar'
 import { PaymentButton } from '@/components/shared/PaymentButton'
-import { updateProfile, cancelSubscription } from './actions'
+import { cancelSubscription } from './actions'
 import { Shield, CreditCard, Bell, User, ShieldCheck, AlertTriangle } from 'lucide-react'
-import { formatPhone } from '@/lib/utils'
 import { DeleteAccountModal } from './DeleteAccountModal'
 import { ProfileForm } from './ProfileForm'
 import { PasswordChangeForm } from './PasswordChangeForm'
@@ -29,6 +24,10 @@ export default async function ConfiguracoesPage() {
 
   const isEscolinha = profile.role === 'escolinha'
 
+  const userFotoUrl = isEscolinha
+    ? (escolinha?.foto_url ?? profile?.foto_url ?? null)
+    : (profile?.foto_url ?? null)
+
   return (
     <>
       <NavbarDashboard
@@ -36,6 +35,7 @@ export default async function ConfiguracoesPage() {
         userRole={profile.role}
         verificado={escolinha?.verificado ?? false}
         userId={user.id}
+        userFotoUrl={userFotoUrl}
       />
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-5 sm:py-8 pb-24 md:pb-8">
 
@@ -54,7 +54,7 @@ export default async function ConfiguracoesPage() {
 
           {/* Dados da conta */}
           <Section icon={<User size={16} />} title="Dados da conta">
-             <ProfileForm profile={profile} escolinha={escolinha} isEscolinha={isEscolinha} />
+            <ProfileForm profile={profile} escolinha={escolinha} isEscolinha={isEscolinha} />
           </Section>
 
           {/* Plano e pagamento */}
@@ -225,7 +225,7 @@ export default async function ConfiguracoesPage() {
                   Exclui permanentemente sua conta, configurações, assinaturas e todos os dados associados. Essa ação não pode ser desfeita.
                 </p>
               </div>
-              <DeleteAccountModal 
+              <DeleteAccountModal
                 hasAssinatura={escolinha?.status_assinatura === 'active'}
                 isVerificado={escolinha?.verificado === true}
               />

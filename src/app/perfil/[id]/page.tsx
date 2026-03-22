@@ -4,6 +4,7 @@ import { NavbarPublic } from '@/components/layout/Navbar'
 import { NavbarDashboard } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Navbar'
 import { Badge, SkillBar } from '@/components/ui/index'
+import { Avatar } from '@/components/ui/Avatar'
 import { POSICAO_LABEL, ESTADO_LABEL, calcularIdade } from '@/lib/utils'
 import { MapPin, Landmark, Star, Send, Trophy, Target, Award, Play, BarChart2, ArrowLeft, Edit2 } from 'lucide-react'
 import Link from 'next/link'
@@ -28,6 +29,7 @@ export default async function PerfilAtletaPage({ params }: { params: Promise<{ i
   let profile = null
   let isEscolinha = false
   let escolinhaId = null
+  let escolinha_data: any = null
   let initialIsFavorite = false
   let initialHasInterest = false
 
@@ -37,14 +39,12 @@ export default async function PerfilAtletaPage({ params }: { params: Promise<{ i
     isEscolinha = p?.role === 'escolinha'
 
     if (isEscolinha) {
-      const { data: c } = await supabase.from('escolinhas').select('id').eq('user_id', user.id).single()
+      const { data: c } = await supabase.from('escolinhas').select('id, foto_url').eq('user_id', user.id).single()
       if (c) {
         escolinhaId = c.id
-        // Check favorite
+        escolinha_data = c
         const { data: fav } = await supabase.from('favoritos').select('id').eq('atleta_id', id).eq('escolinha_id', c.id).single()
         initialIsFavorite = !!fav
-
-        // Check interest
         const { data: int } = await supabase.from('interesses').select('id').eq('atleta_id', id).eq('escolinha_id', c.id).single()
         initialHasInterest = !!int
       }
@@ -52,6 +52,10 @@ export default async function PerfilAtletaPage({ params }: { params: Promise<{ i
   }
 
   const isOwner = user && profile && atleta.responsavel_id === profile.id
+
+  const userFotoUrl = isEscolinha
+    ? (escolinha_data?.foto_url ?? profile?.foto_url ?? null)
+    : (profile?.foto_url ?? null)
 
   const idade = calcularIdade(atleta.data_nascimento)
   const statsAtual = atleta.atleta_stats?.sort((a: any, b: any) => b.temporada - a.temporada)[0]
@@ -66,7 +70,12 @@ export default async function PerfilAtletaPage({ params }: { params: Promise<{ i
   ]
 
   const Navbar = user && profile
-    ? <NavbarDashboard userName={profile.nome} userRole={profile.role} userId={user.id} />
+    ? <NavbarDashboard
+      userName={profile.nome}
+      userRole={profile.role}
+      userId={user.id}
+      userFotoUrl={userFotoUrl}
+    />
     : <NavbarPublic />
 
   return (
@@ -74,19 +83,21 @@ export default async function PerfilAtletaPage({ params }: { params: Promise<{ i
       {Navbar}
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-5 sm:py-8 pb-24 md:pb-8">
 
-        {/* Back */}
         <Link href="/busca" className="inline-flex items-center gap-1.5 text-xs sm:text-sm text-neutral-400 hover:text-neutral-700 mb-4 sm:mb-6 transition-colors">
           <ArrowLeft size={13} /> Voltar para busca
         </Link>
 
-        {/* Mobile: Profile card no topo (layout diferente) */}
+        {/* Mobile: Profile card no topo */}
         <div className="lg:hidden mb-4">
           <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden shadow-sm">
-            {/* Hero strip */}
             <div className="bg-green-100 px-4 pt-5 pb-3 flex items-end gap-3 relative min-h-[100px]">
-              <div className="w-14 h-14 rounded-full bg-green-400 text-white flex items-center justify-center font-display text-2xl flex-shrink-0 z-10">
-                {atleta.nome.split(' ').map((p: string) => p[0]).slice(0, 2).join('').toUpperCase()}
-              </div>
+              <Avatar
+                src={atleta.foto_url}
+                nome={atleta.nome}
+                size="xl"
+                colorClass="bg-green-400 text-white"
+                className="z-10 border-2 border-white shadow-sm"
+              />
               <div className="font-display text-7xl text-green-400/20 absolute right-4 bottom-0 leading-none select-none">
                 {atleta.posicao}
               </div>
@@ -97,7 +108,6 @@ export default async function PerfilAtletaPage({ params }: { params: Promise<{ i
             </div>
 
             <div className="p-4">
-              {/* Info chips */}
               <div className="flex flex-wrap gap-1.5 mb-3">
                 <Badge variant="outline" className="bg-neutral-50">{idade} anos</Badge>
                 {atleta.exibir_cidade && (
@@ -116,7 +126,6 @@ export default async function PerfilAtletaPage({ params }: { params: Promise<{ i
                 </div>
               )}
 
-              {/* Stats rápidos (mobile) */}
               {statsAtual && (
                 <div className="grid grid-cols-4 gap-2 mb-3 py-3 border-y border-neutral-100">
                   {[
@@ -133,7 +142,6 @@ export default async function PerfilAtletaPage({ params }: { params: Promise<{ i
                 </div>
               )}
 
-              {/* CTA mobile */}
               {isEscolinha ? (
                 <AthleteActions
                   atletaId={atleta.id}
@@ -170,9 +178,13 @@ export default async function PerfilAtletaPage({ params }: { params: Promise<{ i
           <aside className="hidden lg:flex lg:col-span-1 flex-col gap-6">
             <div className="bg-white border border-neutral-200 rounded-3xl overflow-hidden shadow-sm">
               <div className="bg-green-100 px-5 pt-6 pb-3 flex items-end gap-3 relative min-h-[120px]">
-                <div className="w-16 h-16 rounded-full bg-green-400 text-white flex items-center justify-center font-display text-2xl flex-shrink-0 z-10 border-2 border-white shadow-sm">
-                  {atleta.nome.split(' ').map((p: string) => p[0]).slice(0, 2).join('').toUpperCase()}
-                </div>
+                <Avatar
+                  src={atleta.foto_url}
+                  nome={atleta.nome}
+                  size="xl"
+                  colorClass="bg-green-400 text-white"
+                  className="z-10 border-2 border-white shadow-sm"
+                />
                 <div className="font-display text-8xl text-green-400/20 absolute right-4 bottom-[-10px] leading-none select-none">
                   {atleta.posicao}
                 </div>
@@ -247,8 +259,7 @@ export default async function PerfilAtletaPage({ params }: { params: Promise<{ i
 
           {/* Main content */}
           <main className="lg:col-span-2 flex flex-col gap-6">
-            
-            {/* Cover Photo - Fixed at top */}
+
             {atleta.foto_url ? (
               <div className="relative aspect-video rounded-3xl overflow-hidden shadow-lg border border-neutral-200 bg-neutral-100 group">
                 <img src={atleta.foto_url} alt={`Capa de ${atleta.nome}`} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
@@ -266,7 +277,6 @@ export default async function PerfilAtletaPage({ params }: { params: Promise<{ i
               </Section>
             )}
 
-            {/* Habilidades */}
             <Section title="Habilidades">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-4">
                 {habilidades.map(h => (
@@ -275,7 +285,6 @@ export default async function PerfilAtletaPage({ params }: { params: Promise<{ i
               </div>
             </Section>
 
-            {/* Dados físicos */}
             {(atleta.altura_cm || atleta.peso_kg) && (
               <Section title="Dados físicos">
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -287,21 +296,19 @@ export default async function PerfilAtletaPage({ params }: { params: Promise<{ i
               </Section>
             )}
 
-            {/* Media Gallery (Additional Photos & Videos) */}
             {(atleta.fotos_adicionais?.length > 0 || atleta.atleta_videos?.length > 0) && (
               <Section title="Galeria & Vídeos">
-                <MediaGallery 
-                  photos={atleta.fotos_adicionais || []} 
-                  videos={atleta.atleta_videos || []} 
+                <MediaGallery
+                  photos={atleta.fotos_adicionais || []}
+                  videos={atleta.atleta_videos || []}
                 />
               </Section>
             )}
 
-            {/* Conquistas / Hall da Fama */}
             {atleta.atleta_conquistas && atleta.atleta_conquistas.length > 0 && (
               <Section title="Conquistas & Hall da Fama">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {atleta.atleta_conquistas.map((c: any, i: number) => (
+                  {atleta.atleta_conquistas.map((c: any) => (
                     <div key={c.id} className="group bg-amber-50/50 border border-amber-100 rounded-3xl p-5 flex gap-5 transition-all hover:shadow-xl hover:bg-white active:scale-[0.98]">
                       <div className="w-14 h-14 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center flex-shrink-0 group-hover:rotate-12 transition-transform shadow-inner">
                         <Trophy size={28} fill="currentColor" />
@@ -312,9 +319,7 @@ export default async function PerfilAtletaPage({ params }: { params: Promise<{ i
                           <span className="text-[10px] font-black text-white bg-amber-600 px-2 py-0.5 rounded-full shadow-sm">{c.ano}</span>
                         </div>
                         {c.descricao && (
-                          <p className="text-xs text-neutral-500 leading-relaxed line-clamp-2">
-                            {c.descricao}
-                          </p>
+                          <p className="text-xs text-neutral-500 leading-relaxed line-clamp-2">{c.descricao}</p>
                         )}
                       </div>
                     </div>
@@ -322,7 +327,7 @@ export default async function PerfilAtletaPage({ params }: { params: Promise<{ i
                 </div>
               </Section>
             )}
-            {/* Gate para não logados */}
+
             {!user && (
               <div className="bg-green-700 rounded-xl p-5 sm:p-6 text-center text-white">
                 <h3 className="font-display text-xl sm:text-2xl mb-2">QUER CONTATAR ESTE ATLETA?</h3>
@@ -337,7 +342,6 @@ export default async function PerfilAtletaPage({ params }: { params: Promise<{ i
                 </div>
               </div>
             )}
-
           </main>
         </div>
       </main>

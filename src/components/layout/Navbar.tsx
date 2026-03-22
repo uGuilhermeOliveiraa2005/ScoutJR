@@ -1,7 +1,4 @@
 'use client'
-// ============================================
-// CAMINHO: src/components/layout/Navbar.tsx
-// ============================================
 
 import Link from 'next/link'
 import { useState } from 'react'
@@ -11,6 +8,7 @@ import { Button } from '@/components/ui/Button'
 import { createSupabaseBrowser } from '@/lib/supabase'
 import { useRouter, usePathname } from 'next/navigation'
 import { NotificationsBell } from '@/components/notifications/NotificationsBell'
+import { Avatar } from '@/components/ui/Avatar'
 
 // -----------------------------------------------
 // Public Navbar
@@ -50,7 +48,6 @@ export function NavbarPublic() {
         </button>
       </div>
 
-      {/* Mobile menu */}
       {open && (
         <div className="md:hidden border-t border-neutral-100 bg-white shadow-xl animate-in fade-in slide-in-from-top-2 duration-200">
           <nav className="px-4 py-3 flex flex-col gap-0.5">
@@ -92,11 +89,13 @@ export function NavbarDashboard({
   userRole,
   verificado,
   userId,
+  userFotoUrl,
 }: {
   userName: string
   userRole: string
   verificado?: boolean
   userId?: string
+  userFotoUrl?: string | null
 }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const router = useRouter()
@@ -147,9 +146,12 @@ export function NavbarDashboard({
           {userId && <NotificationsBell userId={userId} />}
 
           <div className="flex items-center gap-2 border-l border-neutral-100 pl-2 lg:pl-4">
-            <div className="w-8 h-8 rounded-full bg-green-100 text-green-700 flex items-center justify-center font-display text-xs flex-shrink-0">
-              {userName?.slice(0, 2).toUpperCase()}
-            </div>
+            <Avatar
+              src={userFotoUrl}
+              nome={userName}
+              size="sm"
+              colorClass="bg-green-100 text-green-700"
+            />
             <span className="text-sm font-medium text-neutral-700 hidden lg:block">
               {userName?.split(' ')[0]}
             </span>
@@ -169,9 +171,13 @@ export function NavbarDashboard({
         {/* Mobile: avatar + bell + hamburger */}
         <div className="md:hidden flex items-center gap-1.5 sm:gap-2">
           {userId && <NotificationsBell userId={userId} />}
-          <div className="w-8 h-8 rounded-full bg-green-100 text-green-700 flex items-center justify-center font-display text-xs ml-1">
-            {userName?.slice(0, 2).toUpperCase()}
-          </div>
+          <Avatar
+            src={userFotoUrl}
+            nome={userName}
+            size="sm"
+            colorClass="bg-green-100 text-green-700"
+            className="ml-1"
+          />
           <button
             className="p-1.5 rounded-lg hover:bg-neutral-100 transition-colors"
             onClick={() => setMenuOpen(!menuOpen)}
@@ -223,9 +229,12 @@ export function NavbarDashboard({
           >
             <div className="p-5 border-b border-neutral-100">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-green-100 text-green-700 flex items-center justify-center font-display text-lg">
-                  {userName?.slice(0, 2).toUpperCase()}
-                </div>
+                <Avatar
+                  src={userFotoUrl}
+                  nome={userName}
+                  size="lg"
+                  colorClass="bg-green-100 text-green-700"
+                />
                 <div>
                   <div className="text-sm font-semibold text-neutral-900">{userName}</div>
                   <div className="text-[10px] text-neutral-400 uppercase tracking-widest font-medium mt-0.5">
