@@ -1,3 +1,4 @@
+// src/components/notifications/RealtimeInit.tsx
 'use client'
 
 import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications'

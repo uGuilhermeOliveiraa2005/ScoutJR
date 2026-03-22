@@ -1,6 +1,7 @@
+// src/components/notifications/NotificationsBell.tsx
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createSupabaseBrowser } from '@/lib/supabase'
 import { Bell, Star, Send, ArrowRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -12,42 +13,50 @@ export function NotificationsBell({ userId }: { userId: string }) {
   const [notifications, setNotifications] = useState<any[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [isOpen, setIsOpen] = useState(false)
+  // Set de IDs já presentes — evita duplicar via CustomEvent
+  const knownIds = useRef<Set<string>>(new Set())
   const supabase = createSupabaseBrowser()
 
   useEffect(() => {
     if (!userId) return
-    async function fetch() {
+
+    async function fetchNotifs() {
       const { data } = await supabase
         .from('notificacoes')
         .select('*')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .limit(10)
+
       if (data) {
         setNotifications(data)
         setUnreadCount(data.filter((n: any) => !n.lida).length)
-      }
-    }
-    fetch()
-
-    // 2. Escuta eventos do useRealtimeNotifications (para evitar conexão duplicada)
-    const handleNewNotif = (e: any) => {
-      const n = e.detail
-      if (n) {
-        setNotifications(prev => [n, ...prev].slice(0, 10))
-        setUnreadCount(prev => prev + 1)
+        data.forEach((n: any) => knownIds.current.add(n.id))
       }
     }
 
-    window.addEventListener('scoutjr:notification', handleNewNotif as any)
-    return () => {
-      window.removeEventListener('scoutjr:notification', handleNewNotif as any)
+    fetchNotifs()
+
+    function handleNewNotif(e: Event) {
+      const n = (e as CustomEvent).detail
+      if (!n?.id) return
+      if (knownIds.current.has(n.id)) return
+      knownIds.current.add(n.id)
+      setNotifications(prev => [n, ...prev].slice(0, 10))
+      setUnreadCount(prev => prev + 1)
     }
-  }, [userId, supabase])
+
+    window.addEventListener('scoutjr:notification', handleNewNotif)
+    return () => window.removeEventListener('scoutjr:notification', handleNewNotif)
+  }, [userId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function markAsRead() {
     if (unreadCount === 0) return
-    await supabase.from('notificacoes').update({ lida: true }).eq('user_id', userId).eq('lida', false)
+    await supabase
+      .from('notificacoes')
+      .update({ lida: true })
+      .eq('user_id', userId)
+      .eq('lida', false)
     setUnreadCount(0)
     setNotifications(prev => prev.map((n: any) => ({ ...n, lida: true })))
   }
@@ -55,7 +64,10 @@ export function NotificationsBell({ userId }: { userId: string }) {
   return (
     <div className="relative">
       <button
-        onClick={() => { setIsOpen(v => !v); if (!isOpen) markAsRead() }}
+        onClick={() => {
+          setIsOpen(v => !v)
+          if (!isOpen) markAsRead()
+        }}
         className="p-2 rounded-lg hover:bg-neutral-100 transition-colors relative"
         aria-label="Notificações"
       >
@@ -74,7 +86,6 @@ export function NotificationsBell({ userId }: { userId: string }) {
             onClick={() => setIsOpen(false)}
           />
           <div className="fixed inset-x-4 top-20 md:absolute md:inset-auto md:right-0 md:top-full mt-2 md:w-80 bg-white border border-neutral-200 rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-
             <div className="p-4 border-b border-neutral-100 flex justify-between items-center">
               <h3 className="text-sm font-semibold text-neutral-900">Notificações</h3>
               {unreadCount > 0 && (
@@ -99,8 +110,11 @@ export function NotificationsBell({ userId }: { userId: string }) {
             </div>
 
             <div className="p-3 bg-neutral-50 border-t border-neutral-100 text-center">
-              <Link href="/notificacoes" onClick={() => setIsOpen(false)}
-                className="text-[10px] font-bold text-green-700 uppercase tracking-widest hover:text-green-800 transition-colors block w-full py-1">
+              <Link
+                href="/notificacoes"
+                onClick={() => setIsOpen(false)}
+                className="text-[10px] font-bold text-green-700 uppercase tracking-widest hover:text-green-800 transition-colors block w-full py-1"
+              >
                 Ver todas as notificações
               </Link>
             </div>
@@ -111,15 +125,10 @@ export function NotificationsBell({ userId }: { userId: string }) {
   )
 }
 
-// ── Item de notificação ─────────────────────────────────────────
-
 function NotificationItem({ n, onClose }: { n: any; onClose: () => void }) {
   const atletaId = n.metadata?.atleta_id
   const escolinhaId = n.metadata?.escolinha_id
 
-  // Destino do botão "Ver perfil":
-  // - tem escolinha_id → responsável recebeu (favorito/interesse) → vai para a escolinha
-  // - tem atleta_id mas não escolinha_id → escolinha recebeu (novo atleta) → vai para o atleta
   const verPerfilHref = escolinhaId
     ? `/escolinha/${escolinhaId}`
     : atletaId
@@ -143,7 +152,10 @@ function NotificationItem({ n, onClose }: { n: any; onClose: () => void }) {
       !n.lida && 'bg-green-50/30'
     )}>
       <div className="flex gap-3">
-        <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0', colorMap[n.tipo] ?? 'bg-neutral-100 text-neutral-500')}>
+        <div className={cn(
+          'w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0',
+          colorMap[n.tipo] ?? 'bg-neutral-100 text-neutral-500'
+        )}>
           {iconMap[n.tipo] ?? <Bell size={14} />}
         </div>
         <div className="flex-1 min-w-0">
@@ -156,8 +168,6 @@ function NotificationItem({ n, onClose }: { n: any; onClose: () => void }) {
           <p className="text-[9px] text-neutral-400 mt-1.5">
             {formatDistanceToNow(new Date(n.created_at), { addSuffix: true, locale: ptBR })}
           </p>
-
-          {/* Botão Ver perfil */}
           {verPerfilHref && (
             <Link
               href={verPerfilHref}

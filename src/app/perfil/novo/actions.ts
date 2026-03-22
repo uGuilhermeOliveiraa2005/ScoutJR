@@ -1,9 +1,9 @@
+// src/app/perfil/novo/actions.ts
 'use server'
 
 import { createSupabaseServer, createSupabaseAdmin } from '@/lib/supabase-server'
 import { revalidatePath } from 'next/cache'
 
-// Dispara notificações para escolinhas que têm alerta para a posição do atleta
 async function notificarEscolinhasPorPosicao(
   atletaId: string,
   atletaNome: string,
@@ -12,38 +12,41 @@ async function notificarEscolinhasPorPosicao(
 ) {
   try {
     // Busca escolinhas com alerta ativo para essa posição
+    // A join é feita manualmente pois o Supabase pode não resolver o join automático aqui
     const { data: alertas } = await admin
       .from('escolinha_interesses_posicoes')
-      .select('escolinha_id, escolinhas(user_id)')
+      .select('escolinha_id')
       .eq('posicao', posicao)
 
     if (!alertas || alertas.length === 0) return
 
-    // Cria uma notificação para cada escolinha
-    const notificacoes = alertas
-      .map((alerta: any) => {
-        const userId = alerta.escolinhas?.user_id
-        if (!userId) return null
-        return {
-          user_id: userId,
-          tipo: 'sistema',
-          titulo: `Novo ${posicao} disponível!`,
-          mensagem: `${atletaNome} acabou de criar um perfil. Clique para ver.`,
-          lida: false,
-          metadata: {
-            atleta_id: atletaId,
-            posicao,
-          },
-        }
-      })
-      .filter(Boolean)
+    const escolinhaIds = alertas.map((a: any) => a.escolinha_id)
+
+    // Busca os user_ids das escolinhas
+    const { data: escolinhas } = await admin
+      .from('escolinhas')
+      .select('id, nome, user_id')
+      .in('id', escolinhaIds)
+
+    if (!escolinhas || escolinhas.length === 0) return
+
+    const notificacoes = escolinhas.map((esc: any) => ({
+      user_id: esc.user_id,
+      tipo: 'sistema',
+      titulo: `Novo ${posicao} disponível!`,
+      mensagem: `${atletaNome} acabou de criar um perfil. Clique para ver.`,
+      lida: false,
+      metadata: {
+        atleta_id: atletaId,
+        posicao,
+      },
+    }))
 
     if (notificacoes.length > 0) {
       await admin.from('notificacoes').insert(notificacoes)
     }
-  } catch (err) {
+  } catch {
     // Não bloqueia o fluxo se a notificação falhar
-    console.error('[notificarEscolinas] Erro:', err)
   }
 }
 
@@ -93,7 +96,6 @@ export async function createAthlete(data: any) {
     .single()
 
   if (error) {
-    console.error('Erro ao criar atleta:', error)
     return { error: 'Erro ao salvar os dados do atleta: ' + error.message }
   }
 
@@ -187,7 +189,6 @@ export async function updateAthlete(id: string, data: any) {
     .maybeSingle()
 
   if (error || !updatedAtleta) {
-    console.error('Erro ao atualizar atleta:', error?.message)
     return { error: 'Atleta não encontrado ou permissão negada.' }
   }
 

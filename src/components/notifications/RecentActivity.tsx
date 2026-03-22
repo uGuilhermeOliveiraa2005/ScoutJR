@@ -1,6 +1,7 @@
+// src/components/notifications/RecentActivity.tsx
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createSupabaseBrowser } from '@/lib/supabase'
 import { Bell, Star, Send, ArrowRight } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
@@ -11,35 +12,40 @@ import Link from 'next/link'
 export function RecentActivity({ userId, limit = 5 }: { userId: string; limit?: number }) {
   const [notifications, setNotifications] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const knownIds = useRef<Set<string>>(new Set())
   const supabase = createSupabaseBrowser()
 
   useEffect(() => {
     if (!userId) return
-    async function fetch() {
+
+    async function fetchNotifs() {
       const { data } = await supabase
         .from('notificacoes')
         .select('*')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .limit(limit)
-      setNotifications(data ?? [])
+
+      if (data) {
+        setNotifications(data)
+        data.forEach((n: any) => knownIds.current.add(n.id))
+      }
       setLoading(false)
     }
-    fetch()
-    
-    // 2. Escuta eventos do useRealtimeNotifications
-    const handleNewNotif = (e: any) => {
-      const n = e.detail
-      if (n) {
-        setNotifications(prev => [n, ...prev].slice(0, limit))
-      }
+
+    fetchNotifs()
+
+    function handleNewNotif(e: Event) {
+      const n = (e as CustomEvent).detail
+      if (!n?.id) return
+      if (knownIds.current.has(n.id)) return
+      knownIds.current.add(n.id)
+      setNotifications(prev => [n, ...prev].slice(0, limit))
     }
 
-    window.addEventListener('scoutjr:notification', handleNewNotif as any)
-    return () => {
-      window.removeEventListener('scoutjr:notification', handleNewNotif as any)
-    }
-  }, [userId, limit])
+    window.addEventListener('scoutjr:notification', handleNewNotif)
+    return () => window.removeEventListener('scoutjr:notification', handleNewNotif)
+  }, [userId, limit]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading) {
     return (
@@ -72,8 +78,6 @@ export function RecentActivity({ userId, limit = 5 }: { userId: string; limit?: 
         const atletaId = n.metadata?.atleta_id
         const escolinhaId = n.metadata?.escolinha_id
 
-        // Responsável recebeu (favorito/interesse) → vai para a escolinha
-        // Escolinha recebeu (novo atleta na posição) → vai para o atleta
         const verPerfilHref = escolinhaId
           ? `/escolinha/${escolinhaId}`
           : atletaId
@@ -96,7 +100,6 @@ export function RecentActivity({ userId, limit = 5 }: { userId: string; limit?: 
             'flex gap-3 p-3 rounded-xl transition-colors hover:bg-neutral-50',
             !n.lida && 'bg-green-50/40'
           )}>
-            {/* Ícone */}
             <div className={cn(
               'w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0',
               colorMap[n.tipo] ?? 'bg-neutral-100 text-neutral-500'
@@ -104,7 +107,6 @@ export function RecentActivity({ userId, limit = 5 }: { userId: string; limit?: 
               {iconMap[n.tipo] ?? <Bell size={13} />}
             </div>
 
-            {/* Texto */}
             <div className="flex-1 min-w-0">
               <p className="text-xs font-semibold text-neutral-900 leading-tight">
                 {n.titulo}
@@ -118,7 +120,6 @@ export function RecentActivity({ userId, limit = 5 }: { userId: string; limit?: 
                   {formatDistanceToNow(new Date(n.created_at), { addSuffix: true, locale: ptBR })}
                 </span>
 
-                {/* Botão Ver perfil */}
                 {verPerfilHref && (
                   <Link
                     href={verPerfilHref}
@@ -130,7 +131,6 @@ export function RecentActivity({ userId, limit = 5 }: { userId: string; limit?: 
               </div>
             </div>
 
-            {/* Indicador não lida */}
             {!n.lida && (
               <div className="w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0 mt-1" />
             )}

@@ -1,9 +1,10 @@
+// src/components/atletas/AthleteActions.tsx
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { createSupabaseBrowser } from '@/lib/supabase'
 import { Button } from '@/components/ui/Button'
-import { Star, Send, Check } from 'lucide-react'
+import { Star, Check } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
 interface AthleteActionsProps {
@@ -21,7 +22,7 @@ export function AthleteActions({
   initialIsFavorite,
   initialHasInterest,
   aceitarMensagens,
-  size = 'md'
+  size = 'md',
 }: AthleteActionsProps) {
   const [isFavorite, setIsFavorite] = useState(initialIsFavorite)
   const [hasInterest, setHasInterest] = useState(initialHasInterest)
@@ -36,6 +37,7 @@ export function AthleteActions({
 
     try {
       if (isFavorite) {
+        // Remove favorito — sem notificação ao desfavoritar
         await supabase
           .from('favoritos')
           .delete()
@@ -43,14 +45,53 @@ export function AthleteActions({
           .eq('escolinha_id', escolinhaId)
         setIsFavorite(false)
       } else {
-        await supabase
+        // Adiciona favorito
+        const { error } = await supabase
           .from('favoritos')
           .insert({ atleta_id: atletaId, escolinha_id: escolinhaId })
-        setIsFavorite(true)
+
+        if (!error) {
+          setIsFavorite(true)
+
+          // Cria notificação para o responsável do atleta
+          // Busca dados necessários para a mensagem
+          const [atletaRes, escolinhaRes] = await Promise.all([
+            supabase
+              .from('atletas')
+              .select('nome, responsavel_id, profiles!atletas_responsavel_id_fkey(user_id)')
+              .eq('id', atletaId)
+              .single(),
+            supabase
+              .from('escolinhas')
+              .select('nome')
+              .eq('id', escolinhaId)
+              .single(),
+          ])
+
+          const atleta = atletaRes.data as any
+          const escolinha = escolinhaRes.data as any
+
+          if (atleta && escolinha) {
+            const responsavelUserId = atleta.profiles?.user_id
+            if (responsavelUserId) {
+              await supabase.from('notificacoes').insert({
+                user_id: responsavelUserId,
+                tipo: 'favorito',
+                titulo: `${escolinha.nome} favoritou ${atleta.nome}!`,
+                mensagem: `A escolinha ${escolinha.nome} adicionou ${atleta.nome} aos favoritos.`,
+                lida: false,
+                metadata: {
+                  atleta_id: atletaId,
+                  escolinha_id: escolinhaId,
+                },
+              })
+            }
+          }
+        }
       }
       router.refresh()
-    } catch (error) {
-      console.error('Error toggling favorite:', error)
+    } catch {
+      // silencioso
     } finally {
       setLoadingFav(false)
     }
@@ -61,20 +102,53 @@ export function AthleteActions({
     setLoadingInt(true)
 
     try {
-      const { error } = await supabase
-        .from('interesses')
-        .insert({
-          atleta_id: atletaId,
-          escolinha_id: escolinhaId,
-          status: 'pendente'
-        })
+      const { error } = await supabase.from('interesses').insert({
+        atleta_id: atletaId,
+        escolinha_id: escolinhaId,
+        status: 'pendente',
+      })
 
       if (!error) {
         setHasInterest(true)
+
+        // Cria notificação para o responsável
+        const [atletaRes, escolinhaRes] = await Promise.all([
+          supabase
+            .from('atletas')
+            .select('nome, responsavel_id, profiles!atletas_responsavel_id_fkey(user_id)')
+            .eq('id', atletaId)
+            .single(),
+          supabase
+            .from('escolinhas')
+            .select('nome')
+            .eq('id', escolinhaId)
+            .single(),
+        ])
+
+        const atleta = atletaRes.data as any
+        const escolinha = escolinhaRes.data as any
+
+        if (atleta && escolinha) {
+          const responsavelUserId = atleta.profiles?.user_id
+          if (responsavelUserId) {
+            await supabase.from('notificacoes').insert({
+              user_id: responsavelUserId,
+              tipo: 'interesse',
+              titulo: `${escolinha.nome} demonstrou interesse em ${atleta.nome}!`,
+              mensagem: `A escolinha ${escolinha.nome} quer conhecer mais sobre ${atleta.nome}.`,
+              lida: false,
+              metadata: {
+                atleta_id: atletaId,
+                escolinha_id: escolinhaId,
+              },
+            })
+          }
+        }
+
         router.refresh()
       }
-    } catch (error) {
-      console.error('Error sending interest:', error)
+    } catch {
+      // silencioso
     } finally {
       setLoadingInt(false)
     }
@@ -84,18 +158,29 @@ export function AthleteActions({
 
   return (
     <div className={size === 'sm' ? 'flex gap-2' : 'flex flex-col gap-2 mt-4'}>
-      {/* Botão de Interesse / Contato */}
       {hasInterest ? (
-        <Button variant="outline" size={size} className="flex-1 justify-center border-green-500 text-green-700 bg-green-50" disabled>
-          <Check size={size === 'sm' ? 12 : 14} /> {size === 'sm' ? 'Enviado' : 'Interesse já enviado'}
+        <Button
+          variant="outline"
+          size={size}
+          className="flex-1 justify-center border-green-500 text-green-700 bg-green-50"
+          disabled
+        >
+          <Check size={size === 'sm' ? 12 : 14} />
+          {size === 'sm' ? 'Enviado' : 'Interesse já enviado'}
         </Button>
       ) : (
-        <Button variant="dark" size={size} className="flex-1 justify-center" onClick={handleInterest} loading={loadingInt}>
-          <Star size={size === 'sm' ? 12 : 14} /> {size === 'sm' ? 'Interesse' : 'Demonstrar Interesse'}
+        <Button
+          variant="dark"
+          size={size}
+          className="flex-1 justify-center"
+          onClick={handleInterest}
+          loading={loadingInt}
+        >
+          <Star size={size === 'sm' ? 12 : 14} />
+          {size === 'sm' ? 'Interesse' : 'Demonstrar Interesse'}
         </Button>
       )}
 
-      {/* Botão de Favorito */}
       <Button
         variant={isFavorite ? 'amber' : 'outline'}
         size={size}
@@ -104,7 +189,9 @@ export function AthleteActions({
         loading={loadingFav}
       >
         <Star size={size === 'sm' ? 12 : 14} fill={isFavorite ? 'currentColor' : 'none'} />
-        {size === 'sm' ? (isFavorite ? 'Salvo' : 'Favorito') : (isFavorite ? 'Salvo nos favoritos' : 'Salvar nos favoritos')}
+        {size === 'sm'
+          ? isFavorite ? 'Salvo' : 'Favorito'
+          : isFavorite ? 'Salvo nos favoritos' : 'Salvar nos favoritos'}
       </Button>
     </div>
   )

@@ -1,87 +1,47 @@
+// src/hooks/useRealtimeNotifications.ts
 'use client'
 
-import { useEffect, useRef, useCallback } from 'react'
-import { createSupabaseBrowser } from '@/lib/supabase'
+import { useEffect, useRef } from 'react'
 import { useNotificationToast } from '@/components/notifications/NotificationToastProvider'
+import { subscribeToNotifications, unsubscribeFromNotifications } from '@/lib/realtimeChannel'
 
 export function useRealtimeNotifications(userId: string | null) {
-    const supabase = createSupabaseBrowser()
     const { showToast } = useNotificationToast()
-    const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
-
-    const audioRef = useRef<HTMLAudioElement | null>(null)
-
-    const playSound = useCallback(() => {
-        try {
-            if (!audioRef.current) {
-                audioRef.current = new Audio('/sounds/notification.mp3')
-            }
-            const audio = audioRef.current
-            audio.volume = 0.6
-            audio.currentTime = 0
-            audio.play().catch(err => {
-                console.info('[ScoutJR] Som bloqueado ou erro:', err.message)
-            })
-        } catch {
-            console.warn('[ScoutJR] Audio API não suportada')
-        }
-    }, [])
+    // Ref para evitar closure stale no handler
+    const showToastRef = useRef(showToast)
+    showToastRef.current = showToast
 
     useEffect(() => {
         if (!userId) {
-            console.info('[ScoutJR Realtime] Sem userId — canal não aberto.')
+            unsubscribeFromNotifications()
             return
         }
 
-        // Se já existe um canal, não abre outro
-        if (channelRef.current) return
+        subscribeToNotifications(userId, (n) => {
+            // Toca som — novo elemento a cada vez garante replay
+            try {
+                const audio = new Audio('/sounds/notification.mp3')
+                audio.volume = 0.6
+                audio.play().catch(() => { })
+            } catch { }
 
-        const channelName = `notif-user-${userId}`
-        console.info(`[ScoutJR Realtime] Inscrito: ${channelName}`)
-
-        const channel = supabase
-            .channel(channelName)
-            .on(
-                'postgres_changes' as any,
-                {
-                    event: 'INSERT',
-                    schema: 'public',
-                    table: 'notificacoes',
-                    filter: `user_id=eq.${userId}`,
-                },
-                (payload: any) => {
-                    const n = payload.new
-                    if (!n) return
-
-                    console.info('[ScoutJR Realtime] ✅ Evento recebido:', n.id)
-                    
-                    // 1. Toca o som
-                    playSound()
-
-                    // 2. Mostra o Toast
-                    showToast({
-                        id: n.id ?? String(Date.now()),
-                        tipo: n.tipo ?? 'sistema',
-                        titulo: n.titulo ?? 'Nova notificação',
-                        mensagem: n.mensagem ?? '',
-                        metadata: n.metadata ?? {},
-                        createdAt: n.created_at ?? new Date().toISOString(),
-                    })
-
-                    // 3. Avisa outros componentes (como o Bell) via Custom Event
-                    window.dispatchEvent(new CustomEvent('scoutjr:notification', { detail: n }))
-                }
-            )
-            .subscribe((status: string) => {
-                console.info(`[ScoutJR Realtime] Canal status: ${status}`)
+            // Mostra toast
+            showToastRef.current({
+                id: n.id,
+                tipo: n.tipo ?? 'sistema',
+                titulo: n.titulo ?? 'Nova notificação',
+                mensagem: n.mensagem ?? '',
+                metadata: n.metadata ?? {},
+                createdAt: n.created_at ?? new Date().toISOString(),
             })
 
-        channelRef.current = channel
+            // Avisa Bell e RecentActivity
+            window.dispatchEvent(
+                new CustomEvent('scoutjr:notification', { detail: n })
+            )
+        })
 
-        return () => {
-            console.info('[ScoutJR Realtime] Logout/Cleanup canal:', channelName)
-            supabase.removeChannel(channel)
-            channelRef.current = null
-        }
-    }, [userId, playSound, showToast, supabase])
+        // Não fechamos o canal no cleanup do StrictMode
+        // Só fechamos quando userId vira null (logout)
+    }, [userId])
 }
