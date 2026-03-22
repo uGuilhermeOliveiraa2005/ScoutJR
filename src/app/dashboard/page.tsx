@@ -46,18 +46,18 @@ export default async function DashboardPage() {
     profile = newProfile
   }
 
-  const isClube = profile.role === 'clube'
+  const isEscolinha = profile.role === 'escolinha'
 
-  let clube = null
+  let escolinha = null
   let athlete = null
 
-  if (isClube) {
+  if (isEscolinha) {
     const { data } = await supabase
-      .from('clubes')
+      .from('escolinhas')
       .select('*')
       .eq('user_id', user.id)
       .single()
-    clube = data
+    escolinha = data
   } else {
     const { data } = await supabase
       .from('atletas')
@@ -82,7 +82,7 @@ export default async function DashboardPage() {
       <NavbarDashboard
         userName={profile.nome}
         userRole={profile.role}
-        verificado={clube?.verificado ?? false}
+        verificado={escolinha?.verificado ?? false}
         userId={user.id}
       />
       {/* Extra padding bottom for mobile bottom nav */}
@@ -92,9 +92,9 @@ export default async function DashboardPage() {
         <div className="mb-5 sm:mb-8 animate-in fade-in slide-in-from-left duration-500">
           <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
             <h1 className="font-display text-2xl sm:text-3xl md:text-4xl text-neutral-900 tracking-tight leading-tight">
-              OLÁ, {isClube ? profile.nome.toUpperCase() : profile.nome.split(' ')[0].toUpperCase()}
+              OLÁ, {isEscolinha ? profile.nome.toUpperCase() : profile.nome.split(' ')[0].toUpperCase()}
             </h1>
-            {isClube && clube?.verificado && (
+            {isEscolinha && escolinha?.verificado && (
               <div className="flex items-center gap-1 bg-green-100 text-green-700 text-[9px] sm:text-[10px] font-bold px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full border border-green-200">
                 <ShieldCheck size={10} />
                 VERIFICADO
@@ -102,7 +102,7 @@ export default async function DashboardPage() {
             )}
           </div>
           <p className="text-xs sm:text-sm text-neutral-500 mt-1 max-w-lg">
-            {isClube
+            {isEscolinha
               ? 'Gerencie suas buscas e acompanhe novos talentos.'
               : 'Acompanhe o desempenho e a visibilidade do atleta.'}
           </p>
@@ -110,7 +110,7 @@ export default async function DashboardPage() {
 
         {/* Stats cards */}
         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-10">
-          {isClube ? (
+          {isEscolinha ? (
             <>
               <StatCard icon={<Eye size={16} />} label="Perfis vistos" value="—" color="green" />
               <StatCard icon={<Star size={16} />} label="Favoritos" value="—" color="amber" />
@@ -131,7 +131,7 @@ export default async function DashboardPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           <div className="lg:col-span-2 flex flex-col gap-4 sm:gap-6">
 
-            {isClube ? (
+            {isEscolinha ? (
               <div className="bg-white border border-neutral-200 rounded-xl p-5 sm:p-6">
                 <div className="flex justify-between items-center mb-3 sm:mb-4">
                   <h2 className="font-medium text-neutral-900 text-sm sm:text-base">Buscar talentos</h2>
@@ -194,24 +194,24 @@ export default async function DashboardPage() {
                 <div className="flex justify-between">
                   <span>Plano</span>
                   <span className="font-medium text-neutral-700 text-xs sm:text-sm">
-                    {isClube
-                      ? (clube?.plano ? clube.plano.charAt(0).toUpperCase() + clube.plano.slice(1) : 'Gratuito')
+                    {isEscolinha
+                      ? (escolinha?.plano ? escolinha.plano.charAt(0).toUpperCase() + escolinha.plano.slice(1) : 'Gratuito')
                       : 'Família'}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span>Status</span>
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${clube?.status_assinatura === 'active'
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${escolinha?.status_assinatura === 'active'
                       ? 'bg-green-100 text-green-700'
                       : 'bg-neutral-200 text-neutral-600'
                     }`}>
-                    {clube?.status_assinatura === 'active' ? 'Ativo' : 'Gratuito'}
+                    {escolinha?.status_assinatura === 'active' ? 'Ativo' : 'Gratuito'}
                   </span>
                 </div>
-                {isClube && (
+                {isEscolinha && (
                   <div className="flex justify-between items-center">
                     <span>Verificação</span>
-                    {clube?.verificado ? (
+                    {escolinha?.verificado ? (
                       <span className="flex items-center gap-1 text-[10px] font-medium text-green-700">
                         <ShieldCheck size={10} /> Verificado
                       </span>
@@ -221,14 +221,14 @@ export default async function DashboardPage() {
                   </div>
                 )}
               </div>
-              {isClube && clube?.status_assinatura !== 'active' && (
+              {isEscolinha && escolinha?.status_assinatura !== 'active' && (
                 <Link href="/configuracoes" className="mt-3 block">
                   <Button variant="amber" size="sm" className="w-full justify-center text-xs">Fazer upgrade</Button>
                 </Link>
               )}
             </div>
 
-            {!isClube && !athlete?.destaque_ativo && (
+            {!isEscolinha && !athlete?.destaque_ativo && (
               <div className="bg-amber-50 border border-amber-100 rounded-xl p-4 sm:p-5">
                 <h3 className="text-xs sm:text-sm font-medium text-amber-800 mb-1.5">Destaque seu atleta</h3>
                 <p className="text-[10px] sm:text-xs text-amber-600 leading-relaxed mb-3">
@@ -249,16 +249,16 @@ export default async function DashboardPage() {
               </div>
             )}
 
-            {isClube && !clube?.verificado && (
+            {isEscolinha && !escolinha?.verificado && (
               <div className="bg-green-50 border border-green-100 rounded-xl p-4 sm:p-5">
                 <h3 className="text-xs sm:text-sm font-medium text-green-800 mb-1.5 flex items-center gap-1.5">
-                  <ShieldCheck size={13} /> Verifique seu clube
+                  <ShieldCheck size={13} /> Verifique sua escolinha
                 </h3>
                 <p className="text-[10px] sm:text-xs text-green-600 leading-relaxed mb-3">
                   Obtenha o selo verificado e aumente a confiança.
                 </p>
                 <Link href="/configuracoes">
-                  <Button variant="dark" size="sm" className="w-full justify-center text-xs">Verificar agora</Button>
+                  <Button variant="dark" size="sm" className="w-full justify-center text-xs">Verificar minha escolinha</Button>
                 </Link>
               </div>
             )}

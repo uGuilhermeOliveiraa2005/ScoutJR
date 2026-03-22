@@ -28,9 +28,8 @@ export function NavbarPublic() {
         <nav className="hidden md:flex items-center gap-6 lg:gap-8">
           <Link href="/#como-funciona" className="text-sm text-neutral-500 hover:text-neutral-900 transition-colors">Como funciona</Link>
           <Link href="/#para-quem" className="text-sm text-neutral-500 hover:text-neutral-900 transition-colors">Para quem</Link>
-          <Link href="/busca" className="text-sm text-neutral-500 hover:text-neutral-900 transition-colors">Explorar</Link>
           <Link href="/ranking" className="text-sm text-neutral-500 hover:text-neutral-900 transition-colors font-medium">Ranking</Link>
-          <Link href="/#clubes" className="text-sm text-neutral-500 hover:text-neutral-900 transition-colors">Para clubes</Link>
+          <Link href="/#escolinhas" className="text-sm text-neutral-500 hover:text-neutral-900 transition-colors">Para escolinhas</Link>
         </nav>
 
         <div className="hidden md:flex items-center gap-2 lg:gap-3">
@@ -58,9 +57,8 @@ export function NavbarPublic() {
             {[
               { href: '/#como-funciona', label: 'Como funciona' },
               { href: '/#para-quem', label: 'Para quem' },
-              { href: '/busca', label: 'Explorar talentos' },
               { href: '/ranking', label: '🏆 Ranking' },
-              { href: '/#clubes', label: 'Para clubes' },
+              { href: '/#escolinhas', label: 'Para escolinhas' },
             ].map(item => (
               <Link
                 key={item.href}
@@ -231,7 +229,7 @@ export function NavbarDashboard({
                 <div>
                   <div className="text-sm font-semibold text-neutral-900">{userName}</div>
                   <div className="text-[10px] text-neutral-400 uppercase tracking-widest font-medium mt-0.5">
-                    {userRole === 'clube' ? 'Clube' : 'Responsável'}
+                    {userRole === 'escolinha' ? 'Escolinha' : 'Responsável'}
                   </div>
                   {verificado && (
                     <div className="flex items-center gap-1 text-[10px] text-green-700 font-medium mt-1">
@@ -293,7 +291,7 @@ export function Footer() {
               SCOUT<span className="text-amber-400">JR</span>
             </div>
             <p className="text-xs sm:text-sm leading-relaxed">
-              Conectando jovens talentos do futebol a clubes de todo o Brasil.
+              Conectando jovens talentos do futebol a escolinhas de todo o Brasil.
             </p>
           </div>
           <div>
@@ -305,18 +303,17 @@ export function Footer() {
             </div>
           </div>
           <div>
-            <h4 className="text-[10px] sm:text-xs uppercase tracking-widest text-white/40 mb-3 font-medium">Para clubes</h4>
+            <h4 className="text-[10px] sm:text-xs uppercase tracking-widest text-white/40 mb-3 font-medium">Para escolinhas</h4>
             <div className="flex flex-col gap-2">
-              <Link href="/#clubes" className="text-xs sm:text-sm hover:text-white transition-colors">Planos</Link>
+              <Link href="/#escolinhas" className="text-xs sm:text-sm hover:text-white transition-colors">Planos</Link>
               <Link href="/#como-funciona" className="text-xs sm:text-sm hover:text-white transition-colors">Como funciona</Link>
             </div>
           </div>
           <div>
             <h4 className="text-[10px] sm:text-xs uppercase tracking-widest text-white/40 mb-3 font-medium">Legal</h4>
             <div className="flex flex-col gap-2">
-              <Link href="/privacidade" className="text-xs sm:text-sm hover:text-white transition-colors">Privacidade</Link>
+              <Link href="/privacidade" className="text-xs sm:text-sm hover:text-white transition-colors">Privacidade & LGPD</Link>
               <Link href="/termos" className="text-xs sm:text-sm hover:text-white transition-colors">Termos de uso</Link>
-              <Link href="/lgpd" className="text-xs sm:text-sm hover:text-white transition-colors">LGPD</Link>
             </div>
           </div>
         </div>

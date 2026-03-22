@@ -9,9 +9,9 @@ import { cn } from '@/lib/utils'
 
 export default function RankingPage() {
   const [atletas, setAtletas] = useState<any[]>([])
-  const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
-  const [clube, setClube] = useState<any>(null)
+  const [escolinha, setEscolinha] = useState<any>(null)
+  const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
   const supabase = createSupabaseBrowser()
@@ -25,9 +25,9 @@ export default function RankingPage() {
         const { data: p } = await supabase.from('profiles').select('*').eq('user_id', u.id).single()
         setProfile(p)
 
-        if (p?.role === 'clube') {
-          const { data: c } = await supabase.from('clubes').select('verificado').eq('user_id', u.id).single()
-          setClube(c)
+        if (p?.role === 'escolinha') {
+          const { data: c } = await supabase.from('escolinhas').select('verificado').eq('user_id', u.id).single()
+          setEscolinha(c)
         }
       }
 
@@ -51,7 +51,7 @@ export default function RankingPage() {
   return (
     <>
       {user && profile ? (
-        <NavbarDashboard userName={profile.nome} userRole={profile.role} verificado={clube?.verificado ?? false} userId={user.id} />
+        <NavbarDashboard userName={profile.nome} userRole={profile.role} verificado={escolinha?.verificado ?? false} userId={user.id} />
       ) : (
         <NavbarPublic />
       )}
@@ -187,8 +187,8 @@ export default function RankingPage() {
               {/* ── COMO FUNCIONA ── */}
               <div className="mt-12 sm:mt-20 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                 {[
-                  { icon: <Star size={18} className="text-amber-400" />, title: 'Favorito', pts: '+10 pts', desc: 'Quando um clube salva o atleta nos favoritos' },
-                  { icon: <TrendingUp size={18} className="text-green-400" />, title: 'Interesse', pts: '+25 pts', desc: 'Quando um clube manifesta interesse oficial' },
+                  { icon: <Star size={18} className="text-amber-400" />, title: 'Favorito', pts: '+10 pts', desc: 'Quando uma escolinha salva o atleta nos favoritos' },
+                  { icon: <TrendingUp size={18} className="text-green-400" />, title: 'Interesse', pts: '+25 pts', desc: 'Quando uma escolinha manifesta interesse oficial' },
                   { icon: <Trophy size={18} className="text-blue-400" />, title: 'Contato', pts: '+50 pts', desc: 'Quando o interesse é aceito e o contato é liberado' },
                 ].map(item => (
                   <div key={item.title} className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 sm:p-5 flex sm:flex-col items-center sm:items-start gap-4 sm:gap-3">

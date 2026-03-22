@@ -16,18 +16,18 @@ export default async function BuscaPage({
   const params = await searchParams
 
   let profile = null
-  let clube = null
+  let escolinha = null
   if (user) {
     const { data: profileData } = await supabase.from('profiles').select('*').eq('user_id', user.id).single()
     profile = profileData
 
-    if (profile?.role === 'clube') {
-      const { data: clubeData } = await supabase.from('clubes').select('id, verificado').eq('user_id', user.id).single()
-      clube = clubeData
+    if (profile?.role === 'escolinha') {
+      const { data: escolinhaData } = await supabase.from('escolinhas').select('id, verificado').eq('user_id', user.id).single()
+      escolinha = escolinhaData
     }
   }
 
-  const clubeId = (profile?.role === 'clube' && clube) ? clube.id : null
+  const escolinhaId = (profile?.role === 'escolinha' && escolinha) ? escolinha.id : null
 
   let query = supabase
     .from('atletas')
@@ -54,7 +54,7 @@ export default async function BuscaPage({
     <NavbarDashboard
       userName={profile.nome}
       userRole={profile.role}
-      verificado={clube?.verificado ?? false}
+      verificado={escolinha?.verificado ?? false}
       userId={user.id}
     />
   ) : <NavbarPublic />
@@ -224,9 +224,9 @@ export default async function BuscaPage({
               </span>
 
               {/* Alert Button for Clubs */}
-              {clubeId && params.posicao && (
+              {escolinhaId && params.posicao && (
                 <div className="hidden sm:block ml-4">
-                  <PositionAlertButton clubeId={clubeId} posicao={params.posicao} />
+                  <PositionAlertButton escolinhaId={escolinhaId} posicao={params.posicao} />
                 </div>
               )}
               <select className="text-xs sm:text-sm border border-neutral-200 rounded-lg px-2.5 sm:px-3 py-1 sm:py-1.5 outline-none focus:border-green-400 bg-white">
@@ -237,9 +237,9 @@ export default async function BuscaPage({
             </div>
 
             {/* Alert Button for Clubs (Mobile) */}
-            {clubeId && params.posicao && (
+            {escolinhaId && params.posicao && (
               <div className="sm:hidden mb-4">
-                <PositionAlertButton clubeId={clubeId} posicao={params.posicao} />
+                <PositionAlertButton escolinhaId={escolinhaId} posicao={params.posicao} />
               </div>
             )}
 

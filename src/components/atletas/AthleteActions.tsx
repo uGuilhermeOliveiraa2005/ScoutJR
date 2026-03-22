@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation'
 
 interface AthleteActionsProps {
   atletaId: string
-  clubeId: string | null
+  escolinhaId: string | null
   initialIsFavorite: boolean
   initialHasInterest: boolean
   aceitarMensagens: boolean
@@ -17,7 +17,7 @@ interface AthleteActionsProps {
 
 export function AthleteActions({
   atletaId,
-  clubeId,
+  escolinhaId,
   initialIsFavorite,
   initialHasInterest,
   aceitarMensagens,
@@ -31,7 +31,7 @@ export function AthleteActions({
   const router = useRouter()
 
   async function toggleFavorite() {
-    if (!clubeId) return
+    if (!escolinhaId) return
     setLoadingFav(true)
 
     try {
@@ -40,12 +40,12 @@ export function AthleteActions({
           .from('favoritos')
           .delete()
           .eq('atleta_id', atletaId)
-          .eq('clube_id', clubeId)
+          .eq('escolinha_id', escolinhaId)
         setIsFavorite(false)
       } else {
         await supabase
           .from('favoritos')
-          .insert({ atleta_id: atletaId, clube_id: clubeId })
+          .insert({ atleta_id: atletaId, escolinha_id: escolinhaId })
         setIsFavorite(true)
       }
       router.refresh()
@@ -57,7 +57,7 @@ export function AthleteActions({
   }
 
   async function handleInterest() {
-    if (!clubeId || hasInterest) return
+    if (!escolinhaId || hasInterest) return
     setLoadingInt(true)
 
     try {
@@ -65,7 +65,7 @@ export function AthleteActions({
         .from('interesses')
         .insert({
           atleta_id: atletaId,
-          clube_id: clubeId,
+          escolinha_id: escolinhaId,
           status: 'pendente'
         })
 
@@ -80,7 +80,7 @@ export function AthleteActions({
     }
   }
 
-  if (!clubeId) return null
+  if (!escolinhaId) return null
 
   return (
     <div className={size === 'sm' ? 'flex gap-2' : 'flex flex-col gap-2 mt-4'}>

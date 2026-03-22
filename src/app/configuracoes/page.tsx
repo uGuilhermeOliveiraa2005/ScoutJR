@@ -6,8 +6,12 @@ import { createSupabaseServer } from '@/lib/supabase-server'
 import { redirect } from 'next/navigation'
 import { NavbarDashboard } from '@/components/layout/Navbar'
 import { PaymentButton } from '@/components/shared/PaymentButton'
-import { updateProfile } from './actions'
-import { Shield, CreditCard, Bell, User, ShieldCheck } from 'lucide-react'
+import { updateProfile, cancelSubscription } from './actions'
+import { Shield, CreditCard, Bell, User, ShieldCheck, AlertTriangle } from 'lucide-react'
+import { formatPhone } from '@/lib/utils'
+import { DeleteAccountModal } from './DeleteAccountModal'
+import { ProfileForm } from './ProfileForm'
+import { PasswordChangeForm } from './PasswordChangeForm'
 
 export default async function ConfiguracoesPage() {
   const supabase = await createSupabaseServer()
@@ -17,20 +21,20 @@ export default async function ConfiguracoesPage() {
   const { data: profile } = await supabase.from('profiles').select('*').eq('user_id', user.id).single()
   if (!profile) redirect('/login')
 
-  let clube = null
-  if (profile.role === 'clube') {
-    const { data } = await supabase.from('clubes').select('*').eq('user_id', user.id).single()
-    clube = data
+  let escolinha = null
+  if (profile.role === 'escolinha') {
+    const { data } = await supabase.from('escolinhas').select('*').eq('user_id', user.id).single()
+    escolinha = data
   }
 
-  const isClube = profile.role === 'clube'
+  const isEscolinha = profile.role === 'escolinha'
 
   return (
     <>
       <NavbarDashboard
         userName={profile.nome}
         userRole={profile.role}
-        verificado={clube?.verificado ?? false}
+        verificado={escolinha?.verificado ?? false}
         userId={user.id}
       />
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-5 sm:py-8 pb-24 md:pb-8">
@@ -38,7 +42,7 @@ export default async function ConfiguracoesPage() {
         {/* Header */}
         <div className="flex items-center gap-3 mb-5 sm:mb-6">
           <h1 className="font-display text-3xl sm:text-4xl text-neutral-900">CONFIGURAÇÕES</h1>
-          {isClube && clube?.verificado && (
+          {isEscolinha && escolinha?.verificado && (
             <div className="flex items-center gap-1.5 bg-green-100 text-green-700 text-[10px] sm:text-sm font-medium px-2 sm:px-3 py-1 sm:py-1.5 rounded-full">
               <ShieldCheck size={12} />
               Verificado
@@ -50,40 +54,7 @@ export default async function ConfiguracoesPage() {
 
           {/* Dados da conta */}
           <Section icon={<User size={16} />} title="Dados da conta">
-            <form action={updateProfile}>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                <div>
-                  <label className="block text-[10px] sm:text-xs font-medium text-neutral-400 uppercase tracking-wide mb-1 sm:mb-1.5">Nome</label>
-                  <input
-                    name="nome"
-                    defaultValue={profile.nome}
-                    className="w-full px-3 py-2 sm:py-2.5 text-sm border border-neutral-200 rounded-lg bg-white outline-none focus:border-green-400"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] sm:text-xs font-medium text-neutral-400 uppercase tracking-wide mb-1 sm:mb-1.5">E-mail</label>
-                  <input
-                    defaultValue={profile.email}
-                    disabled
-                    className="w-full px-3 py-2 sm:py-2.5 text-sm border border-neutral-200 rounded-lg bg-neutral-50 text-neutral-400 cursor-not-allowed"
-                  />
-                </div>
-                <div className="sm:col-span-2">
-                  <label className="block text-[10px] sm:text-xs font-medium text-neutral-400 uppercase tracking-wide mb-1 sm:mb-1.5">Telefone</label>
-                  <input
-                    name="telefone"
-                    defaultValue={profile.telefone || ''}
-                    className="w-full px-3 py-2 sm:py-2.5 text-sm border border-neutral-200 rounded-lg bg-white outline-none focus:border-green-400"
-                  />
-                </div>
-              </div>
-              <button
-                type="submit"
-                className="mt-4 w-full sm:w-auto px-5 py-2.5 text-sm bg-green-700 text-white rounded-lg hover:bg-green-800 transition-colors font-medium"
-              >
-                Salvar alterações
-              </button>
-            </form>
+             <ProfileForm profile={profile} escolinha={escolinha} isEscolinha={isEscolinha} />
           </Section>
 
           {/* Plano e pagamento */}
@@ -91,31 +62,39 @@ export default async function ConfiguracoesPage() {
             <div className="flex items-center justify-between p-3 sm:p-4 bg-neutral-50 rounded-lg mb-3 sm:mb-4">
               <div>
                 <div className="text-xs sm:text-sm font-medium text-neutral-900">
-                  {isClube
-                    ? (clube?.plano ? `Plano ${clube.plano.charAt(0).toUpperCase() + clube.plano.slice(1)}` : 'Plano Gratuito')
+                  {isEscolinha
+                    ? (escolinha?.plano ? `Plano ${escolinha.plano.charAt(0).toUpperCase() + escolinha.plano.slice(1)}` : 'Plano Gratuito')
                     : 'Conta Família'}
                 </div>
                 <div className="text-[10px] sm:text-xs text-neutral-400 mt-0.5">
-                  {isClube && clube?.status_assinatura === 'active' ? 'Assinatura ativa' : 'Sem assinatura ativa'}
+                  {isEscolinha && escolinha?.status_assinatura === 'active' ? 'Assinatura ativa' : 'Sem assinatura ativa'}
                 </div>
               </div>
-              {isClube && clube?.status_assinatura === 'active'
+              {isEscolinha && escolinha?.status_assinatura === 'active'
                 ? <span className="bg-green-100 text-green-700 text-[10px] sm:text-xs font-medium px-2 sm:px-2.5 py-1 rounded-full">Ativo</span>
                 : <span className="bg-neutral-200 text-neutral-600 text-[10px] sm:text-xs font-medium px-2 sm:px-2.5 py-1 rounded-full">Gratuito</span>
               }
             </div>
 
-            {isClube && (
+            {isEscolinha && (
               <>
-                {clube?.status_assinatura === 'active' ? (
+                {escolinha?.status_assinatura === 'active' ? (
                   <div className="bg-green-50 border border-green-100 rounded-xl p-3 sm:p-4 text-center">
                     <p className="text-xs sm:text-sm text-green-700 font-medium mb-1">Assinatura ativa ✓</p>
                     <p className="text-[10px] sm:text-xs text-green-600">
-                      Plano {clube.plano} ativo.
-                      {clube.assinatura_expira_em && (
-                        <> Renova em {new Date(clube.assinatura_expira_em).toLocaleDateString('pt-BR')}.</>
+                      Plano {escolinha.plano} ativo.
+                      {escolinha.assinatura_expira_em && (
+                        <> Renova em {new Date(escolinha.assinatura_expira_em).toLocaleDateString('pt-BR')}.</>
                       )}
                     </p>
+                    <form action={cancelSubscription}>
+                      <button
+                        type="submit"
+                        className="mt-4 px-5 py-2 sm:py-2.5 text-[10px] sm:text-xs font-medium text-red-600 border border-red-200 bg-white rounded-lg hover:bg-red-50 transition-colors w-full sm:w-auto"
+                      >
+                        Cancelar assinatura mensal
+                      </button>
+                    </form>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -147,7 +126,7 @@ export default async function ConfiguracoesPage() {
               </>
             )}
 
-            {!isClube && (
+            {!isEscolinha && (
               <PaymentButton
                 tipo="destaque"
                 label="Ativar destaque por R$ 49/mês"
@@ -157,15 +136,15 @@ export default async function ConfiguracoesPage() {
             )}
           </Section>
 
-          {/* Verificação de clube */}
-          {isClube && !clube?.verificado && (
-            <Section icon={<Shield size={16} />} title="Verificação de clube">
+          {/* Verificação de escolinha */}
+          {isEscolinha && !escolinha?.verificado && (
+            <Section icon={<Shield size={16} />} title="Verificação de escolinha">
               <div className="flex items-start sm:items-center gap-3 sm:gap-4 mb-4">
                 <div className="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center flex-shrink-0">
                   <Shield size={18} />
                 </div>
                 <div>
-                  <p className="text-xs sm:text-sm font-medium text-neutral-900">Clube não verificado</p>
+                  <p className="text-xs sm:text-sm font-medium text-neutral-900">Escolinha não verificada</p>
                   <p className="text-[10px] sm:text-xs text-neutral-400 mt-0.5">
                     Obtenha o selo verificado e aumente a confiança das famílias.
                   </p>
@@ -173,27 +152,27 @@ export default async function ConfiguracoesPage() {
               </div>
               <PaymentButton
                 tipo="verificacao"
-                label="Verificar meu clube — R$ 997"
+                label="Verificar minha escolinha — R$ 997"
                 variant="dark"
                 className="w-full justify-center"
               />
             </Section>
           )}
 
-          {isClube && clube?.verificado && (
-            <Section icon={<ShieldCheck size={16} />} title="Verificação de clube">
+          {isEscolinha && escolinha?.verificado && (
+            <Section icon={<ShieldCheck size={16} />} title="Verificação de escolinha">
               <div className="flex items-start sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-green-50 border border-green-100 rounded-xl">
                 <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-green-100 text-green-600 flex items-center justify-center flex-shrink-0">
                   <ShieldCheck size={20} />
                 </div>
                 <div className="flex-1">
                   <p className="text-xs sm:text-sm font-medium text-green-800 flex items-center gap-2 flex-wrap">
-                    Clube verificado
+                    Escolinha verificada
                     <span className="bg-green-600 text-white text-[9px] sm:text-xs px-2 py-0.5 rounded-full">✓ Oficial</span>
                   </p>
                   <p className="text-[10px] sm:text-xs text-green-600 mt-0.5">
-                    {clube.verificado_em && (
-                      <>Verificado em {new Date(clube.verificado_em).toLocaleDateString('pt-BR')}.</>
+                    {escolinha.verificado_em && (
+                      <>Verificado em {new Date(escolinha.verificado_em).toLocaleDateString('pt-BR')}.</>
                     )}
                   </p>
                 </div>
@@ -204,15 +183,7 @@ export default async function ConfiguracoesPage() {
           {/* Segurança */}
           <Section icon={<Shield size={16} />} title="Segurança">
             <div className="flex flex-col gap-3 sm:gap-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-xs sm:text-sm font-medium">Alterar senha</div>
-                  <div className="text-[10px] sm:text-xs text-neutral-400">Recomendamos trocar periodicamente</div>
-                </div>
-                <button className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm border border-neutral-200 rounded-lg hover:bg-neutral-50 transition-colors flex-shrink-0">
-                  Alterar
-                </button>
-              </div>
+              <PasswordChangeForm />
               <hr className="border-neutral-100" />
               <div className="flex items-center justify-between">
                 <div>
@@ -229,8 +200,8 @@ export default async function ConfiguracoesPage() {
           {/* Notificações */}
           <Section icon={<Bell size={16} />} title="Notificações">
             {[
-              { label: 'Clube visualizou o perfil', desc: 'E-mail quando um clube ver o atleta' },
-              { label: 'Novo interesse de clube', desc: 'Alerta de interesse' },
+              { label: 'Escolinha visualizou o perfil', desc: 'E-mail quando uma escolinha ver o atleta' },
+              { label: 'Novo interesse de escolinha', desc: 'Alerta de interesse' },
               { label: 'Mensagem recebida', desc: 'Alertas de novas mensagens' },
             ].map(item => (
               <div key={item.label} className="flex items-center justify-between py-2.5 sm:py-3 border-b border-neutral-100 last:border-none">
@@ -243,6 +214,22 @@ export default async function ConfiguracoesPage() {
                 </button>
               </div>
             ))}
+          </Section>
+
+          {/* Zona de Perigo */}
+          <Section icon={<AlertTriangle size={16} className="text-red-500" />} title="Zona de Perigo">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-medium text-neutral-900">Excluir conta definitivamente</p>
+                <p className="text-[10px] sm:text-xs text-neutral-500 mt-1 max-w-sm">
+                  Exclui permanentemente sua conta, configurações, assinaturas e todos os dados associados. Essa ação não pode ser desfeita.
+                </p>
+              </div>
+              <DeleteAccountModal 
+                hasAssinatura={escolinha?.status_assinatura === 'active'}
+                isVerificado={escolinha?.verificado === true}
+              />
+            </div>
           </Section>
 
         </div>

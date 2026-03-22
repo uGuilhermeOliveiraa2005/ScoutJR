@@ -47,10 +47,10 @@ export function ImageUpload({
       
       const fileExt = file.name.split('.').pop()
       const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`
-      const filePath = `uploads/${fileName}`
+      const filePath = `atletas/${fileName}`
 
       const { error: uploadError, data } = await supabase.storage
-        .from('atletas')
+        .from('media')
         .upload(filePath, file)
 
       if (uploadError) {
@@ -58,7 +58,7 @@ export function ImageUpload({
       }
 
       const { data: { publicUrl } } = supabase.storage
-        .from('atletas')
+        .from('media')
         .getPublicUrl(filePath)
 
       onChange(publicUrl)

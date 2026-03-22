@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
             const expira = new Date()
             expira.setMonth(expira.getMonth() + 1)
 
-            await supabase.from('clubes').update({
+            await supabase.from('escolinhas').update({
                 plano,
                 status_assinatura: 'active',
                 assinatura_expira_em: expira.toISOString(),
@@ -98,7 +98,7 @@ export async function POST(req: NextRequest) {
         }
 
         if (tipo === 'verificacao') {
-            await supabase.from('clubes').update({
+            await supabase.from('escolinhas').update({
                 verificado: true,
                 verificado_em: new Date().toISOString(),
                 mp_payment_id: String(payment.id),

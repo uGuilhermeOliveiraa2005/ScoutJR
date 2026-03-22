@@ -4,9 +4,10 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServer, createSupabaseAdmin } from '@/lib/supabase-server'
-import { mpPayment, PLANOS_MP, PRODUTOS_MP } from '@/lib/mercadopago'
+import { mpPayment, mpPreApproval, PLANOS_MP, PRODUTOS_MP } from '@/lib/mercadopago'
 import { checkRateLimit } from '@/lib/mp-security'
 import { z } from 'zod'
+import { cpf, cnpj } from 'cpf-cnpj-validator'
 
 // O formulário CardPayment do MP envia só email e identification
 // Os demais campos (first_name, last_name, phone, address) são opcionais
@@ -24,7 +25,11 @@ const paymentSchema = z.object({
         identification: z.object({
             type: z.enum(['CPF', 'CNPJ']),
             number: z.string().min(11).max(14),
-        }).optional(),
+        }).refine(doc => {
+            if (doc.type === 'CPF') return cpf.isValid(doc.number)
+            if (doc.type === 'CNPJ') return cnpj.isValid(doc.number)
+            return false
+        }, { message: 'CPF ou CNPJ inválido' }).optional(),
         phone: z.object({
             area_code: z.string(),
             number: z.string(),
@@ -53,7 +58,7 @@ async function processApprovedPayment(
         if (tipo === 'assinatura' && plano) {
             const expira = new Date()
             expira.setMonth(expira.getMonth() + 1)
-            await supabase.from('clubes').update({
+            await supabase.from('escolinhas').update({
                 plano,
                 status_assinatura: 'active',
                 assinatura_expira_em: expira.toISOString(),
@@ -80,7 +85,7 @@ async function processApprovedPayment(
         }
 
         if (tipo === 'verificacao') {
-            await supabase.from('clubes').update({
+            await supabase.from('escolinhas').update({
                 verificado: true,
                 verificado_em: new Date().toISOString(),
                 mp_payment_id: String(paymentId),
@@ -196,23 +201,59 @@ export async function POST(req: NextRequest) {
             if (data.issuer_id) paymentData.issuer_id = data.issuer_id
         }
 
-        const payment = await mpPayment.create({ body: paymentData })
+        let responsePayload: any = {}
 
-        if (payment.status === 'approved' && data.payment_type !== 'pix') {
-            await processApprovedPayment(user.id, data.tipo, data.plano, payment.id!)
+        if (data.tipo === 'assinatura' && (data.payment_type === 'credit_card' || data.payment_type === 'debit_card')) {
+            if (!data.token) return NextResponse.json({ error: 'Token obrigatório' }, { status: 400 })
+            const subscription = await mpPreApproval.create({
+                body: {
+                    payer_email: payer.email,
+                    reason: description,
+                    auto_recurring: {
+                        frequency: 1,
+                        frequency_type: "months",
+                        transaction_amount: amount,
+                        currency_id: "BRL"
+                    },
+                    card_token_id: data.token,
+                    status: "authorized",
+                    external_reference: `${user.id}|assinatura|${data.plano ?? ''}|${Date.now()}`
+                } as any
+            })
+
+            const isApproved = subscription.status === 'authorized'
+            if (isApproved) {
+                await processApprovedPayment(user.id, data.tipo, data.plano, Number(subscription.id))
+            }
+
+            responsePayload = {
+                id: subscription.id,
+                status: isApproved ? 'approved' : 'rejected',
+                status_detail: subscription.status,
+                payment_type: data.payment_type
+            }
+
+        } else {
+            const payment = await mpPayment.create({ body: paymentData })
+
+            if (payment.status === 'approved' && data.payment_type !== 'pix') {
+                await processApprovedPayment(user.id, data.tipo, data.plano, payment.id!)
+            }
+
+            responsePayload = {
+                id: payment.id,
+                status: payment.status,
+                status_detail: payment.status_detail,
+                payment_type: data.payment_type,
+                pix: data.payment_type === 'pix' ? {
+                    qr_code: payment.point_of_interaction?.transaction_data?.qr_code,
+                    qr_code_base64: payment.point_of_interaction?.transaction_data?.qr_code_base64,
+                    ticket_url: payment.point_of_interaction?.transaction_data?.ticket_url,
+                } : undefined,
+            }
         }
 
-        return NextResponse.json({
-            id: payment.id,
-            status: payment.status,
-            status_detail: payment.status_detail,
-            payment_type: data.payment_type,
-            pix: data.payment_type === 'pix' ? {
-                qr_code: payment.point_of_interaction?.transaction_data?.qr_code,
-                qr_code_base64: payment.point_of_interaction?.transaction_data?.qr_code_base64,
-                ticket_url: payment.point_of_interaction?.transaction_data?.ticket_url,
-            } : undefined,
-        })
+        return NextResponse.json(responsePayload)
 
     } catch (err: any) {
         console.error('[MP ERROR]', {

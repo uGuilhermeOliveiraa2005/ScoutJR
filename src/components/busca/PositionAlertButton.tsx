@@ -7,11 +7,11 @@ import { Bell, BellOff, Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
 interface PositionAlertButtonProps {
-  clubeId: string | null
+  escolinhaId: string | null
   posicao: string
 }
 
-export function PositionAlertButton({ clubeId, posicao }: PositionAlertButtonProps) {
+export function PositionAlertButton({ escolinhaId, posicao }: PositionAlertButtonProps) {
   const [isSubscribed, setIsSubscribed] = useState(false)
   const [loading, setLoading] = useState(false)
   const [checking, setChecking] = useState(true)
@@ -19,16 +19,16 @@ export function PositionAlertButton({ clubeId, posicao }: PositionAlertButtonPro
   const router = useRouter()
 
   useEffect(() => {
-    if (!clubeId || !posicao) {
+    if (!escolinhaId || !posicao) {
       setChecking(false)
       return
     }
 
     async function checkSubscription() {
       const { data } = await supabase
-        .from('clube_interesses_posicoes')
+        .from('escolinha_interesses_posicoes')
         .select('id')
-        .eq('clube_id', clubeId)
+        .eq('escolinha_id', escolinhaId)
         .eq('posicao', posicao)
         .single()
       
@@ -37,24 +37,24 @@ export function PositionAlertButton({ clubeId, posicao }: PositionAlertButtonPro
     }
 
     checkSubscription()
-  }, [clubeId, posicao])
+  }, [escolinhaId, posicao])
 
   async function toggleAlert() {
-    if (!clubeId || !posicao) return
+    if (!escolinhaId || !posicao) return
     setLoading(true)
 
     try {
       if (isSubscribed) {
         await supabase
-          .from('clube_interesses_posicoes')
+          .from('escolinha_interesses_posicoes')
           .delete()
-          .eq('clube_id', clubeId)
+          .eq('escolinha_id', escolinhaId)
           .eq('posicao', posicao)
         setIsSubscribed(false)
       } else {
         await supabase
-          .from('clube_interesses_posicoes')
-          .insert({ clube_id: clubeId, posicao })
+          .from('escolinha_interesses_posicoes')
+          .insert({ escolinha_id: escolinhaId, posicao })
         setIsSubscribed(true)
       }
     } catch (error) {
@@ -64,7 +64,7 @@ export function PositionAlertButton({ clubeId, posicao }: PositionAlertButtonPro
     }
   }
 
-  if (!clubeId || checking) return null
+  if (!escolinhaId || checking) return null
 
   return (
     <Button

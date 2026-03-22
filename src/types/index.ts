@@ -2,9 +2,9 @@
 // ScoutJR — Global Types
 // ============================================
 
-export type UserRole = 'responsavel' | 'clube' | 'admin'
+export type UserRole = 'responsavel' | 'escolinha' | 'admin'
 
-export type PlanoClube = 'starter' | 'pro' | 'enterprise'
+export type PlanoEscolinha = 'starter' | 'pro' | 'enterprise'
 
 export type StatusAssinatura = 'active' | 'trialing' | 'past_due' | 'canceled' | 'unpaid'
 
@@ -42,7 +42,7 @@ export interface Atleta {
   pe_dominante: PeDominante
   altura_cm: number | null
   peso_kg: number | null
-  clube_atual: string | null
+  escolinha_atual: string | null
   descricao: string | null
   foto_url: string | null
   // habilidades (0–99)
@@ -91,7 +91,7 @@ export interface AtletaConquista {
   created_at: string
 }
 
-export interface Clube {
+export interface Escolinha {
   id: string
   user_id: string
   nome: string
@@ -102,7 +102,7 @@ export interface Clube {
   descricao: string | null
   verificado: boolean
   verificado_em: string | null
-  plano: PlanoClube | null
+  plano: PlanoEscolinha | null
   creditos_contato: number
   created_at: string
   updated_at: string
@@ -110,7 +110,7 @@ export interface Clube {
 
 export interface Interesse {
   id: string
-  clube_id: string
+  escolinha_id: string
   atleta_id: string
   mensagem: string | null
   status: 'pendente' | 'aceito' | 'recusado'
@@ -119,7 +119,7 @@ export interface Interesse {
 
 export interface Favorito {
   id: string
-  clube_id: string
+  escolinha_id: string
   atleta_id: string
   created_at: string
 }
@@ -142,7 +142,7 @@ export interface CadastroResponsavelForm {
   aceito_termos: boolean
 }
 
-export interface CadastroClubeForm {
+export interface CadastroEscolinhaForm {
   nome: string
   cnpj: string
   email: string
@@ -164,7 +164,7 @@ export interface AtletaForm {
   pe_dominante: PeDominante
   altura_cm?: number
   peso_kg?: number
-  clube_atual?: string
+  escolinha_atual?: string
   descricao?: string
   habilidade_tecnica: number
   habilidade_velocidade: number

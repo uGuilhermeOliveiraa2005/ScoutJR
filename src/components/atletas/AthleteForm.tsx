@@ -39,7 +39,7 @@ export function AthleteForm({ initialData, athleteId, mode, onSubmit }: AthleteF
     cidade: initialData?.cidade || '',
     posicao: initialData?.posicao || 'MEI',
     peDominante: initialData?.pe_dominante || 'destro',
-    clubeAtual: initialData?.clube_atual || '',
+    escolinhaAtual: initialData?.escolinha_atual || '',
     habilidades: [
       initialData?.habilidade_tecnica ?? 75,
       initialData?.habilidade_velocidade ?? 68,
@@ -194,8 +194,8 @@ function Step1({ data, setData, onNext }: any) {
           <Select options={[{ value: 'destro', label: 'Destro' }, { value: 'canhoto', label: 'Canhoto' }, { value: 'ambidestro', label: 'Ambidestro' }]} value={data.peDominante} onChange={e => setData({ ...data, peDominante: e.target.value })} />
         </FieldGroup>
         <FieldGroup>
-          <Label>Clube atual</Label>
-          <Input value={data.clubeAtual} onChange={e => setData({ ...data, clubeAtual: e.target.value })} placeholder="Opcional" />
+          <Label>Escolinha atual</Label>
+          <Input value={data.escolinhaAtual} onChange={e => setData({ ...data, escolinhaAtual: e.target.value })} placeholder="Opcional" />
         </FieldGroup>
       </div>
       <FieldGroup>
@@ -279,7 +279,7 @@ function Step3({ data, setData, onBack, onNext }: any) {
     <div className="flex flex-col gap-6">
       <div className="mb-2">
         <h2 className="text-xl font-medium">Mídia</h2>
-        <p className="text-xs text-neutral-400">Adicione fotos e links de vídeos para impressionar os clubes.</p>
+        <p className="text-xs text-neutral-400">Adicione fotos e links de vídeos para impressionar as escolinhas.</p>
       </div>
 
       {/* Main Photo */}
@@ -466,7 +466,7 @@ function StepPreview({ data, onBack, onNext }: any) {
     <div className="flex flex-col gap-6">
       <div className="mb-2">
         <h2 className="text-xl font-medium">Visualizar Perfil</h2>
-        <p className="text-xs text-neutral-400">Veja exatamente como seu perfil será exibido para os clubes.</p>
+        <p className="text-xs text-neutral-400">Veja exatamente como seu perfil será exibido para as escolinhas.</p>
       </div>
 
       <div className="border border-neutral-200 rounded-2xl p-4 bg-neutral-50/50">
@@ -483,9 +483,9 @@ function StepPreview({ data, onBack, onNext }: any) {
 
 function Step5({ data, setData, onBack, onSubmit, loading, error, mode }: any) {
   const items = [
-    { key: 'visivel', icon: <Eye size={16} />, title: 'Perfil visível para clubes', sub: 'Apenas clubes aprovados podem ver' },
+    { key: 'visivel', icon: <Eye size={16} />, title: 'Perfil visível para escolinhas', sub: 'Apenas escolinhas aprovadas podem ver' },
     { key: 'exibirCidade', icon: <MapPin size={16} />, title: 'Exibir cidade e estado', sub: 'Privacidade de localização' },
-    { key: 'mensagens', icon: <MessageCircle size={16} />, title: 'Receber mensagens', sub: 'Clubes podem solicitar contato direto' },
+    { key: 'mensagens', icon: <MessageCircle size={16} />, title: 'Receber mensagens', sub: 'Escolinhas podem solicitar contato direto' },
   ]
 
   return (
@@ -533,8 +533,8 @@ function SuccessScreen({ mode, athleteId }: { mode: 'create' | 'edit'; athleteId
         </h2>
         <p className="text-sm text-neutral-500 mb-8 leading-relaxed">
           {mode === 'create' 
-            ? 'Parabéns! O perfil do seu atleta está completo e pronto para ser descoberto pelos melhores clubes do Brasil.'
-            : 'As alterações foram salvas com sucesso e já estão visíveis para os clubes.'}
+            ? 'Parabéns! O perfil do seu atleta está completo e pronto para ser descoberto pelas melhores escolinhas do Brasil.'
+            : 'As alterações foram salvas com sucesso e já estão visíveis para as escolinhas.'}
         </p>
         <div className="space-y-3">
           <Link href={mode === 'create' ? "/dashboard" : `/perfil/${athleteId}`} className="block">

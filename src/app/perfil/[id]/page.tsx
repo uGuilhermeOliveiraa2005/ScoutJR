@@ -26,26 +26,26 @@ export default async function PerfilAtletaPage({ params }: { params: Promise<{ i
   if (!atleta) notFound()
 
   let profile = null
-  let isClube = false
-  let clubeId = null
+  let isEscolinha = false
+  let escolinhaId = null
   let initialIsFavorite = false
   let initialHasInterest = false
 
   if (user) {
     const { data: p } = await supabase.from('profiles').select('*').eq('user_id', user.id).single()
     profile = p
-    isClube = p?.role === 'clube'
+    isEscolinha = p?.role === 'escolinha'
 
-    if (isClube) {
-      const { data: c } = await supabase.from('clubes').select('id').eq('user_id', user.id).single()
+    if (isEscolinha) {
+      const { data: c } = await supabase.from('escolinhas').select('id').eq('user_id', user.id).single()
       if (c) {
-        clubeId = c.id
+        escolinhaId = c.id
         // Check favorite
-        const { data: fav } = await supabase.from('favoritos').select('id').eq('atleta_id', id).eq('clube_id', c.id).single()
+        const { data: fav } = await supabase.from('favoritos').select('id').eq('atleta_id', id).eq('escolinha_id', c.id).single()
         initialIsFavorite = !!fav
 
         // Check interest
-        const { data: int } = await supabase.from('interesses').select('id').eq('atleta_id', id).eq('clube_id', c.id).single()
+        const { data: int } = await supabase.from('interesses').select('id').eq('atleta_id', id).eq('escolinha_id', c.id).single()
         initialHasInterest = !!int
       }
     }
@@ -109,10 +109,10 @@ export default async function PerfilAtletaPage({ params }: { params: Promise<{ i
                 {atleta.destaque_ativo && <Badge variant="amber">Em destaque</Badge>}
               </div>
 
-              {atleta.clube_atual && (
+              {atleta.escolinha_atual && (
                 <div className="flex items-center gap-1.5 text-xs text-neutral-500 mb-3 bg-neutral-50 p-2 rounded-lg border border-neutral-100">
                   <Landmark size={12} className="text-neutral-400" />
-                  <span className="font-semibold uppercase tracking-tight">{atleta.clube_atual}</span>
+                  <span className="font-semibold uppercase tracking-tight">{atleta.escolinha_atual}</span>
                 </div>
               )}
 
@@ -134,10 +134,10 @@ export default async function PerfilAtletaPage({ params }: { params: Promise<{ i
               )}
 
               {/* CTA mobile */}
-              {isClube ? (
+              {isEscolinha ? (
                 <AthleteActions
                   atletaId={atleta.id}
-                  clubeId={clubeId}
+                  escolinhaId={escolinhaId}
                   initialIsFavorite={initialIsFavorite}
                   initialHasInterest={initialHasInterest}
                   aceitarMensagens={atleta.aceitar_mensagens}
@@ -156,7 +156,7 @@ export default async function PerfilAtletaPage({ params }: { params: Promise<{ i
               ) : profile?.role === 'responsavel' ? (
                 <div className="bg-amber-50 border border-amber-100 rounded-xl p-3 text-center">
                   <p className="text-[10px] text-amber-700 font-bold uppercase tracking-wider">
-                    RESTRITO PARA CLUBES 🛡️
+                    RESTRITO PARA ESCOLINHAS 🛡️
                   </p>
                 </div>
               ) : null}
@@ -187,18 +187,18 @@ export default async function PerfilAtletaPage({ params }: { params: Promise<{ i
                   {atleta.exibir_cidade && <Badge variant="outline" className="bg-neutral-50 px-3 py-1 text-xs">{atleta.cidade}, {atleta.estado}</Badge>}
                   <Badge variant="outline" className="bg-neutral-50 px-3 py-1 text-xs">{atleta.pe_dominante === 'destro' ? 'Destro' : atleta.pe_dominante === 'canhoto' ? 'Canhoto' : 'Ambidestro'}</Badge>
                 </div>
-                {atleta.clube_atual && (
+                {atleta.escolinha_atual && (
                   <div className="flex items-center gap-2 text-sm text-neutral-600 mb-5 bg-neutral-50 p-3 rounded-xl border border-neutral-100 font-bold uppercase tracking-tight">
                     <Landmark size={14} className="text-neutral-400" />
-                    {atleta.clube_atual}
+                    {atleta.escolinha_atual}
                   </div>
                 )}
                 {atleta.destaque_ativo && <Badge variant="amber" className="mb-6 w-full justify-center py-1.5 text-xs font-bold ring-4 ring-amber-500/10 uppercase tracking-widest">ATLETA EM DESTAQUE 💎</Badge>}
 
-                {isClube ? (
+                {isEscolinha ? (
                   <AthleteActions
                     atletaId={atleta.id}
-                    clubeId={clubeId}
+                    escolinhaId={escolinhaId}
                     initialIsFavorite={initialIsFavorite}
                     initialHasInterest={initialHasInterest}
                     aceitarMensagens={atleta.aceitar_mensagens}
@@ -215,7 +215,7 @@ export default async function PerfilAtletaPage({ params }: { params: Promise<{ i
                       PAINEL DO ATLETA 🛡️
                     </p>
                     <p className="text-[10px] text-neutral-400 leading-relaxed uppercase tracking-tighter">
-                      Apenas perfis de clubes podem favoritar ou demonstrar interesse.
+                      Apenas perfis de escolinhas podem favoritar ou demonstrar interesse.
                     </p>
                   </div>
                 ) : null}
@@ -326,10 +326,10 @@ export default async function PerfilAtletaPage({ params }: { params: Promise<{ i
             {!user && (
               <div className="bg-green-700 rounded-xl p-5 sm:p-6 text-center text-white">
                 <h3 className="font-display text-xl sm:text-2xl mb-2">QUER CONTATAR ESTE ATLETA?</h3>
-                <p className="text-xs sm:text-sm text-white/70 mb-4">Crie uma conta de clube para entrar em contato.</p>
+                <p className="text-xs sm:text-sm text-white/70 mb-4">Crie uma conta de escolinha para entrar em contato.</p>
                 <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-center">
-                  <Link href="/cadastro?tipo=clube">
-                    <Button variant="amber" className="w-full sm:w-auto justify-center">Criar conta de clube</Button>
+                  <Link href="/cadastro?tipo=escolinha">
+                    <Button variant="amber" className="w-full sm:w-auto justify-center">Criar conta de escolinha</Button>
                   </Link>
                   <Link href="/login">
                     <Button variant="outline" className="w-full sm:w-auto justify-center text-white border-white/30 hover:bg-white/10">Já tenho conta</Button>

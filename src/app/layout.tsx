@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { Toaster } from 'sonner'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -6,7 +7,7 @@ export const metadata: Metadata = {
     default: 'ScoutJR — O futuro do futebol começa aqui',
     template: '%s | ScoutJR',
   },
-  description: 'A plataforma que conecta jovens talentos do futebol a clubes e escolinhas de todo o Brasil.',
+  description: 'A plataforma que conecta jovens talentos do futebol a escolinhas de todo o Brasil.',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -20,7 +21,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           rel="stylesheet"
         />
       </head>
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        {children}
+        <Toaster richColors position="top-right" />
+      </body>
     </html>
   )
 }

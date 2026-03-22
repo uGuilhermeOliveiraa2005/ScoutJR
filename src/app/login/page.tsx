@@ -10,6 +10,7 @@ import { useState, Suspense } from 'react'
 import { Mail, Lock, LogIn } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input, Label, FieldGroup } from '@/components/ui/Form'
+import { toast } from 'sonner'
 
 // 1. Movemos a lógica principal para este componente interno
 function LoginContent() {
@@ -38,8 +39,10 @@ function LoginContent() {
     })
     if (error) {
       setServerError('E-mail ou senha incorretos.')
+      toast.error('E-mail ou senha incorretos.')
       return
     }
+    toast.success('Login efetuado com sucesso!')
     router.push('/dashboard')
     router.refresh()
   }

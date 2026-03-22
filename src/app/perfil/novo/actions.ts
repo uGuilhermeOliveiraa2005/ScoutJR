@@ -33,7 +33,7 @@ export async function createAthlete(data: any) {
       estado: data.estado,
       cidade: data.cidade,
       pe_dominante: data.peDominante,
-      clube_atual: data.clubeAtual,
+      escolinha_atual: data.escolinhaAtual,
       posicao: data.posicao,
       habilidade_tecnica: data.habilidades[0],
       habilidade_velocidade: data.habilidades[1],
@@ -114,7 +114,7 @@ export async function updateAthlete(id: string, data: any) {
     return { error: 'Você não tem permissão para editar este atleta' }
   }
 
-  const { error } = await supabase
+  const { data: updatedAtleta, error } = await supabase
     .from('atletas')
     .update({
       nome: data.nomeAtleta,
@@ -123,7 +123,7 @@ export async function updateAthlete(id: string, data: any) {
       estado: data.estado,
       cidade: data.cidade,
       pe_dominante: data.peDominante,
-      clube_atual: data.clubeAtual,
+      escolinha_atual: data.escolinhaAtual,
       posicao: data.posicao,
       habilidade_tecnica: data.habilidades[0],
       habilidade_velocidade: data.habilidades[1],
@@ -138,10 +138,12 @@ export async function updateAthlete(id: string, data: any) {
       fotos_adicionais: data.fotosAdicionais || [],
     })
     .eq('id', id)
+    .select('id')
+    .maybeSingle()
 
-  if (error) {
-    console.error('Erro ao atualizar atleta:', error)
-    return { error: 'Erro ao salvar os dados do atleta: ' + error.message }
+  if (error || !updatedAtleta) {
+    console.error('Erro ao atualizar atleta:', error?.message || 'Nenhuma linha afetada')
+    return { error: 'Atleta não encontrado ou permissão negada.' }
   }
 
   // Update Videos: Delete and recreate

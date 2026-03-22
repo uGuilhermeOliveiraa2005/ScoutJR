@@ -44,8 +44,8 @@ export const PRODUTOS_MP = {
         descricao: 'Destaque do perfil do atleta por 30 dias',
     },
     verificacao: {
-        nome: 'Verificação de Clube',
+        nome: 'Verificação de Escolinha',
         preco: 997,
-        descricao: 'Verificação oficial do clube na plataforma',
+        descricao: 'Verificação oficial da escolinha na plataforma',
     },
 } as const

@@ -7,7 +7,7 @@ import { useState, useEffect } from 'react'
 import { initMercadoPago, CardPayment } from '@mercadopago/sdk-react'
 import { X, Loader2, Copy, CheckCircle, AlertCircle, CreditCard, ShieldCheck, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
-import { cn } from '@/lib/utils'
+import { cn, formatCpfCnpj } from '@/lib/utils'
 
 interface CheckoutModalProps {
     isOpen: boolean
@@ -327,11 +327,7 @@ function PixSimpleForm({ onSubmit, onBack, loading }: { onSubmit: (email: string
     const [cpf, setCpf] = useState('')
     const [errors, setErrors] = useState<Record<string, string>>({})
 
-    function formatCpfCnpj(value: string) {
-        const digits = value.replace(/\D/g, '')
-        if (digits.length <= 11) return digits.replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2')
-        return digits.replace(/(\d{2})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1/$2').replace(/(\d{4})(\d{1,2})$/, '$1-$2')
-    }
+
 
     function validate() {
         const e: Record<string, string> = {}

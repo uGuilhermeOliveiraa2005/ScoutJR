@@ -19,14 +19,14 @@ export default async function NotificacoesPage() {
 
   if (!profile) redirect('/login')
 
-  let clube = null
-  if (profile.role === 'clube') {
+  let escolinha = null
+  if (profile.role === 'escolinha') {
     const { data } = await supabase
-      .from('clubes')
+      .from('escolinhas')
       .select('*')
       .eq('user_id', user.id)
       .single()
-    clube = data
+    escolinha = data
   }
 
   return (
@@ -34,7 +34,7 @@ export default async function NotificacoesPage() {
       <NavbarDashboard
         userName={profile.nome}
         userRole={profile.role}
-        verificado={clube?.verificado ?? false}
+        verificado={escolinha?.verificado ?? false}
         userId={user.id}
       />
       

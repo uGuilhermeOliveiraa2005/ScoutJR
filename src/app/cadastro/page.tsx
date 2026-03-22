@@ -7,8 +7,9 @@ import Link from 'next/link'
 import React, { Suspense, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { cadastroResponsavelSchema, cadastroClubeSchema, type CadastroResponsavelInput, type CadastroClubeInput } from '@/lib/validations'
+import { cadastroResponsavelSchema, cadastroEscolinhaSchema, type CadastroResponsavelInput, type CadastroEscolinhaInput } from '@/lib/validations'
 import { createSupabaseBrowser } from '@/lib/supabase'
+import { uploadImage, uploadImages } from '@/lib/storage'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
 import { Input, Select, Label, FieldGroup, Textarea } from '@/components/ui/Form'
@@ -18,13 +19,14 @@ import {
   Video, MessageCircle, CircleCheckBig, Plus, Trash2, 
   Trophy, Youtube, Image as ImageIcon
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, formatPhone, formatCNPJ } from '@/lib/utils'
+import { toast } from 'sonner'
 import { AthleteProfilePreview } from '@/components/atletas/AthleteProfilePreview'
 
-type Tipo = 'responsavel' | 'clube'
+type Tipo = 'responsavel' | 'escolinha'
 
 const STEP_LABELS_RESP = ['Tipo', 'Conta', 'Atleta', 'Habilidades', 'Mídia', 'Conquistas', 'Visualizar', 'Privacidade']
-const STEP_LABELS_CLUBE = ['Tipo', 'Conta', 'Verificação']
+const STEP_LABELS_ESCOLINHA = ['Tipo', 'Conta', 'Sobre', 'Verificação']
 
 
 
@@ -41,6 +43,7 @@ function CadastroForm() {
   const [step, setStep] = useState(1)
   const [done, setDone] = useState(false)
   const [serverError, setServerError] = useState('')
+  const [isUploading, setIsUploading] = useState(false)
   const supabase = createSupabaseBrowser()
 
   const [atletaData, setAtletaData] = useState({
@@ -51,10 +54,10 @@ function CadastroForm() {
     cidade: '',
     posicao: 'MEI', 
     peDominante: 'destro', 
-    clubeAtual: '',
+    escolinhaAtual: '',
     habilidades: [75, 68, 82, 60, 71, 79],
-    fotoUrl: '',
-    fotosAdicionais: [] as string[],
+    fotoUrl: '' as any,
+    fotosAdicionais: [] as any[],
     videos: [] as { url: string; titulo: string }[],
     conquistas: [] as { titulo: string; ano: string; descricao: string }[],
     visivel: true, 
@@ -62,53 +65,93 @@ function CadastroForm() {
     mensagens: false
   })
 
-  const totalSteps = tipo === 'responsavel' ? 7 : 3
-  const labels = tipo === 'responsavel' ? STEP_LABELS_RESP : STEP_LABELS_CLUBE
+  const [escolinhaFotos, setEscolinhaFotos] = useState<any[]>([])
+  const [responsavelPreview, setResponsavelPreview] = useState('')
+  const [escolinhaPreview, setEscolinhaPreview] = useState('')
+
+  const totalSteps = tipo === 'responsavel' ? 7 : 4
+  const labels = tipo === 'responsavel' ? STEP_LABELS_RESP : STEP_LABELS_ESCOLINHA
 
   const formResp = useForm<CadastroResponsavelInput>({ resolver: zodResolver(cadastroResponsavelSchema) })
-  const formClube = useForm<CadastroClubeInput>({ resolver: zodResolver(cadastroClubeSchema) })
+  const formEscolinha = useForm<CadastroEscolinhaInput>({ resolver: zodResolver(cadastroEscolinhaSchema) })
 
   async function submitResponsavel(data: CadastroResponsavelInput) {
     setServerError('')
-    const { error } = await supabase.auth.signUp({
-      email: data.email,
-      password: data.password,
-      options: {
-        data: {
-          nome: data.nome, role: 'responsavel', telefone: data.telefone,
-          atleta_nome: atletaData.nomeAtleta, 
-          atleta_descricao: atletaData.descricao,
-          atleta_nascimento: atletaData.dataNascimento,
-          atleta_estado: atletaData.estado, atleta_cidade: atletaData.cidade,
-          atleta_posicao: atletaData.posicao, atleta_pe: atletaData.peDominante,
-          atleta_clube: atletaData.clubeAtual, atleta_habilidades: atletaData.habilidades,
-          atleta_foto_url: atletaData.fotoUrl,
-          atleta_fotos_adicionais: atletaData.fotosAdicionais,
-          atleta_videos: atletaData.videos,
-          atleta_conquistas: atletaData.conquistas,
-          atleta_visivel: atletaData.visivel, atleta_exibir_cidade: atletaData.exibirCidade,
-          atleta_mensagens: atletaData.mensagens,
+    setIsUploading(true)
+    
+    try {
+      const foto_url_final = data.foto_url instanceof File ? await uploadImage(data.foto_url, 'responsavel') : data.foto_url
+      const atleta_foto_url_final = atletaData.fotoUrl instanceof File ? await uploadImage(atletaData.fotoUrl, 'atleta') : atletaData.fotoUrl
+      const atleta_fotos_adicionais_final = await uploadImages(atletaData.fotosAdicionais, 'atleta_galeria')
+
+      const { error } = await supabase.auth.signUp({
+        email: data.email,
+        password: data.password,
+        options: {
+          data: {
+            nome: data.nome, role: 'responsavel', telefone: data.telefone, foto_url: foto_url_final,
+            atleta_nome: atletaData.nomeAtleta, 
+            atleta_descricao: atletaData.descricao,
+            atleta_nascimento: atletaData.dataNascimento,
+            atleta_estado: atletaData.estado, atleta_cidade: atletaData.cidade,
+            atleta_posicao: atletaData.posicao, atleta_pe: atletaData.peDominante,
+            atleta_clube: atletaData.escolinhaAtual, atleta_habilidades: atletaData.habilidades,
+            atleta_foto_url: atleta_foto_url_final,
+            atleta_fotos_adicionais: atleta_fotos_adicionais_final,
+            atleta_videos: atletaData.videos,
+            atleta_conquistas: atletaData.conquistas,
+            atleta_visivel: atletaData.visivel, atleta_exibir_cidade: atletaData.exibirCidade,
+            atleta_mensagens: atletaData.mensagens,
+          },
         },
-      },
-    })
-    if (error) { setServerError(error.message); return }
-    setDone(true)
+      })
+      if (error) {
+        setServerError(error.message)
+        toast.error(error.message)
+        return
+      }
+      setDone(true)
+      toast.success('Perfil de atleta publicado com sucesso!')
+    } catch (e: any) {
+      setServerError('Falha ao processar imagens. Tente novamente.')
+      toast.error('Falha ao processar imagens. Tente novamente.')
+    } finally {
+      setIsUploading(false)
+    }
   }
 
-  async function submitClube(data: CadastroClubeInput) {
+  async function submitEscolinha(data: CadastroEscolinhaInput) {
     setServerError('')
-    const { error } = await supabase.auth.signUp({
-      email: data.email,
-      password: data.password,
-      options: {
-        data: {
-          nome: data.nome, role: 'clube', telefone: data.telefone,
-          estado: data.estado, cidade: data.cidade, cnpj: data.cnpj ?? null,
+    setIsUploading(true)
+    
+    try {
+      const foto_url_final = data.foto_url instanceof File ? await uploadImage(data.foto_url, 'escolinha') : data.foto_url
+      const fotos_adicionais_final = await uploadImages(escolinhaFotos, 'escolinha_galeria')
+
+      const { error } = await supabase.auth.signUp({
+        email: data.email,
+        password: data.password,
+        options: {
+          data: {
+            nome: data.nome, role: 'escolinha', telefone: data.telefone,
+            estado: data.estado, cidade: data.cidade, cnpj: data.cnpj ?? null,
+            foto_url: foto_url_final, descricao: data.descricao, fotos_adicionais: fotos_adicionais_final,
+          },
         },
-      },
-    })
-    if (error) { setServerError(error.message); return }
-    setDone(true)
+      })
+      if (error) {
+        setServerError(error.message)
+        toast.error(error.message)
+        return
+      }
+      setDone(true)
+      toast.success('Conta de escolinha criada com sucesso!')
+    } catch(e: any) {
+      setServerError('Falha ao processar imagens. Tente novamente.')
+      toast.error('Falha ao processar imagens. Tente novamente.')
+    } finally {
+      setIsUploading(false)
+    }
   }
 
   if (done) return <SuccessScreen tipo={tipo} />
@@ -157,7 +200,7 @@ function CadastroForm() {
               <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-6 sm:mb-8">
                 {([
                   { val: 'responsavel', icon: <Users size={22} />, title: 'Sou responsável', sub: 'Quero cadastrar meu filho(a) como atleta' },
-                  { val: 'clube', icon: <Landmark size={22} />, title: 'Sou um clube', sub: 'Quero buscar e recrutar jovens talentos' },
+                  { val: 'escolinha', icon: <Landmark size={22} />, title: 'Sou uma escolinha', sub: 'Quero buscar e recrutar jovens talentos' },
                 ] as const).map(opt => (
                   <button
                     key={opt.val}
@@ -191,6 +234,26 @@ function CadastroForm() {
               <h2 className="text-lg sm:text-xl font-medium mb-1">Seus dados de contato</h2>
               <p className="text-xs sm:text-sm text-neutral-500 mb-4 sm:mb-6">Nunca aparecem no perfil público do atleta.</p>
               <div className="flex flex-col gap-3 sm:gap-4">
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <div className="w-16 h-16 rounded-full bg-neutral-100 border border-neutral-200 flex items-center justify-center flex-shrink-0 text-neutral-400 overflow-hidden">
+                    {responsavelPreview || (typeof formResp.watch('foto_url') === 'string' && formResp.watch('foto_url')) ? <img src={responsavelPreview || formResp.watch('foto_url')} alt="Avatar" className="w-full h-full object-cover" /> : <ImageIcon size={20} />}
+                  </div>
+                  <FieldGroup className="flex-1">
+                    <Label className="flex items-center gap-2">Sua foto de perfil (Opcional)</Label>
+                    <Input type="file" accept="image/*" className="pt-2" error={formResp.formState.errors.foto_url?.message as string} onChange={e => {
+                      const file = e.target.files?.[0]
+                      if (file) {
+                        formResp.setValue('foto_url', file, { shouldValidate: true })
+                        const reader = new FileReader()
+                        reader.onload = (ev) => setResponsavelPreview(ev.target?.result as string)
+                        reader.readAsDataURL(file)
+                      } else {
+                        formResp.setValue('foto_url', null)
+                        setResponsavelPreview('')
+                      }
+                    }} />
+                  </FieldGroup>
+                </div>
                 <FieldGroup>
                   <Label>Nome completo</Label>
                   <Input placeholder="João da Silva" error={formResp.formState.errors.nome?.message} {...formResp.register('nome')} />
@@ -202,7 +265,7 @@ function CadastroForm() {
                   </FieldGroup>
                   <FieldGroup>
                     <Label>Telefone / WhatsApp</Label>
-                    <Input type="tel" placeholder="(51) 9 9999-9999" error={formResp.formState.errors.telefone?.message} {...formResp.register('telefone')} />
+                    <Input type="tel" placeholder="(51) 9 9999-9999" error={formResp.formState.errors.telefone?.message} {...formResp.register('telefone', { onChange: e => e.target.value = formatPhone(e.target.value) })} />
                   </FieldGroup>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -245,60 +308,61 @@ function CadastroForm() {
               loading={formResp.formState.isSubmitting}
               serverError={serverError}
               onSubmit={formResp.handleSubmit(submitResponsavel)}
+              isUploading={isUploading}
             />
           )}
 
-          {/* STEP 2 — Dados clube */}
-          {step === 2 && tipo === 'clube' && (
-            <form onSubmit={formClube.handleSubmit(() => setStep(3))}>
+          {/* STEP 2 — Dados escolinha */}
+          {step === 2 && tipo === 'escolinha' && (
+            <form onSubmit={formEscolinha.handleSubmit(() => setStep(3))}>
               <div className="font-display text-3xl sm:text-4xl text-neutral-400 mb-1.5 sm:mb-2 leading-none">02</div>
-              <h2 className="text-lg sm:text-xl font-medium mb-1">Dados do clube</h2>
-              <p className="text-xs sm:text-sm text-neutral-500 mb-4 sm:mb-6">Informações do clube ou escolinha.</p>
+              <h2 className="text-lg sm:text-xl font-medium mb-1">Dados da escolinha</h2>
+              <p className="text-xs sm:text-sm text-neutral-500 mb-4 sm:mb-6">Informações da instituição.</p>
               <div className="flex flex-col gap-3 sm:gap-4">
                 <FieldGroup>
-                  <Label>Nome do clube / escolinha</Label>
-                  <Input placeholder="Ex: Escolinha Grêmio FBPA" error={formClube.formState.errors.nome?.message} {...formClube.register('nome')} />
+                  <Label>Nome da escolinha</Label>
+                  <Input placeholder="Ex: Escolinha Grêmio FBPA" error={formEscolinha.formState.errors.nome?.message} {...formEscolinha.register('nome')} />
                 </FieldGroup>
                 <FieldGroup>
-                  <Label>CNPJ (opcional)</Label>
-                  <Input placeholder="00.000.000/0000-00" error={formClube.formState.errors.cnpj?.message} {...formClube.register('cnpj')} />
+                  <Label>CNPJ</Label>
+                  <Input placeholder="00.000.000/0000-00" error={formEscolinha.formState.errors.cnpj?.message} {...formEscolinha.register('cnpj', { onChange: e => e.target.value = formatCNPJ(e.target.value) })} />
                 </FieldGroup>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <FieldGroup>
                     <Label>E-mail</Label>
-                    <Input type="email" placeholder="contato@clube.com.br" error={formClube.formState.errors.email?.message} {...formClube.register('email')} />
+                    <Input type="email" placeholder="contato@escolinha.com.br" error={formEscolinha.formState.errors.email?.message} {...formEscolinha.register('email')} />
                   </FieldGroup>
                   <FieldGroup>
                     <Label>Telefone</Label>
-                    <Input type="tel" placeholder="(51) 3333-3333" error={formClube.formState.errors.telefone?.message} {...formClube.register('telefone')} />
+                    <Input type="tel" placeholder="(51) 3333-3333" error={formEscolinha.formState.errors.telefone?.message} {...formEscolinha.register('telefone', { onChange: e => e.target.value = formatPhone(e.target.value) })} />
                   </FieldGroup>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <FieldGroup>
                     <Label>Estado</Label>
-                    <Select options={ESTADOS} placeholder="Selecione" error={formClube.formState.errors.estado?.message} {...formClube.register('estado')} />
+                    <Select options={ESTADOS} placeholder="Selecione" error={formEscolinha.formState.errors.estado?.message} {...formEscolinha.register('estado')} />
                   </FieldGroup>
                   <FieldGroup>
                     <Label>Cidade</Label>
-                    <Input placeholder="Porto Alegre" error={formClube.formState.errors.cidade?.message} {...formClube.register('cidade')} />
+                    <Input placeholder="Porto Alegre" error={formEscolinha.formState.errors.cidade?.message} {...formEscolinha.register('cidade')} />
                   </FieldGroup>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <FieldGroup>
                     <Label>Senha</Label>
-                    <Input type="password" placeholder="Mín. 8 caracteres" error={formClube.formState.errors.password?.message} {...formClube.register('password')} />
+                    <Input type="password" placeholder="Mín. 8 caracteres" error={formEscolinha.formState.errors.password?.message} {...formEscolinha.register('password')} />
                   </FieldGroup>
                   <FieldGroup>
                     <Label>Confirmar</Label>
-                    <Input type="password" error={formClube.formState.errors.confirmPassword?.message} {...formClube.register('confirmPassword')} />
+                    <Input type="password" error={formEscolinha.formState.errors.confirmPassword?.message} {...formEscolinha.register('confirmPassword')} />
                   </FieldGroup>
                 </div>
                 <label className="flex items-start gap-3 cursor-pointer">
-                  <input type="checkbox" className="mt-0.5 accent-green-500" {...formClube.register('aceito_termos')} />
+                  <input type="checkbox" className="mt-0.5 accent-green-500" {...formEscolinha.register('aceito_termos')} />
                   <span className="text-xs text-neutral-500">Li e aceito os termos de uso e política de privacidade</span>
                 </label>
-                {formClube.formState.errors.aceito_termos && (
-                  <p className="text-xs text-red-500">{formClube.formState.errors.aceito_termos.message}</p>
+                {formEscolinha.formState.errors.aceito_termos && (
+                  <p className="text-xs text-red-500">{formEscolinha.formState.errors.aceito_termos.message}</p>
                 )}
               </div>
               <div className="flex justify-between mt-5 sm:mt-6">
@@ -310,10 +374,80 @@ function CadastroForm() {
             </form>
           )}
 
-          {step === 3 && tipo === 'clube' && (
-            <div>
+          {step === 3 && tipo === 'escolinha' && (
+            <div className="flex flex-col gap-5">
               <div className="font-display text-3xl sm:text-4xl text-neutral-400 mb-1.5 sm:mb-2 leading-none">03</div>
-              <h2 className="text-lg sm:text-xl font-medium mb-1">Verificação de clube</h2>
+              <h2 className="text-lg sm:text-xl font-medium mb-1">Sobre a Escolinha</h2>
+              <p className="text-xs sm:text-sm text-neutral-500 mb-4 sm:mb-6">Crie um perfil atrativo. Isso vai passar muita segurança para as famílias dos atletas.</p>
+
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="w-20 h-20 rounded-xl bg-neutral-100 border border-neutral-200 flex items-center justify-center flex-shrink-0 text-neutral-400 overflow-hidden">
+                  {escolinhaPreview || (typeof formEscolinha.watch('foto_url') === 'string' && formEscolinha.watch('foto_url')) ? <img src={escolinhaPreview || formEscolinha.watch('foto_url')} alt="Logo" className="w-full h-full object-cover" /> : <ImageIcon size={24} />}
+                </div>
+                <FieldGroup className="flex-1">
+                  <Label>Logo / Emblema da Escolinha</Label>
+                  <Input type="file" accept="image/*" className="pt-2" onChange={e => {
+                    const file = e.target.files?.[0]
+                    if (file) {
+                      formEscolinha.setValue('foto_url', file, { shouldValidate: true })
+                      const reader = new FileReader()
+                      reader.onload = (ev) => setEscolinhaPreview(ev.target?.result as string)
+                      reader.readAsDataURL(file)
+                    } else {
+                      formEscolinha.setValue('foto_url', null)
+                      setEscolinhaPreview('')
+                    }
+                  }} />
+                </FieldGroup>
+              </div>
+
+              <FieldGroup>
+                <Label>Apresentação / Descrição da Estrutura</Label>
+                <Textarea placeholder="Conte a história do clube, filosofia de jogo, campeonatos que participam..." className="min-h-[100px]" {...formEscolinha.register('descricao')} />
+              </FieldGroup>
+
+              <div className="space-y-3">
+                <Label>Fotos da Quadra/Campo e Treinos (Máx. 3 fotos)</Label>
+                <Input type="file" accept="image/*" multiple className="pt-2" onChange={async e => {
+                  if (e.target.files && e.target.files.length > 0) {
+                    const selected = Array.from(e.target.files).slice(0, 3)
+                    const filesWithPreview = await Promise.all(selected.map(f => {
+                      return new Promise((resolve) => {
+                        const reader = new FileReader()
+                        reader.onload = (ev) => resolve(Object.assign(f, { preview: ev.target?.result as string }))
+                        reader.readAsDataURL(f)
+                      })
+                    }))
+                    setEscolinhaFotos(filesWithPreview as any[])
+                  }
+                }} />
+                {escolinhaFotos.length > 0 && (
+                  <div className="flex gap-3 mt-2 flex-wrap">
+                    {escolinhaFotos.map((file: any, i: number) => (
+                      <div key={i} className="relative group">
+                         <img src={file.preview || file} className="w-20 h-20 rounded-xl object-cover border border-neutral-200" alt="Preview da estrutura" />
+                         <button type="button" onClick={() => setEscolinhaFotos(escolinhaFotos.filter((_, idx) => idx !== i))} className="absolute top-1 right-1 bg-white/90 text-red-500 rounded-md p-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 size={12} /></button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex justify-between mt-4">
+                <Button variant="outline" type="button" onClick={() => setStep(2)}>
+                  <ArrowLeft size={14} /> Voltar
+                </Button>
+                <Button variant="dark" type="button" onClick={() => setStep(4)}>
+                  Continuar <ArrowRight size={14} />
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {step === 4 && tipo === 'escolinha' && (
+            <div>
+              <div className="font-display text-3xl sm:text-4xl text-neutral-400 mb-1.5 sm:mb-2 leading-none">04</div>
+              <h2 className="text-lg sm:text-xl font-medium mb-1">Verificação de escolinha</h2>
               <p className="text-xs sm:text-sm text-neutral-500 mb-4 sm:mb-6">O que você ganha com a verificação.</p>
               <div className="border border-neutral-200 rounded-xl overflow-hidden mb-5 sm:mb-6">
                 {[
@@ -334,11 +468,11 @@ function CadastroForm() {
                 <div className="bg-red-50 border border-red-200 text-red-600 text-xs sm:text-sm rounded-lg px-3 sm:px-4 py-2.5 sm:py-3 mb-4">{serverError}</div>
               )}
               <div className="flex justify-between">
-                <Button variant="outline" type="button" onClick={() => setStep(2)}>
+                <Button variant="outline" type="button" onClick={() => setStep(3)}>
                   <ArrowLeft size={14} /> Voltar
                 </Button>
-                <Button variant="dark" loading={formClube.formState.isSubmitting} onClick={formClube.handleSubmit(submitClube)}>
-                  Criar conta <ArrowRight size={14} />
+                <Button variant="dark" loading={isUploading || formEscolinha.formState.isSubmitting} type="button" onClick={formEscolinha.handleSubmit(submitEscolinha)}>
+                  {isUploading ? 'Criando e enviando...' : 'Criar conta'} <ArrowRight size={14} />
                 </Button>
               </div>
             </div>
@@ -355,6 +489,8 @@ function CadastroForm() {
 }
 
 function AtletaSteps({ step, setStep, data, setData, loading, serverError, onSubmit }: any) {
+  const [atletaCapaPreview, setAtletaCapaPreview] = useState('')
+
   const posicoes = [
     { value: 'GK', label: 'GK', sub: 'Goleiro' }, { value: 'LD', label: 'LD', sub: 'Lat. Dir.' },
     { value: 'LE', label: 'LE', sub: 'Lat. Esq.' }, { value: 'ZAG', label: 'ZAG', sub: 'Zagueiro' },
@@ -429,7 +565,7 @@ function AtletaSteps({ step, setStep, data, setData, loading, serverError, onSub
     <div>
       <div className="font-display text-3xl sm:text-4xl text-neutral-400 mb-1.5 sm:mb-2 leading-none">04</div>
       <h2 className="text-lg sm:text-xl font-medium mb-1">Habilidades</h2>
-      <p className="text-xs sm:text-sm text-neutral-500 mb-4 sm:mb-6">Seja honesto. Clubes valorizam evolução.</p>
+      <p className="text-xs sm:text-sm text-neutral-500 mb-4 sm:mb-6">Seja honesto. Escolinhas valorizam evolução.</p>
       <div className="flex flex-col gap-4 sm:gap-5">
         {habilidades.map((h, i) => (
           <div key={h} className="flex items-center gap-3 sm:gap-4">
@@ -480,21 +616,56 @@ function AtletaSteps({ step, setStep, data, setData, loading, serverError, onSub
         </div>
 
         <FieldGroup>
-          <Label className="flex items-center gap-2"><ImageIcon size={14} /> Foto de Capa / Perfil (URL)</Label>
-          <Input placeholder="URL da foto..." value={data.fotoUrl} onChange={e => setData({ ...data, fotoUrl: e.target.value })} />
+          <Label className="flex items-center gap-2"><ImageIcon size={14} /> Foto de Capa / Perfil</Label>
+          <div className="flex items-center gap-4">
+             {atletaCapaPreview || (typeof data.fotoUrl === 'string' && data.fotoUrl) ? (
+                <div className="w-16 h-16 rounded-lg bg-neutral-100 border border-neutral-200 flex-shrink-0 overflow-hidden">
+                   <img src={atletaCapaPreview || data.fotoUrl} alt="Atleta Capa" className="w-full h-full object-cover" />
+                </div>
+             ) : (
+                <div className="w-16 h-16 rounded-lg bg-neutral-100 border border-neutral-200 flex-shrink-0 flex items-center justify-center text-neutral-400">
+                   <ImageIcon size={20} />
+                </div>
+             )}
+             <Input type="file" accept="image/*" className="pt-2 flex-1" onChange={e => {
+               const file = e.target.files?.[0]
+               if (file) {
+                 setData({ ...data, fotoUrl: file })
+                 const reader = new FileReader()
+                 reader.onload = (ev) => setAtletaCapaPreview(ev.target?.result as string)
+                 reader.readAsDataURL(file)
+               } else {
+                 setData({ ...data, fotoUrl: null as any })
+                 setAtletaCapaPreview('')
+               }
+             }} />
+          </div>
           <p className="text-[10px] text-neutral-400 italic">Resolução recomendada: 1280x720 (16:9).</p>
         </FieldGroup>
-
-        <div className="space-y-2">
-          <Label>Fotos Adicionais</Label>
-          {data.fotosAdicionais.map((url:string, i:number) => (
-            <div key={i} className="flex gap-2">
-              <Input placeholder="URL..." value={url} onChange={e => updatePhoto(i, e.target.value)} />
-              <button onClick={() => removePhoto(i)} className="text-red-400"><Trash2 size={18} /></button>
+        <div className="space-y-3">
+          <Label>Fotos Adicionais (Galeria)</Label>
+          <Input type="file" accept="image/*" multiple className="pt-2" onChange={async e => {
+            if (e.target.files && e.target.files.length > 0) {
+              const selected = Array.from(e.target.files).slice(0, 3)
+              const filesWithPreview = await Promise.all(selected.map(f => {
+                return new Promise((resolve) => {
+                  const reader = new FileReader()
+                  reader.onload = (ev) => resolve(Object.assign(f, { preview: ev.target?.result as string }))
+                  reader.readAsDataURL(f)
+                })
+              }))
+              setData({ ...data, fotosAdicionais: filesWithPreview as any[] })
+            }
+          }} />
+          {data.fotosAdicionais.length > 0 && (
+            <div className="flex gap-3 mt-2 flex-wrap">
+              {data.fotosAdicionais.map((file: any, i: number) => (
+                <div key={i} className="relative group">
+                   <img src={file.preview || file} className="w-16 h-16 rounded-lg object-cover border border-neutral-200" alt="Extra" />
+                   <button onClick={() => setData({ ...data, fotosAdicionais: data.fotosAdicionais.filter((_:any, idx:number) => idx !== i) })} className="absolute top-1 right-1 bg-white/90 text-red-500 rounded-md p-1 opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 size={12} /></button>
+                </div>
+              ))}
             </div>
-          ))}
-          {data.fotosAdicionais.length < 3 && (
-            <button onClick={addPhoto} className="w-full py-2 border border-dashed border-neutral-200 rounded-lg text-[10px] text-neutral-400">+ Foto</button>
           )}
         </div>
 
@@ -608,7 +779,7 @@ function AtletaSteps({ step, setStep, data, setData, loading, serverError, onSub
       <div>
         <div className="font-display text-3xl sm:text-4xl text-neutral-400 mb-1.5 sm:mb-2 leading-none">07</div>
         <h2 className="text-lg sm:text-xl font-medium mb-1">Visualizar Perfil</h2>
-        <p className="text-xs sm:text-sm text-neutral-500 mb-4 sm:mb-6">Veja como os clubes verão seu perfil.</p>
+        <p className="text-xs sm:text-sm text-neutral-500 mb-4 sm:mb-6">Veja como as escolinhas verão seu perfil.</p>
       </div>
 
       <div className="border border-neutral-200 rounded-2xl p-3 sm:p-4 bg-neutral-50/50">
@@ -637,9 +808,9 @@ function AtletaSteps({ step, setStep, data, setData, loading, serverError, onSub
 function PrivacidadeStep({ data, setData, onBack, onSubmit, loading, error }: any) {
   const toggle = (key: string) => setData({ ...data, [key]: !data[key] })
   const items = [
-    { key: 'visivel', icon: <Eye size={14} />, title: 'Perfil visível para clubes', sub: 'Apenas clubes aprovados podem ver' },
+    { key: 'visivel', icon: <Eye size={14} />, title: 'Perfil visível para escolinhas', sub: 'Apenas escolinhas aprovadas podem ver' },
     { key: 'exibirCidade', icon: <MapPin size={14} />, title: 'Exibir cidade e estado', sub: 'Nunca endereço completo' },
-    { key: 'mensagens', icon: <MessageCircle size={14} />, title: 'Receber mensagens', sub: 'Contato direto de clubes' },
+    { key: 'mensagens', icon: <MessageCircle size={14} />, title: 'Receber mensagens', sub: 'Contato direto das escolinhas' },
   ]
 
   return (
@@ -683,8 +854,8 @@ function SuccessScreen({ tipo }: { tipo: Tipo }) {
         </h2>
         <p className="text-xs sm:text-sm text-neutral-500 leading-relaxed mb-2 text-center">
           {tipo === 'responsavel'
-            ? 'O atleta já está visível para os clubes verificados.'
-            : 'Sua conta de clube foi criada com sucesso.'}
+            ? 'O atleta já está visível para as escolinhas verificadas.'
+            : 'Sua conta de escolinha foi criada com sucesso.'}
         </p>
         <p className="text-[10px] sm:text-xs text-neutral-400 mb-6 sm:mb-8 text-center">Verifique sua caixa de entrada para confirmar o e-mail.</p>
         <div className="flex flex-col gap-2.5 sm:gap-3">

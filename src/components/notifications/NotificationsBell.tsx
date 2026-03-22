@@ -107,14 +107,8 @@ export function NotificationsBell({ userId }: { userId: string }) {
 
             <div className="max-h-96 overflow-y-auto scrollbar-hide">
               {notifications.length > 0 ? (
-                notifications.map((n: any) => (
-                  <div
-                    key={n.id}
-                    className={cn(
-                      "p-4 border-b border-neutral-50 last:border-none hover:bg-neutral-50 transition-colors cursor-default",
-                      !n.lida && "bg-green-50/30"
-                    )}
-                  >
+                notifications.map((n: any) => {
+                  const content = (
                     <div className="flex gap-3">
                       <div className={cn(
                         "w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0",
@@ -138,8 +132,36 @@ export function NotificationsBell({ userId }: { userId: string }) {
                         </p>
                       </div>
                     </div>
-                  </div>
-                ))
+                  );
+                  
+                  if (n.metadata?.escolinha_id) {
+                    return (
+                      <Link
+                        key={n.id}
+                        href={`/escolinha/${n.metadata.escolinha_id}`}
+                        onClick={() => setIsOpen(false)}
+                        className={cn(
+                          "block p-4 border-b border-neutral-50 last:border-none hover:bg-neutral-50 transition-colors cursor-pointer",
+                          !n.lida && "bg-green-50/30"
+                        )}
+                      >
+                        {content}
+                      </Link>
+                    );
+                  }
+
+                  return (
+                    <div
+                      key={n.id}
+                      className={cn(
+                        "block p-4 border-b border-neutral-50 last:border-none hover:bg-neutral-50 transition-colors cursor-default",
+                        !n.lida && "bg-green-50/30"
+                      )}
+                    >
+                      {content}
+                    </div>
+                  );
+                })
               ) : (
                 <div className="py-12 text-center">
                   <Bell size={24} className="text-neutral-200 mx-auto mb-2" />

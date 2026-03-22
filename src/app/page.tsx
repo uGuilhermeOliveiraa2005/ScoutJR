@@ -16,7 +16,7 @@ export default function HomePage() {
         <StatsBar />
         <HowItWorksSection />
         <ForWhoSection />
-        <ClubsSection />
+        <EscolinhasSection />
       </main>
       <Footer />
     </>
@@ -49,7 +49,7 @@ function HeroSection() {
               AQUI.
             </h1>
             <p className="text-neutral-500 text-base sm:text-lg leading-relaxed mb-6 sm:mb-8 max-w-md">
-              A vitrine digital para jovens atletas. Pais criam o perfil, clubes e olheiros descobrem o próximo craque.
+              A vitrine digital para jovens atletas. Pais criam o perfil, escolinhas e olheiros descobrem o próximo craque.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 mb-5 sm:mb-6">
               <Link href="/cadastro" className="w-full sm:w-auto">
@@ -57,9 +57,9 @@ function HeroSection() {
                   Criar perfil do atleta
                 </Button>
               </Link>
-              <Link href="/#clubes" className="w-full sm:w-auto">
+              <Link href="/#escolinhas" className="w-full sm:w-auto">
                 <Button variant="outline" size="lg" className="w-full sm:w-auto justify-center">
-                  Sou um clube <ArrowRight size={15} />
+                  Sou uma escolinha <ArrowRight size={15} />
                 </Button>
               </Link>
             </div>
@@ -67,7 +67,7 @@ function HeroSection() {
               {[
                 { icon: <Check size={13} />, label: 'Gratuito para famílias' },
                 { icon: <Shield size={13} />, label: 'Dados protegidos' },
-                { icon: <BadgeCheck size={13} />, label: 'Clubes verificados' },
+                { icon: <BadgeCheck size={13} />, label: 'Escolinhas verificadas' },
               ].map(item => (
                 <span key={item.label} className="flex items-center gap-1.5 text-xs text-neutral-400">
                   {item.icon} {item.label}
@@ -90,7 +90,7 @@ function HeroSection() {
             <FloatBadge
               className="hidden sm:flex top-2 sm:top-4 -left-2 sm:-left-4 animate-float-delay"
               icon={<Users size={14} />}
-              title="180 clubes ativos"
+              title="180 escolinhas ativas"
               sub="buscando talentos agora"
             />
           </div>
@@ -135,7 +135,7 @@ function HeroPlayerCard() {
         </div>
       </div>
       <div className="px-3 sm:px-4 py-2.5 sm:py-3 border-t border-neutral-100 flex justify-between items-center gap-2">
-        <span className="bg-amber-100 text-amber-700 text-[9px] sm:text-xs font-medium px-2 py-0.5 rounded-full truncate">3 clubes interessados</span>
+        <span className="bg-amber-100 text-amber-700 text-[9px] sm:text-xs font-medium px-2 py-0.5 rounded-full truncate">3 escolinhas interessadas</span>
         <Button size="sm" className="flex-shrink-0 text-xs">Contatar</Button>
       </div>
     </div>
@@ -162,7 +162,7 @@ function StatsBar() {
     <div className="bg-green-700 py-4 sm:py-5">
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
         <div className="grid grid-cols-2 sm:flex sm:flex-wrap justify-center gap-0 divide-y sm:divide-y-0 sm:divide-x divide-white/20">
-          {[['2.400+', 'Atletas cadastrados'], ['180', 'Clubes parceiros'], ['94', 'Conexões realizadas'], ['12', 'Estados cobertos']].map(([num, label]) => (
+          {[['2.400+', 'Atletas cadastrados'], ['180', 'Escolinhas parceiras'], ['94', 'Conexões realizadas'], ['12', 'Estados cobertos']].map(([num, label]) => (
             <div key={label} className="text-center px-4 sm:px-8 py-3 sm:py-1">
               <div className="font-display text-2xl sm:text-3xl text-white leading-none">{num}</div>
               <div className="text-[10px] sm:text-xs text-white/50 mt-1">{label}</div>
@@ -184,15 +184,15 @@ function HowItWorksSection() {
         <div className="mb-8 sm:mb-12">
           <p className="text-[10px] sm:text-xs uppercase tracking-widest text-neutral-400 mb-2">Como funciona</p>
           <h2 className="font-display text-4xl sm:text-5xl text-neutral-900">
-            DO PERFIL AO <span className="text-green-400">CLUBE</span><br className="hidden sm:block" />
+            DO PERFIL À <span className="text-green-400">ESCOLINHA</span><br className="hidden sm:block" />
             {' '}EM TRÊS PASSOS
           </h2>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-0 relative">
           {[
             { num: '01', icon: <UserPlus size={24} />, title: 'Pais criam o perfil', desc: 'Responsáveis cadastram o atleta com posição, habilidades, fotos e vídeos. Rápido e seguro.' },
-            { num: '02', icon: <Search size={24} />, title: 'Clubes buscam talentos', desc: 'Filtros por posição, idade, cidade e habilidades. Olheiros encontram exatamente quem procuram.' },
-            { num: '03', icon: <Handshake size={24} />, title: 'Conexão direta e segura', desc: 'O clube contata os responsáveis. Nenhum dado da criança exposto. Família decide se aceita.' },
+            { num: '02', icon: <Search size={24} />, title: 'Escolinhas buscam talentos', desc: 'Filtros por posição, idade, cidade e habilidades. Olheiros encontram exatamente quem procuram.' },
+            { num: '03', icon: <Handshake size={24} />, title: 'Conexão direta e segura', desc: 'A escolinha contata os responsáveis. Nenhum dado da criança exposto. Família decide se aceita.' },
           ].map((step, i) => (
             <div key={step.num} className="relative">
               {/* Mobile: card estilo */}
@@ -246,7 +246,7 @@ function ForWhoSection() {
           <div className="bg-green-50 border border-green-100 rounded-2xl p-6 sm:p-8">
             <p className="text-[10px] sm:text-xs uppercase tracking-widest text-green-600 font-medium mb-2 sm:mb-3">Para famílias</p>
             <h3 className="font-display text-2xl sm:text-3xl text-neutral-900 mb-2 sm:mb-3">Seu filho merece ser visto</h3>
-            <p className="text-sm text-neutral-500 leading-relaxed mb-5 sm:mb-6">Crie um perfil completo, adicione vídeos de jogos, acompanhe o interesse de clubes e gerencie tudo com total segurança.</p>
+            <p className="text-sm text-neutral-500 leading-relaxed mb-5 sm:mb-6">Crie um perfil completo, adicione vídeos de jogos, acompanhe o interesse de escolinhas e gerencie tudo com total segurança.</p>
             <ul className="flex flex-col gap-2 sm:gap-3 mb-6 sm:mb-8">
               {['Perfil gratuito para sempre', 'Controle total de privacidade', 'Notificações de interesse', 'Histórico de evolução'].map(item => (
                 <li key={item} className="flex items-center gap-2 text-xs sm:text-sm text-neutral-600">
@@ -259,7 +259,7 @@ function ForWhoSection() {
             </Link>
           </div>
           <div className="bg-amber-50 border border-amber-100 rounded-2xl p-6 sm:p-8">
-            <p className="text-[10px] sm:text-xs uppercase tracking-widest text-amber-600 font-medium mb-2 sm:mb-3">Para clubes</p>
+            <p className="text-[10px] sm:text-xs uppercase tracking-widest text-amber-600 font-medium mb-2 sm:mb-3">Para escolinhas</p>
             <h3 className="font-display text-2xl sm:text-3xl text-neutral-900 mb-2 sm:mb-3">Talentos a um clique</h3>
             <p className="text-sm text-neutral-500 leading-relaxed mb-5 sm:mb-6">Acesse milhares de perfis verificados, filtre por qualquer critério e entre em contato diretamente com as famílias.</p>
             <ul className="flex flex-col gap-2 sm:gap-3 mb-6 sm:mb-8">
@@ -269,8 +269,8 @@ function ForWhoSection() {
                 </li>
               ))}
             </ul>
-            <Link href="/#clubes">
-              <Button variant="amber" className="w-full sm:w-auto justify-center">Ver planos para clubes</Button>
+            <Link href="/#escolinhas">
+              <Button variant="amber" className="w-full sm:w-auto justify-center">Ver planos para escolinhas</Button>
             </Link>
           </div>
         </div>
@@ -282,13 +282,13 @@ function ForWhoSection() {
 // -----------------------------------------------
 // Clubs section
 // -----------------------------------------------
-function ClubsSection() {
+function EscolinhasSection() {
   return (
-    <section className="py-14 sm:py-20 bg-green-700" id="clubes">
+    <section className="py-14 sm:py-20 bg-green-700" id="escolinhas">
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12 items-center">
           <div>
-            <p className="text-[10px] sm:text-xs uppercase tracking-widest text-white/40 mb-2 sm:mb-3">Para clubes e escolinhas</p>
+            <p className="text-[10px] sm:text-xs uppercase tracking-widest text-white/40 mb-2 sm:mb-3">Para escolinhas</p>
             <h2 className="font-display text-4xl sm:text-5xl text-white mb-3 sm:mb-4">
               RECRUTE COM <span className="text-amber-400">INTELIGÊNCIA</span>
             </h2>
@@ -309,7 +309,7 @@ function ClubsSection() {
               ))}
             </div>
             <div className="flex flex-col sm:flex-row gap-3">
-              <Link href="/cadastro?tipo=clube" className="w-full sm:w-auto">
+              <Link href="/cadastro?tipo=escolinha" className="w-full sm:w-auto">
                 <Button variant="amber" size="lg" className="w-full sm:w-auto justify-center">Começar gratuitamente</Button>
               </Link>
               <Button variant="outline" size="lg" className="w-full sm:w-auto justify-center text-white border-white/30 hover:bg-white/10">

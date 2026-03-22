@@ -16,7 +16,7 @@ interface PreviewData {
   cidade: string
   posicao: string
   peDominante: string
-  clubeAtual?: string
+  escolinhaAtual?: string
   habilidades: number[]
   fotoUrl?: string
   fotosAdicionais: string[]
@@ -165,10 +165,10 @@ function ProfileContent({ data, viewMode, habilidades, idade }: { data: any, vie
                     {data.peDominante === 'destro' ? 'Destro' : data.peDominante === 'canhoto' ? 'Canhoto' : 'Ambidestro'}
                   </Badge>
                 </div>
-                {data.clubeAtual && (
+                {data.escolinhaAtual && (
                   <div className="flex items-center gap-2 text-sm text-neutral-600 mb-5 bg-neutral-50 p-3 rounded-xl border border-neutral-100 font-bold uppercase tracking-tight">
                     <Landmark size={14} className="text-neutral-400" />
-                    {data.clubeAtual}
+                    {data.escolinhaAtual}
                   </div>
                 )}
                 
