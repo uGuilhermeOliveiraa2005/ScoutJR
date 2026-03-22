@@ -3,8 +3,8 @@
 import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications'
 
 /**
- * Montado uma vez no RootLayout (client boundary).
- * Ativa o canal Supabase Realtime e os toasts de notificação.
+ * Componente client montado uma única vez no RootLayout.
+ * Não renderiza nada — só abre o canal Supabase Realtime.
  */
 export function RealtimeInit({ userId }: { userId: string | null }) {
     useRealtimeNotifications(userId)

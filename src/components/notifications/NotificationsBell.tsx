@@ -29,17 +29,21 @@ export function NotificationsBell({ userId }: { userId: string }) {
       }
     }
     fetch()
-    const channel = supabase
-      .channel('bell-notifications')
-      .on('postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'notificacoes', filter: `user_id=eq.${userId}` },
-        (payload: any) => {
-          setNotifications(prev => [payload.new, ...prev].slice(0, 10))
-          setUnreadCount(prev => prev + 1)
-        }
-      ).subscribe()
-    return () => { supabase.removeChannel(channel) }
-  }, [userId])
+
+    // 2. Escuta eventos do useRealtimeNotifications (para evitar conexão duplicada)
+    const handleNewNotif = (e: any) => {
+      const n = e.detail
+      if (n) {
+        setNotifications(prev => [n, ...prev].slice(0, 10))
+        setUnreadCount(prev => prev + 1)
+      }
+    }
+
+    window.addEventListener('scoutjr:notification', handleNewNotif as any)
+    return () => {
+      window.removeEventListener('scoutjr:notification', handleNewNotif as any)
+    }
+  }, [userId, supabase])
 
   async function markAsRead() {
     if (unreadCount === 0) return

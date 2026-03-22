@@ -13,29 +13,47 @@ export const metadata: Metadata = {
   description: 'Plataforma de talentos do futebol infantil',
 }
 
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  // Pega userId server-side para passar ao RealtimeInit
-  const supabase = await createSupabaseServer()
-  const { data: { user } } = await supabase.auth.getUser()
+export default async function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  // userId server-side — passado para o client RealtimeInit
+  let userId: string | null = null
+  try {
+    const supabase = await createSupabaseServer()
+    const { data: { user } } = await supabase.auth.getUser()
+    userId = user?.id ?? null
+  } catch {
+    // Não logado ou erro de sessão — ok, realtime fica desativado
+  }
 
   return (
     <html lang="pt-BR">
       <body className={inter.className}>
+
+        {/*
+          NotificationToastProvider DEVE envolver tudo para que
+          useNotificationToast() funcione em qualquer componente filho.
+        */}
         <NotificationToastProvider>
-          {/* Ativa realtime + toasts para o usuário logado */}
-          <RealtimeInit userId={user?.id ?? null} />
+
+          {/* Abre o canal Supabase Realtime assim que a página monta */}
+          <RealtimeInit userId={userId} />
 
           {children}
 
-          {/* Toasts genéricos do Sonner (form actions, erros, etc.) */}
+          {/*
+            Toaster do Sonner para toasts de ações (form submit, erros, etc.)
+            Fica separado do sistema de notificações acima.
+          */}
           <Toaster
             position="bottom-right"
             richColors
             closeButton
-            toastOptions={{
-              style: { borderRadius: '12px' },
-            }}
+            toastOptions={{ style: { borderRadius: '12px' } }}
           />
+
         </NotificationToastProvider>
       </body>
     </html>

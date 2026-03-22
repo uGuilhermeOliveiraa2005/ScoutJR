@@ -26,16 +26,20 @@ export function RecentActivity({ userId, limit = 5 }: { userId: string; limit?: 
       setLoading(false)
     }
     fetch()
+    
+    // 2. Escuta eventos do useRealtimeNotifications
+    const handleNewNotif = (e: any) => {
+      const n = e.detail
+      if (n) {
+        setNotifications(prev => [n, ...prev].slice(0, limit))
+      }
+    }
 
-    const channel = supabase
-      .channel('recent-activity')
-      .on('postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'notificacoes', filter: `user_id=eq.${userId}` },
-        (payload: any) => setNotifications(prev => [payload.new, ...prev].slice(0, limit))
-      ).subscribe()
-
-    return () => { supabase.removeChannel(channel) }
-  }, [userId])
+    window.addEventListener('scoutjr:notification', handleNewNotif as any)
+    return () => {
+      window.removeEventListener('scoutjr:notification', handleNewNotif as any)
+    }
+  }, [userId, limit])
 
   if (loading) {
     return (
