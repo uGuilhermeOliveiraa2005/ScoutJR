@@ -52,7 +52,7 @@ export function NotificationToastProvider({ children }: { children: React.ReactN
         // 1. Marca invisible → anima saída
         setToasts(prev => prev.map(t => t.id === id ? { ...t, visible: false } : t))
         // 2. Remove da lista após a animação
-        setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 400)
+        setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 600)
         // 3. Cancela timer
         const t = timers.current.get(id)
         if (t) { clearTimeout(t); timers.current.delete(id) }
@@ -60,8 +60,9 @@ export function NotificationToastProvider({ children }: { children: React.ReactN
 
     const showToast = useCallback((n: NotifToast) => {
         setToasts(prev => {
-            // Evita duplicatas
+            // Evita duplicatas — se já existe um toast COM O MESMO ID, não adiciona
             if (prev.some(t => t.id === n.id)) return prev
+            // Adiciona no topo e limita
             return [{ ...n, visible: true }, ...prev].slice(0, MAX_VISIBLE)
         })
         const t = setTimeout(() => dismiss(n.id), DURATION)
@@ -71,7 +72,7 @@ export function NotificationToastProvider({ children }: { children: React.ReactN
     return (
         <ToastContext.Provider value={{ showToast }}>
             {children}
-            {mounted && createPortal(
+            {mounted && typeof document !== 'undefined' && createPortal(
                 <ToastStack toasts={toasts} onDismiss={dismiss} />,
                 document.body
             )}
@@ -93,12 +94,13 @@ function ToastStack({
     return (
         <div
             className={cn(
-                'fixed z-[9999] flex flex-col gap-2.5 pointer-events-none',
-                // Mobile: topo, margem lateral
-                'top-4 left-3 right-3',
-                // Desktop: canto inferior direito, largura fixa
-                'sm:top-auto sm:left-auto sm:bottom-6 sm:right-5 sm:w-[360px]',
+                'fixed z-[999999] flex flex-col gap-2.5 pointer-events-none',
+                // Mobile: topo, margem lateral, leve recuo para baixo (fugir da navbar)
+                'top-16 left-4 right-4',
+                // Desktop: canto inferior direito
+                'sm:top-auto sm:left-auto sm:bottom-8 sm:right-8 sm:w-[380px]',
             )}
+            style={{ isolation: 'isolate' }}
             aria-live="polite"
         >
             {toasts.map(t => (
@@ -149,6 +151,7 @@ function NotifToastItem({
     toast: NotifToast & { visible: boolean }
     onDismiss: (id: string) => void
 }) {
+    const [isAnimatingIn, setIsAnimatingIn] = useState(false)
     const cfg = TIPO_CFG[toast.tipo] ?? TIPO_CFG['sistema']
 
     const escolinhaId = toast.metadata?.escolinha_id
@@ -160,17 +163,26 @@ function NotifToastItem({
             ? `/perfil/${atletaId}`
             : null
 
+    useEffect(() => {
+        if (toast.visible) {
+            const raf = requestAnimationFrame(() => setIsAnimatingIn(true))
+            return () => cancelAnimationFrame(raf)
+        }
+    }, [toast.visible])
+
     return (
         <div
             style={{
-                transition: 'opacity 0.3s ease, transform 0.3s ease',
-                opacity: toast.visible ? 1 : 0,
-                transform: toast.visible ? 'translateY(0) scale(1)' : 'translateY(8px) scale(0.97)',
+                transition: 'all 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
+                opacity: (toast.visible && isAnimatingIn) ? 1 : 0,
+                transform: (toast.visible && isAnimatingIn) 
+                    ? 'translateY(0) scale(1)' 
+                    : 'translateY(-20px) scale(0.95)',
             }}
             className={cn(
                 'pointer-events-auto relative overflow-hidden',
-                'bg-white border border-neutral-200/80 rounded-2xl',
-                'shadow-[0_8px_30px_rgba(0,0,0,0.12)]',
+                'bg-white/95 backdrop-blur-md border border-neutral-200/80 rounded-2xl',
+                'shadow-[0_20px_40px_rgba(0,0,0,0.1)]',
                 'w-full',
             )}
             role="alert"
