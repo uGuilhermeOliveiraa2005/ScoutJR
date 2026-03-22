@@ -1,18 +1,58 @@
 'use server'
 
-import { createSupabaseServer } from '@/lib/supabase-server'
+import { createSupabaseServer, createSupabaseAdmin } from '@/lib/supabase-server'
 import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
+
+// Dispara notificações para escolinhas que têm alerta para a posição do atleta
+async function notificarEscolinhasPorPosicao(
+  atletaId: string,
+  atletaNome: string,
+  posicao: string,
+  admin: ReturnType<typeof createSupabaseAdmin>
+) {
+  try {
+    // Busca escolinhas com alerta ativo para essa posição
+    const { data: alertas } = await admin
+      .from('escolinha_interesses_posicoes')
+      .select('escolinha_id, escolinhas(user_id)')
+      .eq('posicao', posicao)
+
+    if (!alertas || alertas.length === 0) return
+
+    // Cria uma notificação para cada escolinha
+    const notificacoes = alertas
+      .map((alerta: any) => {
+        const userId = alerta.escolinhas?.user_id
+        if (!userId) return null
+        return {
+          user_id: userId,
+          tipo: 'sistema',
+          titulo: `Novo ${posicao} disponível!`,
+          mensagem: `${atletaNome} acabou de criar um perfil. Clique para ver.`,
+          lida: false,
+          metadata: {
+            atleta_id: atletaId,
+            posicao,
+          },
+        }
+      })
+      .filter(Boolean)
+
+    if (notificacoes.length > 0) {
+      await admin.from('notificacoes').insert(notificacoes)
+    }
+  } catch (err) {
+    // Não bloqueia o fluxo se a notificação falhar
+    console.error('[notificarEscolinas] Erro:', err)
+  }
+}
 
 export async function createAthlete(data: any) {
   const supabase = await createSupabaseServer()
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user) {
-    return { error: 'Não autorizado' }
-  }
+  if (!user) return { error: 'Não autorizado' }
 
-  // Busca o profile do responsável
   const { data: profile } = await supabase
     .from('profiles')
     .select('id, role')
@@ -23,7 +63,9 @@ export async function createAthlete(data: any) {
     return { error: 'Apenas responsáveis podem cadastrar atletas' }
   }
 
-  const { data: athlete, error } = await supabase
+  const admin = createSupabaseAdmin()
+
+  const { data: athlete, error } = await admin
     .from('atletas')
     .insert({
       responsavel_id: profile.id,
@@ -33,7 +75,7 @@ export async function createAthlete(data: any) {
       estado: data.estado,
       cidade: data.cidade,
       pe_dominante: data.peDominante,
-      escolinha_atual: data.escolinhaAtual,
+      escolinha_atual: data.escolinhaAtual || null,
       posicao: data.posicao,
       habilidade_tecnica: data.habilidades[0],
       habilidade_velocidade: data.habilidades[1],
@@ -44,7 +86,7 @@ export async function createAthlete(data: any) {
       visivel: data.visivel,
       exibir_cidade: data.exibirCidade,
       aceitar_mensagens: data.mensagens,
-      foto_url: data.fotoUrl,
+      foto_url: data.fotoUrl || null,
       fotos_adicionais: data.fotosAdicionais || [],
     })
     .select()
@@ -55,32 +97,37 @@ export async function createAthlete(data: any) {
     return { error: 'Erro ao salvar os dados do atleta: ' + error.message }
   }
 
-  // Insert Videos
+  // Vídeos
   if (data.videos && data.videos.length > 0) {
-    const videoInserts = data.videos.map((v: any) => ({
-      atleta_id: athlete.id,
-      titulo: v.titulo || 'Destaque',
-      url: v.url
-    }))
-    await supabase.from('atleta_videos').insert(videoInserts)
+    const videoInserts = data.videos
+      .filter((v: any) => v.url)
+      .map((v: any) => ({ atleta_id: athlete.id, titulo: v.titulo || 'Destaque', url: v.url }))
+    if (videoInserts.length > 0) {
+      await admin.from('atleta_videos').insert(videoInserts)
+    }
   }
 
-  // Insert Conquests
+  // Conquistas
   if (data.conquistas && data.conquistas.length > 0) {
-    const conquestInserts = data.conquistas.map((c: any) => ({
-      atleta_id: athlete.id,
-      titulo: c.titulo,
-      ano: parseInt(c.ano),
-      descricao: c.descricao
-    }))
-    await supabase.from('atleta_conquistas').insert(conquestInserts)
+    const conquistaInserts = data.conquistas
+      .filter((c: any) => c.titulo)
+      .map((c: any) => ({
+        atleta_id: athlete.id,
+        titulo: c.titulo,
+        ano: parseInt(c.ano) || new Date().getFullYear(),
+        descricao: c.descricao || null,
+      }))
+    if (conquistaInserts.length > 0) {
+      await admin.from('atleta_conquistas').insert(conquistaInserts)
+    }
   }
+
+  // Notifica escolinhas com alerta para a posição
+  await notificarEscolinhasPorPosicao(athlete.id, athlete.nome, athlete.posicao, admin)
 
   revalidatePath('/dashboard')
-  revalidatePath('/perfil')
-  revalidatePath('/ranking')
   revalidatePath('/busca')
-  
+
   return { success: true, id: athlete.id }
 }
 
@@ -88,11 +135,8 @@ export async function updateAthlete(id: string, data: any) {
   const supabase = await createSupabaseServer()
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user) {
-    return { error: 'Não autorizado' }
-  }
+  if (!user) return { error: 'Não autorizado' }
 
-  // Busca o profile do responsável
   const { data: profile } = await supabase
     .from('profiles')
     .select('id, role')
@@ -103,7 +147,6 @@ export async function updateAthlete(id: string, data: any) {
     return { error: 'Apenas responsáveis podem editar atletas' }
   }
 
-  // Verifica se o atleta pertence a este responsável
   const { data: existing } = await supabase
     .from('atletas')
     .select('responsavel_id')
@@ -114,7 +157,9 @@ export async function updateAthlete(id: string, data: any) {
     return { error: 'Você não tem permissão para editar este atleta' }
   }
 
-  const { data: updatedAtleta, error } = await supabase
+  const admin = createSupabaseAdmin()
+
+  const { data: updatedAtleta, error } = await admin
     .from('atletas')
     .update({
       nome: data.nomeAtleta,
@@ -123,7 +168,7 @@ export async function updateAthlete(id: string, data: any) {
       estado: data.estado,
       cidade: data.cidade,
       pe_dominante: data.peDominante,
-      escolinha_atual: data.escolinhaAtual,
+      escolinha_atual: data.escolinhaAtual || null,
       posicao: data.posicao,
       habilidade_tecnica: data.habilidades[0],
       habilidade_velocidade: data.habilidades[1],
@@ -134,7 +179,7 @@ export async function updateAthlete(id: string, data: any) {
       visivel: data.visivel,
       exibir_cidade: data.exibirCidade,
       aceitar_mensagens: data.mensagens,
-      foto_url: data.fotoUrl,
+      foto_url: data.fotoUrl || null,
       fotos_adicionais: data.fotosAdicionais || [],
     })
     .eq('id', id)
@@ -142,37 +187,40 @@ export async function updateAthlete(id: string, data: any) {
     .maybeSingle()
 
   if (error || !updatedAtleta) {
-    console.error('Erro ao atualizar atleta:', error?.message || 'Nenhuma linha afetada')
+    console.error('Erro ao atualizar atleta:', error?.message)
     return { error: 'Atleta não encontrado ou permissão negada.' }
   }
 
-  // Update Videos: Delete and recreate
-  await supabase.from('atleta_videos').delete().eq('atleta_id', id)
+  // Vídeos: deleta e recria
+  await admin.from('atleta_videos').delete().eq('atleta_id', id)
   if (data.videos && data.videos.length > 0) {
-    const videoInserts = data.videos.map((v: any) => ({
-      atleta_id: id,
-      titulo: v.titulo || 'Destaque',
-      url: v.url
-    }))
-    await supabase.from('atleta_videos').insert(videoInserts)
+    const videoInserts = data.videos
+      .filter((v: any) => v.url)
+      .map((v: any) => ({ atleta_id: id, titulo: v.titulo || 'Destaque', url: v.url }))
+    if (videoInserts.length > 0) {
+      await admin.from('atleta_videos').insert(videoInserts)
+    }
   }
 
-  // Update Conquests: Delete and recreate
-  await supabase.from('atleta_conquistas').delete().eq('atleta_id', id)
+  // Conquistas: deleta e recria
+  await admin.from('atleta_conquistas').delete().eq('atleta_id', id)
   if (data.conquistas && data.conquistas.length > 0) {
-    const conquestInserts = data.conquistas.map((c: any) => ({
-      atleta_id: id,
-      titulo: c.titulo,
-      ano: parseInt(c.ano),
-      descricao: c.descricao
-    }))
-    await supabase.from('atleta_conquistas').insert(conquestInserts)
+    const conquistaInserts = data.conquistas
+      .filter((c: any) => c.titulo)
+      .map((c: any) => ({
+        atleta_id: id,
+        titulo: c.titulo,
+        ano: parseInt(c.ano) || new Date().getFullYear(),
+        descricao: c.descricao || null,
+      }))
+    if (conquistaInserts.length > 0) {
+      await admin.from('atleta_conquistas').insert(conquistaInserts)
+    }
   }
 
   revalidatePath('/dashboard')
   revalidatePath(`/perfil/${id}`)
-  revalidatePath('/ranking')
   revalidatePath('/busca')
-  
+
   return { success: true }
 }

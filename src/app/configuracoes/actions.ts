@@ -2,15 +2,12 @@
 
 import { createSupabaseServer, createSupabaseAdmin } from '@/lib/supabase-server'
 import { revalidatePath } from 'next/cache'
-import { mpPreApproval } from '@/lib/mercadopago'
 
+// ── Perfil básico (responsável ou escolinha) ─────────────────
 export async function updateProfile(formData: FormData) {
   const supabase = await createSupabaseServer()
   const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) {
-    return { error: 'Usuário não autenticado.' }
-  }
+  if (!user) return { error: 'Usuário não autenticado.' }
 
   const nome = formData.get('nome') as string
   const telefone = formData.get('telefone') as string
@@ -20,154 +17,205 @@ export async function updateProfile(formData: FormData) {
 
   let final_foto_url = current_foto_url
 
-  if (foto_file && foto_file.size && foto_file.size > 0) {
+  if (foto_file && foto_file.size > 0) {
     const admin = createSupabaseAdmin()
     const fileExt = foto_file.name.split('.').pop()
     const fileName = `configuracoes/${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`
-
-    const { data: uploadData, error: uploadError } = await admin.storage.from('media').upload(fileName, foto_file)
+    const { error: uploadError } = await admin.storage.from('media').upload(fileName, foto_file)
     if (!uploadError) {
       const { data: { publicUrl } } = admin.storage.from('media').getPublicUrl(fileName)
       final_foto_url = publicUrl
     } else {
-      console.error('Erro no upload:', uploadError)
-      return { error: 'Ocorreu um erro ao enviar a imagem para o servidor.' }
+      return { error: 'Erro ao enviar a imagem. Tente novamente.' }
     }
   }
 
-  // Atualiza profiles
-  const { data: updatedProfile, error } = await supabase
+  const { error } = await createSupabaseAdmin()
     .from('profiles')
-    .update({
-      nome,
-      telefone,
-      foto_url: final_foto_url,
-      avatar_url: final_foto_url
-    })
+    .update({ nome, telefone, foto_url: final_foto_url, avatar_url: final_foto_url })
     .eq('user_id', user.id)
-    .select('id')
-    .maybeSingle()
 
-  if (error || !updatedProfile) {
-    console.error('Erro ao atualizar perfil:', error?.message || 'Nenhuma linha afetada')
-    return { error: 'Perfil não encontrado ou erro de permissão. Tente novamente.' }
-  }
+  if (error) return { error: 'Erro ao atualizar perfil: ' + error.message }
 
-  // Verifica se é escolinha
-  const { data: profileCheck } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('user_id', user.id)
-    .single()
+  // Atualiza escolinha se for do tipo escolinha
+  const { data: profileCheck } = await (await createSupabaseServer())
+    .from('profiles').select('role').eq('user_id', user.id).single()
 
   if (profileCheck?.role === 'escolinha') {
-    // Busca dados existentes da escolinha para preservar campos obrigatórios
-    const { data: escolinhaExistente } = await supabase
-      .from('escolinhas')
-      .select('estado, cidade, cnpj')
-      .eq('user_id', user.id)
-      .maybeSingle()
+    const admin = createSupabaseAdmin()
+    const { data: existing } = await admin
+      .from('escolinhas').select('estado, cidade, cnpj').eq('user_id', user.id).maybeSingle()
 
-    // Garante que estado e cidade nunca sejam nulos no upsert
-    const estado = escolinhaExistente?.estado ?? ''
-    const cidade = escolinhaExistente?.cidade ?? ''
-    const cnpj = escolinhaExistente?.cnpj ?? null
-
-    const { data: updatedEsc, error: escError } = await supabase
-      .from('escolinhas')
-      .upsert({
-        user_id: user.id,
-        nome,
-        foto_url: final_foto_url,
-        logo_url: final_foto_url,
-        descricao,
-        estado,
-        cidade,
-        cnpj,
-      }, { onConflict: 'user_id' })
-      .select('id')
-      .maybeSingle()
-
-    if (escError || !updatedEsc) {
-      console.error('Erro ao atualizar/criar escolinha:', escError?.message || 'Nenhuma linha afetada')
-      return { error: 'Não foi possível salvar os dados da escolinha. Verifique suas permissões.' }
-    }
+    await admin.from('escolinhas').upsert({
+      user_id: user.id,
+      nome,
+      foto_url: final_foto_url,
+      logo_url: final_foto_url,
+      descricao,
+      estado: existing?.estado ?? '',
+      cidade: existing?.cidade ?? '',
+      cnpj: existing?.cnpj ?? null,
+    }, { onConflict: 'user_id' })
   }
 
   revalidatePath('/configuracoes')
   revalidatePath('/dashboard')
-
   return { success: true }
 }
 
-export async function cancelSubscription(formData?: FormData): Promise<void> {
+// ── Localização da escolinha ─────────────────────────────────
+export async function updateEscolinhaLocalizacao(formData: FormData) {
   const supabase = await createSupabaseServer()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Não autorizado')
+  if (!user) return { error: 'Não autenticado.' }
 
-  const { data: escolinha } = await supabase
-    .from('escolinhas')
-    .select('mp_payment_id')
-    .eq('user_id', user.id)
-    .single()
-
-  if (escolinha?.mp_payment_id) {
-    try {
-      await (mpPreApproval as any).update({
-        id: escolinha.mp_payment_id,
-        body: { status: 'cancelled' }
-      })
-    } catch (err) {
-      console.error('Erro ao cancelar no MP:', err)
-    }
-  }
-
-  await supabase.from('escolinhas').update({ status_assinatura: 'canceled' }).eq('user_id', user.id)
-  revalidatePath('/configuracoes')
-}
-
-export async function deleteAccount() {
-  const supabase = await createSupabaseServer()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: 'Não autorizado' }
-
-  const { data: escolinha } = await supabase
-    .from('escolinhas')
-    .select('mp_payment_id, status_assinatura')
-    .eq('user_id', user.id)
-    .single()
-
-  if (escolinha?.status_assinatura === 'active' && escolinha.mp_payment_id) {
-    try {
-      await (mpPreApproval as any).update({
-        id: escolinha.mp_payment_id,
-        body: { status: 'cancelled' }
-      })
-    } catch (err) {
-      console.error('Erro ao cancelar assinatura antes da exclusão', err)
-    }
-  }
+  const estado = formData.get('estado') as string
+  const cidade = formData.get('cidade') as string
+  const cnpj = formData.get('cnpj') as string
 
   const admin = createSupabaseAdmin()
-  const { error } = await admin.auth.admin.deleteUser(user.id)
+  const { error } = await admin
+    .from('escolinhas')
+    .update({ estado, cidade, cnpj: cnpj || null })
+    .eq('user_id', user.id)
 
-  if (error) {
-    console.error('Erro ao deletar usuário:', error)
-    return { error: 'Falha ao excluir conta no Supabase.' }
-  }
+  if (error) return { error: 'Erro ao atualizar localização: ' + error.message }
 
+  revalidatePath('/configuracoes')
   return { success: true }
 }
 
+// ── Fotos adicionais da escolinha ────────────────────────────
+export async function updateEscolinhaFotos(formData: FormData) {
+  const supabase = await createSupabaseServer()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Não autenticado.' }
+
+  const fotosJson = formData.get('fotos_adicionais') as string
+  let fotos: string[] = []
+  try { fotos = JSON.parse(fotosJson) } catch { fotos = [] }
+
+  // Upload de novos arquivos
+  const admin = createSupabaseAdmin()
+  const uploadedUrls: string[] = []
+
+  for (let i = 0; i < 3; i++) {
+    const file = formData.get(`foto_nova_${i}`) as File | null
+    if (file && file.size > 0) {
+      const ext = file.name.split('.').pop()
+      const fileName = `escolinha_galeria/${Math.random().toString(36).substring(2)}_${Date.now()}.${ext}`
+      const { error: upErr } = await admin.storage.from('media').upload(fileName, file)
+      if (!upErr) {
+        const { data: { publicUrl } } = admin.storage.from('media').getPublicUrl(fileName)
+        uploadedUrls.push(publicUrl)
+      }
+    }
+  }
+
+  const allFotos = [...fotos.filter(Boolean), ...uploadedUrls].slice(0, 3)
+
+  const { error } = await admin
+    .from('escolinhas')
+    .update({ fotos_adicionais: allFotos })
+    .eq('user_id', user.id)
+
+  if (error) return { error: 'Erro ao atualizar fotos: ' + error.message }
+
+  revalidatePath('/configuracoes')
+  return { success: true }
+}
+
+// ── Dados do atleta ──────────────────────────────────────────
+export async function updateAtleta(formData: FormData) {
+  const supabase = await createSupabaseServer()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Não autenticado.' }
+
+  const { data: profile } = await supabase
+    .from('profiles').select('id').eq('user_id', user.id).single()
+  if (!profile) return { error: 'Perfil não encontrado.' }
+
+  const atletaId = formData.get('atleta_id') as string
+  if (!atletaId) return { error: 'Atleta não encontrado.' }
+
+  const admin = createSupabaseAdmin()
+
+  // Upload foto se houver
+  const foto_file = formData.get('foto_url') as File | null
+  const current_foto_url = formData.get('current_foto_url') as string
+  let final_foto_url = current_foto_url
+
+  if (foto_file && foto_file.size > 0) {
+    const ext = foto_file.name.split('.').pop()
+    const fileName = `atleta/${Math.random().toString(36).substring(2)}_${Date.now()}.${ext}`
+    const { error: upErr } = await admin.storage.from('media').upload(fileName, foto_file)
+    if (!upErr) {
+      const { data: { publicUrl } } = admin.storage.from('media').getPublicUrl(fileName)
+      final_foto_url = publicUrl
+    }
+  }
+
+  const habilidades = [
+    parseInt(formData.get('hab_tecnica') as string) || 50,
+    parseInt(formData.get('hab_velocidade') as string) || 50,
+    parseInt(formData.get('hab_visao') as string) || 50,
+    parseInt(formData.get('hab_fisico') as string) || 50,
+    parseInt(formData.get('hab_finalizacao') as string) || 50,
+    parseInt(formData.get('hab_passes') as string) || 50,
+  ]
+
+  const { error } = await admin
+    .from('atletas')
+    .update({
+      nome: formData.get('nome') as string,
+      descricao: formData.get('descricao') as string,
+      data_nascimento: formData.get('data_nascimento') as string,
+      estado: formData.get('estado') as string,
+      cidade: formData.get('cidade') as string,
+      posicao: formData.get('posicao') as string,
+      pe_dominante: formData.get('pe_dominante') as string,
+      escolinha_atual: (formData.get('escolinha_atual') as string) || null,
+      habilidade_tecnica: habilidades[0],
+      habilidade_velocidade: habilidades[1],
+      habilidade_visao: habilidades[2],
+      habilidade_fisico: habilidades[3],
+      habilidade_finalizacao: habilidades[4],
+      habilidade_passes: habilidades[5],
+      foto_url: final_foto_url || null,
+      visivel: formData.get('visivel') === 'true',
+      exibir_cidade: formData.get('exibir_cidade') === 'true',
+      aceitar_mensagens: formData.get('aceitar_mensagens') === 'true',
+    })
+    .eq('id', atletaId)
+    .eq('responsavel_id', profile.id)
+
+  if (error) return { error: 'Erro ao atualizar atleta: ' + error.message }
+
+  revalidatePath('/configuracoes')
+  revalidatePath(`/perfil/${atletaId}`)
+  revalidatePath('/dashboard')
+  return { success: true }
+}
+
+// ── Senha ────────────────────────────────────────────────────
 export async function updatePassword(formData: FormData) {
   const supabase = await createSupabaseServer()
   const password = formData.get('password') as string
   const confirm = formData.get('confirm') as string
-
   if (!password || password.length < 8) return { error: 'A senha deve ter pelo menos 8 caracteres.' }
   if (password !== confirm) return { error: 'As senhas não coincidem.' }
-
   const { error } = await supabase.auth.updateUser({ password })
   if (error) return { error: error.message }
+  return { success: true }
+}
+
+// ── Excluir conta ────────────────────────────────────────────
+export async function deleteAccount() {
+  const supabase = await createSupabaseServer()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Não autorizado' }
+  const admin = createSupabaseAdmin()
+  const { error } = await admin.auth.admin.deleteUser(user.id)
+  if (error) return { error: 'Falha ao excluir conta.' }
   return { success: true }
 }

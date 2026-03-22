@@ -1,6 +1,7 @@
 'use client'
 import { cn } from '@/lib/utils'
-import { forwardRef, type InputHTMLAttributes, type SelectHTMLAttributes, type TextareaHTMLAttributes, type LabelHTMLAttributes } from 'react'
+import { forwardRef, useState, type InputHTMLAttributes, type SelectHTMLAttributes, type TextareaHTMLAttributes, type LabelHTMLAttributes } from 'react'
+import { Eye, EyeOff } from 'lucide-react'
 
 // -----------------------------------------------
 // Input
@@ -11,29 +12,52 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 }
 
 const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ className, error, leftIcon, ...props }, ref) => (
-    <div className="relative w-full">
-      {leftIcon && (
-        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none">
-          {leftIcon}
-        </div>
-      )}
-      <input
-        ref={ref}
-        className={cn(
-          'w-full px-3 py-2.5 text-sm border rounded-lg bg-white text-neutral-900 outline-none transition-colors placeholder:text-neutral-400',
-          'focus:border-green-400 focus:ring-2 focus:ring-green-100',
-          error ? 'border-red-400 ring-2 ring-red-100' : 'border-neutral-200',
-          leftIcon && 'pl-9',
-          className
+  ({ className, error, leftIcon, type, ...props }, ref) => {
+    const [showPassword, setShowPassword] = useState(false)
+    const isPassword = type === 'password'
+    const resolvedType = isPassword ? (showPassword ? 'text' : 'password') : type
+
+    return (
+      <div className="relative w-full">
+        {leftIcon && (
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none z-10">
+            {leftIcon}
+          </div>
         )}
-        {...props}
-      />
-      {error && (
-        <p className="mt-1 text-xs text-red-500">{error}</p>
-      )}
-    </div>
-  )
+        <input
+          ref={ref}
+          type={resolvedType}
+          className={cn(
+            'w-full px-3 py-2.5 text-sm border rounded-lg bg-white text-neutral-900 outline-none transition-colors placeholder:text-neutral-400',
+            'focus:border-green-400 focus:ring-2 focus:ring-green-100',
+            error ? 'border-red-400 ring-2 ring-red-100' : 'border-neutral-200',
+            leftIcon && 'pl-9',
+            isPassword && 'pr-10',
+            className
+          )}
+          {...props}
+        />
+        {isPassword && (
+          <button
+            type="button"
+            onMouseDown={e => {
+              // Impede que o input perca foco ao clicar no botão
+              e.preventDefault()
+            }}
+            onClick={() => setShowPassword(v => !v)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 transition-colors z-10"
+            tabIndex={-1}
+            aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+          >
+            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+          </button>
+        )}
+        {error && (
+          <p className="mt-1 text-xs text-red-500">{error}</p>
+        )}
+      </div>
+    )
+  }
 )
 Input.displayName = 'Input'
 

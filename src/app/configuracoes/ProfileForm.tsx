@@ -1,181 +1,347 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { User, Camera, Loader2 } from 'lucide-react'
-import { formatPhone } from '@/lib/utils'
-import { updateProfile } from './actions'
+import { Camera, Loader2, User, ImageIcon, Trash2 } from 'lucide-react'
+import { formatPhone, formatCNPJ, ESTADOS } from '@/lib/utils'
+import { updateProfile, updateEscolinhaLocalizacao, updateEscolinhaFotos } from './actions'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 
 export function ProfileForm({ profile, escolinha, isEscolinha }: any) {
   const router = useRouter()
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [preview, setPreview] = useState('')
   const [loading, setLoading] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [loadingLoc, setLoadingLoc] = useState(false)
+  const [loadingFotos, setLoadingFotos] = useState(false)
 
-  // Campos controlados para garantir que reflitam os dados atuais
+  // Campos controlados
   const [nome, setNome] = useState(profile?.nome ?? '')
   const [telefone, setTelefone] = useState(formatPhone(profile?.telefone ?? ''))
   const [descricao, setDescricao] = useState(escolinha?.descricao ?? '')
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
 
-  // Atualiza state se as props mudarem (após revalidação do servidor)
+  // Localização escolinha
+  const [estado, setEstado] = useState(escolinha?.estado ?? '')
+  const [cidade, setCidade] = useState(escolinha?.cidade ?? '')
+  const [cnpj, setCnpj] = useState(escolinha?.cnpj ?? '')
+
+  // Fotos adicionais
+  const [fotosExistentes, setFotosExistentes] = useState<string[]>(
+    Array.isArray(escolinha?.fotos_adicionais) ? escolinha.fotos_adicionais.filter(Boolean) : []
+  )
+  const [novasFotos, setNovasFotos] = useState<{ file: File; preview: string }[]>([])
+
   useEffect(() => {
     setNome(profile?.nome ?? '')
     setTelefone(formatPhone(profile?.telefone ?? ''))
     setDescricao(escolinha?.descricao ?? '')
+    setEstado(escolinha?.estado ?? '')
+    setCidade(escolinha?.cidade ?? '')
+    setCnpj(escolinha?.cnpj ?? '')
+    setFotosExistentes(Array.isArray(escolinha?.fotos_adicionais) ? escolinha.fotos_adicionais.filter(Boolean) : [])
     setPreview('')
     setSelectedFile(null)
-  }, [profile?.nome, profile?.telefone, profile?.foto_url, escolinha?.descricao])
+  }, [profile?.nome, profile?.telefone, escolinha?.descricao, escolinha?.estado, escolinha?.cidade])
 
-  const currentFoto = isEscolinha ? escolinha?.foto_url : profile?.foto_url
-  const validCurrentFoto = currentFoto && currentFoto !== 'null' && currentFoto !== 'undefined'
-    ? currentFoto
-    : ''
-
-  const displayFoto = preview || validCurrentFoto
+  const currentFoto = isEscolinha ? (escolinha?.foto_url ?? profile?.foto_url) : profile?.foto_url
+  const validFoto = currentFoto && currentFoto !== 'null' ? currentFoto : ''
+  const displayFoto = preview || validFoto
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
       setSelectedFile(file)
       const reader = new FileReader()
-      reader.onload = (event) => setPreview(event.target?.result as string)
+      reader.onload = ev => setPreview(ev.target?.result as string)
       reader.readAsDataURL(file)
-    } else {
-      setSelectedFile(null)
-      setPreview('')
     }
   }
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  // Submit dados básicos
+  const handleSubmitBasico = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-
     const fd = new FormData()
     fd.append('nome', nome)
     fd.append('telefone', telefone)
     fd.append('descricao', descricao)
-    fd.append('current_foto_url', validCurrentFoto)
-
-    if (selectedFile) {
-      fd.append('foto_url', selectedFile)
-    }
-
+    fd.append('current_foto_url', validFoto)
+    if (selectedFile) fd.append('foto_url', selectedFile)
     const res = await updateProfile(fd)
     setLoading(false)
-
-    if (res?.error) {
-      toast.error(res.error)
-    } else {
-      toast.success('Perfil atualizado com sucesso!')
-      setSelectedFile(null)
-      if (fileInputRef.current) fileInputRef.current.value = ''
-      // Força re-fetch dos dados do servidor
-      router.refresh()
-    }
+    if (res?.error) { toast.error(res.error) }
+    else { toast.success('Dados atualizados!'); setSelectedFile(null); router.refresh() }
   }
 
+  // Submit localização escolinha
+  const handleSubmitLocalizacao = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoadingLoc(true)
+    const fd = new FormData()
+    fd.append('estado', estado)
+    fd.append('cidade', cidade)
+    fd.append('cnpj', cnpj)
+    const res = await updateEscolinhaLocalizacao(fd)
+    setLoadingLoc(false)
+    if (res?.error) toast.error(res.error)
+    else { toast.success('Localização atualizada!'); router.refresh() }
+  }
+
+  // Adicionar nova foto
+  const handleNovaFoto = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? [])
+    const totalAtual = fotosExistentes.length + novasFotos.length
+    const disponiveis = 3 - totalAtual
+    if (disponiveis <= 0) { toast.error('Máximo de 3 fotos atingido.'); return }
+    const selecionadas = files.slice(0, disponiveis)
+    selecionadas.forEach(file => {
+      const reader = new FileReader()
+      reader.onload = ev => {
+        setNovasFotos(prev => [...prev, { file, preview: ev.target?.result as string }])
+      }
+      reader.readAsDataURL(file)
+    })
+    e.target.value = ''
+  }
+
+  // Remover foto existente
+  const removerFotoExistente = (index: number) => {
+    setFotosExistentes(prev => prev.filter((_, i) => i !== index))
+  }
+
+  // Remover nova foto (antes de salvar)
+  const removerNovaFoto = (index: number) => {
+    setNovasFotos(prev => prev.filter((_, i) => i !== index))
+  }
+
+  // Submit fotos
+  const handleSubmitFotos = async () => {
+    setLoadingFotos(true)
+    const fd = new FormData()
+    fd.append('fotos_adicionais', JSON.stringify(fotosExistentes))
+    novasFotos.forEach((f, i) => fd.append(`foto_nova_${i}`, f.file))
+    const res = await updateEscolinhaFotos(fd)
+    setLoadingFotos(false)
+    if (res?.error) toast.error(res.error)
+    else { toast.success('Fotos atualizadas!'); setNovasFotos([]); router.refresh() }
+  }
+
+  const totalFotos = fotosExistentes.length + novasFotos.length
+
   return (
-    <form onSubmit={handleSubmit}>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+    <div className="flex flex-col gap-6">
+
+      {/* ── Dados básicos ── */}
+      <form onSubmit={handleSubmitBasico} className="flex flex-col gap-4">
+        <h3 className="text-xs font-bold uppercase tracking-widest text-neutral-400">
+          Dados principais
+        </h3>
 
         {/* Foto */}
-        <div className="sm:col-span-2">
-          <label className="block text-[10px] sm:text-xs font-medium text-neutral-400 uppercase tracking-wide mb-3">
-            Foto / Logo (Clique para alterar)
-          </label>
-          <div className="flex justify-start">
-            <div
-              className="group cursor-pointer"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <div className="relative w-20 h-20 rounded-full bg-neutral-100 border-2 border-dashed border-neutral-300 overflow-hidden flex-shrink-0 flex items-center justify-center transition-colors group-hover:border-green-400 text-neutral-400">
-                {displayFoto
-                  ? <img src={displayFoto} className="w-full h-full object-cover" alt="Avatar" />
-                  : <User size={28} className="text-neutral-400" />
-                }
-                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Camera size={20} className="text-white" />
-                </div>
-              </div>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleFileChange}
-              />
+        <div className="flex items-center gap-4">
+          <div
+            className="relative w-16 h-16 rounded-full bg-neutral-100 border-2 border-dashed border-neutral-300 overflow-hidden cursor-pointer group flex-shrink-0"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            {displayFoto
+              ? <img src={displayFoto} className="w-full h-full object-cover" alt="Foto" />
+              : <User size={24} className="absolute inset-0 m-auto text-neutral-400" />}
+            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              <Camera size={16} className="text-white" />
             </div>
           </div>
-          {selectedFile && (
-            <p className="text-[10px] text-green-600 mt-2 font-medium">
-              📎 {selectedFile.name} selecionada — salve para confirmar
-            </p>
+          <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+          <div className="flex-1">
+            <div className="text-xs font-medium text-neutral-700 mb-0.5">
+              {isEscolinha ? 'Logo da escolinha' : 'Foto de perfil'}
+            </div>
+            <div className="text-[10px] text-neutral-400">
+              {selectedFile ? `📎 ${selectedFile.name}` : 'Clique para alterar'}
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Field label="Nome">
+            <input
+              value={nome}
+              onChange={e => setNome(e.target.value)}
+              className={inputClass}
+            />
+          </Field>
+          <Field label="E-mail">
+            <input
+              defaultValue={profile?.email ?? ''}
+              disabled
+              className={`${inputClass} bg-neutral-50 text-neutral-400 cursor-not-allowed`}
+            />
+          </Field>
+          <Field label="Telefone / WhatsApp" className="sm:col-span-2">
+            <input
+              value={telefone}
+              onChange={e => setTelefone(formatPhone(e.target.value))}
+              className={inputClass}
+              placeholder="(51) 9 9999-9999"
+            />
+          </Field>
+
+          {/* Descrição só para escolinha */}
+          {isEscolinha && (
+            <Field label="Descrição / Bio" className="sm:col-span-2">
+              <textarea
+                value={descricao}
+                onChange={e => setDescricao(e.target.value)}
+                rows={3}
+                className={`${inputClass} resize-none`}
+                placeholder="Conte sobre a escolinha, estrutura, campeonatos..."
+              />
+            </Field>
           )}
         </div>
 
-        {/* Nome */}
-        <div>
-          <label className="block text-[10px] sm:text-xs font-medium text-neutral-400 uppercase tracking-wide mb-1 sm:mb-1.5">
-            Nome
-          </label>
-          <input
-            value={nome}
-            onChange={e => setNome(e.target.value)}
-            className="w-full px-3 py-2 sm:py-2.5 text-sm border border-neutral-200 rounded-lg bg-white outline-none focus:border-green-400"
-          />
+        <div className="flex justify-end">
+          <SubmitButton loading={loading} label="Salvar dados" />
         </div>
+      </form>
 
-        {/* E-mail (readonly) */}
-        <div>
-          <label className="block text-[10px] sm:text-xs font-medium text-neutral-400 uppercase tracking-wide mb-1 sm:mb-1.5">
-            E-mail
-          </label>
-          <input
-            defaultValue={profile?.email ?? ''}
-            disabled
-            className="w-full px-3 py-2 sm:py-2.5 text-sm border border-neutral-200 rounded-lg bg-neutral-50 text-neutral-400 cursor-not-allowed"
-          />
-        </div>
+      {/* ── Localização (escolinha) ── */}
+      {isEscolinha && (
+        <>
+          <Divider />
+          <form onSubmit={handleSubmitLocalizacao} className="flex flex-col gap-4">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-neutral-400">
+              Localização
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <Field label="CNPJ">
+                <input
+                  value={cnpj}
+                  onChange={e => setCnpj(formatCNPJ(e.target.value))}
+                  className={inputClass}
+                  placeholder="00.000.000/0000-00"
+                />
+              </Field>
+              <Field label="Estado">
+                <select
+                  value={estado}
+                  onChange={e => setEstado(e.target.value)}
+                  className={`${inputClass} appearance-none`}
+                >
+                  <option value="">Selecione</option>
+                  {ESTADOS.map(e => <option key={e.value} value={e.value}>{e.label}</option>)}
+                </select>
+              </Field>
+              <Field label="Cidade">
+                <input
+                  value={cidade}
+                  onChange={e => setCidade(e.target.value)}
+                  className={inputClass}
+                  placeholder="Porto Alegre"
+                />
+              </Field>
+            </div>
+            <div className="flex justify-end">
+              <SubmitButton loading={loadingLoc} label="Salvar localização" />
+            </div>
+          </form>
+        </>
+      )}
 
-        {/* Telefone */}
-        <div className="sm:col-span-2">
-          <label className="block text-[10px] sm:text-xs font-medium text-neutral-400 uppercase tracking-wide mb-1 sm:mb-1.5">
-            Telefone
-          </label>
-          <input
-            value={telefone}
-            onChange={e => setTelefone(formatPhone(e.target.value))}
-            className="w-full px-3 py-2 sm:py-2.5 text-sm border border-neutral-200 rounded-lg bg-white outline-none focus:border-green-400"
-          />
-        </div>
+      {/* ── Fotos adicionais (escolinha) ── */}
+      {isEscolinha && (
+        <>
+          <Divider />
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-neutral-400">
+                Fotos da estrutura <span className="text-neutral-300 font-normal">({totalFotos}/3)</span>
+              </h3>
+            </div>
 
-        {/* Descrição (escolinha) */}
-        {isEscolinha && (
-          <div className="sm:col-span-2">
-            <label className="block text-[10px] sm:text-xs font-medium text-neutral-400 uppercase tracking-wide mb-1 sm:mb-1.5">
-              Descrição / Bio da Escolinha
-            </label>
-            <textarea
-              value={descricao}
-              onChange={e => setDescricao(e.target.value)}
-              rows={3}
-              className="w-full px-3 py-2 sm:py-2.5 text-sm border border-neutral-200 rounded-lg bg-white outline-none focus:border-green-400 resize-none"
-              placeholder="Conte um pouco sobre a escolinha, estrutura, campeonatos..."
-            />
+            <div className="grid grid-cols-3 gap-3">
+              {/* Fotos já salvas */}
+              {fotosExistentes.map((url, i) => (
+                <div key={`existente-${i}`} className="relative group aspect-square">
+                  <img src={url} className="w-full h-full object-cover rounded-xl border border-neutral-200" alt={`Foto ${i + 1}`} />
+                  <button
+                    type="button"
+                    onClick={() => removerFotoExistente(i)}
+                    className="absolute top-1.5 right-1.5 p-1.5 bg-red-500 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                </div>
+              ))}
+
+              {/* Novas fotos (preview local) */}
+              {novasFotos.map((f, i) => (
+                <div key={`nova-${i}`} className="relative group aspect-square">
+                  <img src={f.preview} className="w-full h-full object-cover rounded-xl border-2 border-dashed border-green-300" alt={`Nova ${i + 1}`} />
+                  <div className="absolute top-1.5 left-1.5 bg-green-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md">
+                    Nova
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removerNovaFoto(i)}
+                    className="absolute top-1.5 right-1.5 p-1.5 bg-red-500 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                </div>
+              ))}
+
+              {/* Slot para adicionar */}
+              {totalFotos < 3 && (
+                <label className="aspect-square border-2 border-dashed border-neutral-200 rounded-xl flex flex-col items-center justify-center gap-1.5 text-neutral-400 hover:border-green-400 hover:text-green-500 hover:bg-green-50/30 transition-all cursor-pointer">
+                  <ImageIcon size={20} />
+                  <span className="text-[10px] font-bold uppercase tracking-widest">Adicionar</span>
+                  <input type="file" accept="image/*" multiple className="hidden" onChange={handleNovaFoto} />
+                </label>
+              )}
+            </div>
+
+            {(novasFotos.length > 0 || fotosExistentes.length !== (Array.isArray(escolinha?.fotos_adicionais) ? escolinha.fotos_adicionais.filter(Boolean).length : 0)) && (
+              <div className="flex justify-end">
+                <SubmitButton loading={loadingFotos} label="Salvar fotos" onClick={handleSubmitFotos} />
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        </>
+      )}
+    </div>
+  )
+}
 
-      <button
-        type="submit"
-        disabled={loading}
-        className="mt-4 w-full sm:w-auto px-5 py-2.5 text-sm bg-green-700 text-white rounded-lg hover:bg-green-800 transition-colors font-medium disabled:opacity-50 flex items-center gap-2"
-      >
-        {loading && <Loader2 size={14} className="animate-spin" />}
-        {loading ? 'Salvando...' : 'Salvar alterações'}
-      </button>
-    </form>
+// ── Helpers ──────────────────────────────────────────────────
+
+const inputClass = 'w-full px-3 py-2.5 text-sm border border-neutral-200 rounded-lg bg-white outline-none focus:border-green-400 focus:ring-2 focus:ring-green-100 transition-colors'
+
+function Field({ label, children, className = '' }: { label: string; children: React.ReactNode; className?: string }) {
+  return (
+    <div className={className}>
+      <label className="block text-[10px] font-bold text-neutral-400 uppercase tracking-wide mb-1.5">
+        {label}
+      </label>
+      {children}
+    </div>
+  )
+}
+
+function Divider() {
+  return <hr className="border-neutral-100" />
+}
+
+function SubmitButton({ loading, label, onClick }: { loading: boolean; label: string; onClick?: () => void }) {
+  return (
+    <button
+      type={onClick ? 'button' : 'submit'}
+      onClick={onClick}
+      disabled={loading}
+      className="px-5 py-2.5 text-sm bg-green-700 text-white rounded-lg hover:bg-green-800 transition-colors font-medium disabled:opacity-50 flex items-center gap-2"
+    >
+      {loading && <Loader2 size={14} className="animate-spin" />}
+      {loading ? 'Salvando...' : label}
+    </button>
   )
 }
