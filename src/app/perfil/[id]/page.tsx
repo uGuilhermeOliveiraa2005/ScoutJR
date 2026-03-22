@@ -81,101 +81,18 @@ export default async function PerfilAtletaPage({ params }: { params: Promise<{ i
   return (
     <>
       {Navbar}
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-5 sm:py-8 pb-24 md:pb-8">
-
-        <Link href="/busca" className="inline-flex items-center gap-1.5 text-xs sm:text-sm text-neutral-400 hover:text-neutral-700 mb-4 sm:mb-6 transition-colors">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-5 sm:py-8 pb-32 lg:pb-8">
+        
+        <Link href="/busca" className="inline-flex items-center gap-1.5 text-xs sm:text-sm text-neutral-400 hover:text-neutral-700 mb-6 transition-colors">
           <ArrowLeft size={13} /> Voltar para busca
         </Link>
 
-        {/* Mobile: Profile card no topo */}
-        <div className="lg:hidden mb-4">
-          <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden shadow-sm">
-            <div className="bg-green-100 px-4 pt-5 pb-3 flex items-end gap-3 relative min-h-[100px]">
-              <Avatar
-                src={atleta.foto_url}
-                nome={atleta.nome}
-                size="xl"
-                colorClass="bg-green-400 text-white"
-                className="z-10 border-2 border-white shadow-sm"
-              />
-              <div className="font-display text-7xl text-green-400/20 absolute right-4 bottom-0 leading-none select-none">
-                {atleta.posicao}
-              </div>
-              <div className="flex-1 z-10">
-                <h1 className="font-display text-xl text-neutral-900 leading-tight">{atleta.nome}</h1>
-                <p className="text-xs text-neutral-500 uppercase tracking-wider font-bold">{POSICAO_LABEL[atleta.posicao]}</p>
-              </div>
-            </div>
-
-            <div className="p-4">
-              <div className="flex flex-wrap gap-1.5 mb-3">
-                <Badge variant="outline" className="bg-neutral-50">{idade} anos</Badge>
-                {atleta.exibir_cidade && (
-                  <Badge variant="outline" className="bg-neutral-50">{atleta.cidade}, {atleta.estado}</Badge>
-                )}
-                <Badge variant="outline" className="bg-neutral-50">
-                  {atleta.pe_dominante === 'destro' ? 'Destro' : atleta.pe_dominante === 'canhoto' ? 'Canhoto' : 'Ambidestro'}
-                </Badge>
-                {atleta.destaque_ativo && <Badge variant="amber">Em destaque</Badge>}
-              </div>
-
-              {atleta.escolinha_atual && (
-                <div className="flex items-center gap-1.5 text-xs text-neutral-500 mb-3 bg-neutral-50 p-2 rounded-lg border border-neutral-100">
-                  <Landmark size={12} className="text-neutral-400" />
-                  <span className="font-semibold uppercase tracking-tight">{atleta.escolinha_atual}</span>
-                </div>
-              )}
-
-              {statsAtual && (
-                <div className="grid grid-cols-4 gap-2 mb-3 py-3 border-y border-neutral-100">
-                  {[
-                    ['Jogos', statsAtual.jogos],
-                    ['Gols', statsAtual.gols],
-                    ['Assist', statsAtual.assistencias],
-                    ['Nota', statsAtual.nota_media],
-                  ].map(([label, value]) => (
-                    <div key={label as string} className="text-center">
-                      <div className="font-display text-2xl text-green-700 leading-none">{value as number}</div>
-                      <div className="text-[9px] text-neutral-400 mt-0.5 uppercase font-bold tracking-tighter">{label as string}</div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {isEscolinha ? (
-                <AthleteActions
-                  atletaId={atleta.id}
-                  escolinhaId={escolinhaId}
-                  initialIsFavorite={initialIsFavorite}
-                  initialHasInterest={initialHasInterest}
-                  aceitarMensagens={atleta.aceitar_mensagens}
-                  size="sm"
-                />
-              ) : !user ? (
-                <Link href="/login" className="block">
-                  <Button variant="dark" className="w-full justify-center text-sm py-3">ENTRAR PARA CONTATAR</Button>
-                </Link>
-              ) : isOwner ? (
-                <Link href={`/perfil/${atleta.id}/editar`} className="block">
-                  <Button variant="outline" className="w-full justify-center text-sm py-3 gap-2 font-bold uppercase tracking-widest border-green-200 text-green-700 bg-green-50/50">
-                    <Edit2 size={14} /> EDITAR MEU PERFIL
-                  </Button>
-                </Link>
-              ) : profile?.role === 'responsavel' ? (
-                <div className="bg-amber-50 border border-amber-100 rounded-xl p-3 text-center">
-                  <p className="text-[10px] text-amber-700 font-bold uppercase tracking-wider">
-                    RESTRITO PARA ESCOLINHAS 🛡️
-                  </p>
-                </div>
-              ) : null}
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-
-          {/* Sidebar — desktop only */}
-          <aside className="hidden lg:flex lg:col-span-1 flex-col gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 items-start">
+          
+          {/* COLUNA 1: Perfil & Ações (Sidebar no desktop, Topo no mobile) */}
+          <aside className="flex flex-col gap-6 lg:sticky lg:top-24">
+            
+            {/* Card Principal de Perfil */}
             <div className="bg-white border border-neutral-200 rounded-3xl overflow-hidden shadow-sm">
               <div className="bg-green-100 px-5 pt-6 pb-3 flex items-end gap-3 relative min-h-[120px]">
                 <Avatar
@@ -205,16 +122,28 @@ export default async function PerfilAtletaPage({ params }: { params: Promise<{ i
                     {atleta.escolinha_atual}
                   </div>
                 )}
-                {atleta.destaque_ativo && <Badge variant="amber" className="mb-6 w-full justify-center py-1.5 text-xs font-bold ring-4 ring-amber-500/10 uppercase tracking-widest">ATLETA EM DESTAQUE 💎</Badge>}
-
+                
+                {/* 
+                  AÇÕES DO ATLETA: Renderizado apenas uma vez.
+                  No mobile vira um rodapé fixo para melhor acessibilidade.
+                  No desktop fica aqui na sidebar.
+                */}
                 {isEscolinha ? (
-                  <AthleteActions
-                    atletaId={atleta.id}
-                    escolinhaId={escolinhaId}
-                    initialIsFavorite={initialIsFavorite}
-                    initialHasInterest={initialHasInterest}
-                    aceitarMensagens={atleta.aceitar_mensagens}
-                  />
+                  <div className="fixed bottom-0 inset-x-0 bg-white/90 backdrop-blur-md border-t border-neutral-200 p-4 z-50 lg:relative lg:bottom-auto lg:inset-auto lg:bg-transparent lg:border-t-0 lg:p-0 lg:z-auto">
+                    <div className="max-w-6xl mx-auto lg:max-w-none">
+                      <AthleteActions
+                        atletaId={atleta.id}
+                        escolinhaId={escolinhaId}
+                        initialIsFavorite={initialIsFavorite}
+                        initialHasInterest={initialHasInterest}
+                        aceitarMensagens={atleta.aceitar_mensagens}
+                      />
+                    </div>
+                  </div>
+                ) : !user ? (
+                  <Link href="/login" className="block mt-4">
+                    <Button variant="dark" className="w-full justify-center py-4 font-bold tracking-widest uppercase">ENTRAR PARA CONTATAR</Button>
+                  </Link>
                 ) : isOwner ? (
                   <Link href={`/perfil/${atleta.id}/editar`} className="block mt-4">
                     <Button variant="outline" className="w-full justify-center py-4 font-bold tracking-widest uppercase gap-2 border-green-200 text-green-700 bg-green-50/50 hover:bg-green-100 transition-all shadow-sm">
@@ -222,20 +151,18 @@ export default async function PerfilAtletaPage({ params }: { params: Promise<{ i
                     </Button>
                   </Link>
                 ) : profile?.role === 'responsavel' ? (
-                  <div className="bg-neutral-50 border border-neutral-100 rounded-2xl p-5 mt-4 text-center">
-                    <p className="text-xs text-neutral-500 font-bold tracking-widest uppercase mb-1">
-                      PAINEL DO ATLETA 🛡️
-                    </p>
-                    <p className="text-[10px] text-neutral-400 leading-relaxed uppercase tracking-tighter">
-                      Apenas perfis de escolinhas podem favoritar ou demonstrar interesse.
+                  <div className="bg-neutral-50 border border-neutral-100 rounded-2xl p-4 mt-4 text-center">
+                    <p className="text-[10px] text-neutral-500 font-bold tracking-widest uppercase">
+                      ACESSO RESTRITO A ESCOLINHAS 🛡️
                     </p>
                   </div>
                 ) : null}
               </div>
             </div>
 
+            {/* Stats Rápidas (Desktop Sidebar) */}
             {statsAtual && (
-              <div className="bg-white border border-neutral-200 rounded-3xl p-6 shadow-sm">
+              <div className="hidden lg:block bg-white border border-neutral-200 rounded-3xl p-6 shadow-sm">
                 <div className="flex items-center gap-2 mb-5">
                   <BarChart2 size={16} className="text-green-600" />
                   <span className="text-xs font-bold uppercase tracking-widest text-neutral-500">Temporada {statsAtual.temporada}</span>
@@ -257,23 +184,41 @@ export default async function PerfilAtletaPage({ params }: { params: Promise<{ i
             )}
           </aside>
 
-          {/* Main content */}
-          <main className="lg:col-span-2 flex flex-col gap-6">
-
+          {/* COLUNA 2: Conteúdo Principal */}
+          <div className="lg:col-span-2 flex flex-col gap-6">
+            
+            {/* Foto de Capa / Galeria de Destaque */}
             {atleta.foto_url ? (
               <div className="relative aspect-video rounded-3xl overflow-hidden shadow-lg border border-neutral-200 bg-neutral-100 group">
                 <img src={atleta.foto_url} alt={`Capa de ${atleta.nome}`} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
               </div>
             ) : (
-              <div className="aspect-video rounded-3xl border-2 border-dashed border-neutral-200 flex items-center justify-center bg-neutral-50">
-                <p className="text-xs text-neutral-400 font-bold uppercase tracking-widest">Sem foto de capa</p>
+              <div className="aspect-video rounded-3xl border-2 border-dashed border-neutral-200 flex items-center justify-center bg-neutral-50 font-display text-neutral-300">
+                SCJR
+              </div>
+            )}
+
+            {/* Info Mobile Mobile (Stats que no desktop ficam na sidebar) */}
+            {statsAtual && (
+              <div className="lg:hidden grid grid-cols-4 gap-2 bg-white border border-neutral-200 rounded-2xl p-4">
+                {[
+                  ['Jogos', statsAtual.jogos],
+                  ['Gols', statsAtual.gols],
+                  ['Assist', statsAtual.assistencias],
+                  ['Nota', statsAtual.nota_media],
+                ].map(([label, value]) => (
+                  <div key={label as string} className="text-center">
+                    <div className="font-display text-2xl text-green-700 leading-none">{value as number}</div>
+                    <div className="text-[9px] text-neutral-400 mt-0.5 uppercase font-bold tracking-tighter">{label as string}</div>
+                  </div>
+                ))}
               </div>
             )}
 
             {atleta.descricao && (
               <Section title="Sobre o atleta">
-                <p className="text-xs sm:text-sm text-neutral-600 leading-relaxed text-justify">{atleta.descricao}</p>
+                <p className="text-sm text-neutral-600 leading-relaxed text-justify">{atleta.descricao}</p>
               </Section>
             )}
 
@@ -296,14 +241,12 @@ export default async function PerfilAtletaPage({ params }: { params: Promise<{ i
               </Section>
             )}
 
-            {(atleta.fotos_adicionais?.length > 0 || atleta.atleta_videos?.length > 0) && (
-              <Section title="Galeria & Vídeos">
-                <MediaGallery
-                  photos={atleta.fotos_adicionais || []}
-                  videos={atleta.atleta_videos || []}
-                />
-              </Section>
-            )}
+            <Section title="Galeria & Vídeos">
+              <MediaGallery
+                photos={atleta.fotos_adicionais || []}
+                videos={atleta.atleta_videos || []}
+              />
+            </Section>
 
             {atleta.atleta_conquistas && atleta.atleta_conquistas.length > 0 && (
               <Section title="Conquistas & Hall da Fama">
@@ -327,22 +270,7 @@ export default async function PerfilAtletaPage({ params }: { params: Promise<{ i
                 </div>
               </Section>
             )}
-
-            {!user && (
-              <div className="bg-green-700 rounded-xl p-5 sm:p-6 text-center text-white">
-                <h3 className="font-display text-xl sm:text-2xl mb-2">QUER CONTATAR ESTE ATLETA?</h3>
-                <p className="text-xs sm:text-sm text-white/70 mb-4">Crie uma conta de escolinha para entrar em contato.</p>
-                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-center">
-                  <Link href="/cadastro?tipo=escolinha">
-                    <Button variant="amber" className="w-full sm:w-auto justify-center">Criar conta de escolinha</Button>
-                  </Link>
-                  <Link href="/login">
-                    <Button variant="outline" className="w-full sm:w-auto justify-center text-white border-white/30 hover:bg-white/10">Já tenho conta</Button>
-                  </Link>
-                </div>
-              </div>
-            )}
-          </main>
+          </div>
         </div>
       </main>
       <Footer />

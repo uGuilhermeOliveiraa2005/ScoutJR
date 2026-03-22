@@ -32,7 +32,7 @@ export function AthleteActions({
   const router = useRouter()
 
   async function toggleFavorite() {
-    if (!escolinhaId) return
+    if (!escolinhaId || loadingFav) return
     setLoadingFav(true)
 
     try {
@@ -52,41 +52,6 @@ export function AthleteActions({
 
         if (!error) {
           setIsFavorite(true)
-
-          // Cria notificação para o responsável do atleta
-          // Busca dados necessários para a mensagem
-          const [atletaRes, escolinhaRes] = await Promise.all([
-            supabase
-              .from('atletas')
-              .select('nome, responsavel_id, profiles!atletas_responsavel_id_fkey(user_id)')
-              .eq('id', atletaId)
-              .single(),
-            supabase
-              .from('escolinhas')
-              .select('nome')
-              .eq('id', escolinhaId)
-              .single(),
-          ])
-
-          const atleta = atletaRes.data as any
-          const escolinha = escolinhaRes.data as any
-
-          if (atleta && escolinha) {
-            const responsavelUserId = atleta.profiles?.user_id
-            if (responsavelUserId) {
-              await supabase.from('notificacoes').insert({
-                user_id: responsavelUserId,
-                tipo: 'favorito',
-                titulo: `${escolinha.nome} favoritou ${atleta.nome}!`,
-                mensagem: `A escolinha ${escolinha.nome} adicionou ${atleta.nome} aos favoritos.`,
-                lida: false,
-                metadata: {
-                  atleta_id: atletaId,
-                  escolinha_id: escolinhaId,
-                },
-              })
-            }
-          }
         }
       }
       router.refresh()
@@ -110,41 +75,6 @@ export function AthleteActions({
 
       if (!error) {
         setHasInterest(true)
-
-        // Cria notificação para o responsável
-        const [atletaRes, escolinhaRes] = await Promise.all([
-          supabase
-            .from('atletas')
-            .select('nome, responsavel_id, profiles!atletas_responsavel_id_fkey(user_id)')
-            .eq('id', atletaId)
-            .single(),
-          supabase
-            .from('escolinhas')
-            .select('nome')
-            .eq('id', escolinhaId)
-            .single(),
-        ])
-
-        const atleta = atletaRes.data as any
-        const escolinha = escolinhaRes.data as any
-
-        if (atleta && escolinha) {
-          const responsavelUserId = atleta.profiles?.user_id
-          if (responsavelUserId) {
-            await supabase.from('notificacoes').insert({
-              user_id: responsavelUserId,
-              tipo: 'interesse',
-              titulo: `${escolinha.nome} demonstrou interesse em ${atleta.nome}!`,
-              mensagem: `A escolinha ${escolinha.nome} quer conhecer mais sobre ${atleta.nome}.`,
-              lida: false,
-              metadata: {
-                atleta_id: atletaId,
-                escolinha_id: escolinhaId,
-              },
-            })
-          }
-        }
-
         router.refresh()
       }
     } catch {
