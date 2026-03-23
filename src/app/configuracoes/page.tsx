@@ -7,6 +7,8 @@ import { ProfileForm } from './ProfileForm'
 import { AtletaConfigForm } from './AtletaConfigForm'
 import { PasswordChangeForm } from './PasswordChangeForm'
 
+export const dynamic = 'force-dynamic'
+
 export default async function ConfiguracoesPage() {
   const supabase = await createSupabaseServer()
   const { data: { user } } = await supabase.auth.getUser()
@@ -15,6 +17,20 @@ export default async function ConfiguracoesPage() {
   const { data: profile } = await supabase
     .from('profiles').select('*').eq('user_id', user.id).single()
   if (!profile) redirect('/login')
+
+  console.log('DEBUG CONFIG:', {
+    userId: user.id,
+    email: user.email,
+    profileExists: !!profile,
+    profileStatus: profile?.status,
+    profileIsAdmin: profile?.is_admin
+  })
+
+  // Strict Lockout for unverified users
+  if (profile.status !== 'ativo' && !profile.is_admin) {
+    console.log('CONFIG REDIRECTING TO WAITING PAGE...')
+    redirect('/aguardando-verificacao')
+  }
 
   let escolinha = null
   let atleta = null

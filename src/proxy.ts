@@ -70,7 +70,7 @@ export default async function proxy(request: NextRequest) {
     default-src 'self';
     script-src 'self' 'unsafe-inline' 'unsafe-eval' https://sdk.mercadopago.com https://http2.mlstatic.com https://www.google-analytics.com;
     style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
-    connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.mercadopago.com https://*.mercadopago.com.br https://*.mlstatic.com https://*.mercadolibre.com https://api.mercadolibre.com;
+    connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.mercadopago.com https://*.mercadopago.com.br https://*.mlstatic.com https://*.mercadolibre.com https://api.mercadolibre.com https://servicodados.ibge.gov.br;
     img-src 'self' data: https://*.supabase.co https://*.mercadopago.com https://*.mercadopago.com.br https://*.mlstatic.com https://*.mercadolibre.com https://*.mercadolivre.com.br https://img.youtube.com https://i.ytimg.com https://*.imgur.com;
     font-src 'self' https://fonts.gstatic.com;
     frame-src 'self' https://*.mercadopago.com https://*.mercadopago.com.br https://*.mercadolibre.com https://*.mercadolivre.com.br https://www.youtube.com https://youtube.com;

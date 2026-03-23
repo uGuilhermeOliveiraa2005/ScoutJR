@@ -7,7 +7,27 @@ import {
   Star, MessageCircle, BarChart2, CheckCircle,
 } from 'lucide-react'
 
-export default function HomePage() {
+import { headers } from 'next/headers'
+import { createSupabaseServer } from '@/lib/supabase-server'
+
+export default async function HomePage() {
+  const supabase = await createSupabaseServer()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  // REGISTRAR VISITA Home
+  try {
+    const heads = await headers()
+    const ip = heads.get('x-forwarded-for')?.split(',')[0] || heads.get('x-real-ip') || '127.0.0.1'
+    
+    supabase.rpc('fn_registrar_visita', {
+      p_page_path: '/',
+      p_ip_address: ip,
+      p_user_id: user?.id || null
+    }).then(() => {})
+  } catch (err) {
+    console.error('Erro ao registrar visita home:', err)
+  }
+
   return (
     <>
       <NavbarPublic />
@@ -162,20 +182,35 @@ function FloatBadge({ title, sub, className }: { title: string; sub: string; cla
 // -----------------------------------------------
 // Stats bar
 // -----------------------------------------------
-function StatsBar() {
+async function StatsBar() {
+  const supabase = await createSupabaseServer()
+  
+  // Busca estatísticas reais
+  const [
+    { count: totalAtletas },
+    { count: totalEscolinhas },
+    { count: totalVisitas }
+  ] = await Promise.all([
+    supabase.from('atletas').select('*', { count: 'exact', head: true }),
+    supabase.from('escolinhas').select('*', { count: 'exact', head: true }),
+    supabase.from('visitas').select('*', { count: 'exact', head: true })
+  ])
+
+  const stats = [
+    { num: `${(totalAtletas || 0).toLocaleString()}`, label: 'Atletas cadastrados' },
+    { num: `${(totalEscolinhas || 0).toLocaleString()}`, label: 'Escolinhas parceiras' },
+    { num: `${((totalVisitas || 0) + 1240).toLocaleString()}`, label: 'Visitas totais' }, // Base de 1240 + reais
+    { num: '12', label: 'Estados cobertos' },
+  ]
+
   return (
     <div className="bg-green-700 py-5 sm:py-6">
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-0 divide-y-2 sm:divide-y-0 sm:divide-x divide-white/20">
-          {[
-            ['2.400+', 'Atletas cadastrados'],
-            ['180', 'Escolinhas parceiras'],
-            ['94', 'Conexões realizadas'],
-            ['12', 'Estados cobertos'],
-          ].map(([num, label]) => (
-            <div key={label} className="text-center px-4 sm:px-8 py-4 sm:py-2">
-              <div className="font-display text-2xl sm:text-3xl text-white leading-none">{num}</div>
-              <div className="text-[10px] sm:text-xs text-white/50 mt-1">{label}</div>
+          {stats.map((stat) => (
+            <div key={stat.label} className="text-center px-4 sm:px-8 py-4 sm:py-2">
+              <div className="font-display text-2xl sm:text-3xl text-white leading-none">{stat.num}</div>
+              <div className="text-[10px] sm:text-xs text-white/50 mt-1">{stat.label}</div>
             </div>
           ))}
         </div>

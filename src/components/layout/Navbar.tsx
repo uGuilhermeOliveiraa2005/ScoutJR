@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
-import { Menu, X, LogOut, Settings, LayoutDashboard, ShieldCheck, Trophy } from 'lucide-react'
+import { Menu, X, LogOut, Settings, LayoutDashboard, ShieldCheck, Trophy, Search } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
 import { createSupabaseBrowser } from '@/lib/supabase'
@@ -110,7 +110,7 @@ export function NavbarDashboard({
 
   const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={14} /> },
-    { href: '/busca', label: 'Explorar', icon: null },
+    { href: '/busca', label: 'Explorar', icon: <Search size={14} /> },
     { href: '/ranking', label: 'Ranking', icon: <Trophy size={14} /> },
     { href: '/configuracoes', label: 'Config.', icon: <Settings size={14} /> },
   ]
@@ -205,11 +205,7 @@ export function NavbarDashboard({
             >
               <span className="text-[20px]">
                 {item.href === '/dashboard' && <LayoutDashboard size={20} />}
-                {item.href === '/busca' && (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-                  </svg>
-                )}
+                {item.href === '/busca' && <Search size={20} />}
                 {item.href === '/ranking' && <Trophy size={20} />}
                 {item.href === '/configuracoes' && <Settings size={20} />}
               </span>
@@ -251,7 +247,7 @@ export function NavbarDashboard({
             <nav className="p-3 flex flex-col gap-1">
               {[
                 { href: '/dashboard', icon: <LayoutDashboard size={16} />, label: 'Dashboard' },
-                { href: '/busca', icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>, label: 'Explorar talentos' },
+                { href: '/busca', icon: <Search size={16} />, label: 'Explorar talentos' },
                 { href: '/ranking', icon: <Trophy size={16} />, label: 'Ranking' },
                 { href: '/configuracoes', icon: <Settings size={16} />, label: 'Configurações' },
               ].map(item => (

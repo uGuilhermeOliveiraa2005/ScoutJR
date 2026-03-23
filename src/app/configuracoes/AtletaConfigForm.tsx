@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Camera, Loader2, Eye, MapPin, MessageCircle, ImageIcon } from 'lucide-react'
 import { ESTADOS, POSICAO_LABEL, cn } from '@/lib/utils'
 import { updateAtleta } from './actions'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
+import { CitySelect } from '@/components/ui/CitySelect'
 
 const POSICOES = [
     { value: 'GK', label: 'GK', sub: 'Goleiro' },
@@ -73,6 +74,31 @@ export function AtletaConfigForm({ atleta }: { atleta: any }) {
     const [visivel, setVisivel] = useState(atleta?.visivel ?? true)
     const [exibirCidade, setExibirCidade] = useState(atleta?.exibir_cidade ?? true)
     const [aceitarMensagens, setAceitarMsg] = useState(atleta?.aceitar_mensagens ?? false)
+
+    // Sincronizar estado local com props quando o servidor atualizar (router.refresh)
+    useEffect(() => {
+        setNome(atleta?.nome ?? '')
+        setDescricao(atleta?.descricao ?? '')
+        setDataNasc(atleta?.data_nascimento ?? '')
+        setEstado(atleta?.estado ?? '')
+        setCidade(atleta?.cidade ?? '')
+        setPosicao(atleta?.posicao ?? 'MEI')
+        setPeDominante(atleta?.pe_dominante ?? 'destro')
+        setEscolinhaAt(atleta?.escolinha_atual ?? '')
+        setHabilidades({
+            hab_tecnica: atleta?.habilidade_tecnica ?? 50,
+            hab_velocidade: atleta?.habilidade_velocidade ?? 50,
+            hab_visao: atleta?.habilidade_visao ?? 50,
+            hab_fisico: atleta?.habilidade_fisico ?? 50,
+            hab_finalizacao: atleta?.habilidade_finalizacao ?? 50,
+            hab_passes: atleta?.habilidade_passes ?? 50,
+        })
+        setVisivel(atleta?.visivel ?? true)
+        setExibirCidade(atleta?.exibir_cidade ?? true)
+        setAceitarMsg(atleta?.aceitar_mensagens ?? false)
+        setPreview('')
+        setSelectedFile(null)
+    }, [atleta])
 
     const currentFoto = atleta?.foto_url ?? ''
     const validFoto = currentFoto && currentFoto !== 'null' ? currentFoto : ''
@@ -160,13 +186,22 @@ export function AtletaConfigForm({ atleta }: { atleta: any }) {
                         <input type="date" value={dataNasc} onChange={e => setDataNasc(e.target.value)} className={inputClass} />
                     </Field>
                     <Field label="Estado">
-                        <select value={estado} onChange={e => setEstado(e.target.value)} className={`${inputClass} appearance-none`}>
+                        <select 
+                            value={estado} 
+                            onChange={e => { setEstado(e.target.value); setCidade('') }} 
+                            className={`${inputClass} appearance-none`}
+                        >
                             <option value="">Selecione</option>
                             {ESTADOS.map(e => <option key={e.value} value={e.value}>{e.label}</option>)}
                         </select>
                     </Field>
                     <Field label="Cidade">
-                        <input value={cidade} onChange={e => setCidade(e.target.value)} className={inputClass} placeholder="Porto Alegre" />
+                        <CitySelect
+                            estado={estado}
+                            value={cidade}
+                            onChange={e => setCidade(e.target.value)}
+                            placeholder="Selecione a cidade"
+                        />
                     </Field>
                     <Field label="Pé dominante">
                         <select value={peDominante} onChange={e => setPeDominante(e.target.value)} className={`${inputClass} appearance-none`}>

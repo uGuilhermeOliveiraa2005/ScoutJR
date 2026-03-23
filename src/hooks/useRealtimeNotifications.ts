@@ -5,9 +5,32 @@ import { useEffect, useRef } from 'react'
 import { useNotificationToast } from '@/components/notifications/NotificationToastProvider'
 import { subscribeToNotifications, unsubscribeFromNotifications } from '@/lib/realtimeChannel'
 
+function playNotificationSound() {
+    try {
+        // Cria um novo elemento a cada vez E usa src com timestamp para burlar cache
+        const audio = new Audio()
+        audio.src = `/sounds/notification.mp3?t=${Date.now()}`
+        audio.volume = 0.6
+        audio.load()
+
+        const playPromise = audio.play()
+        if (playPromise !== undefined) {
+            playPromise.catch(() => {
+                // Fallback: tenta novamente após breve delay (útil em alguns browsers)
+                setTimeout(() => {
+                    const retry = new Audio(`/sounds/notification.mp3?t=${Date.now()}`)
+                    retry.volume = 0.6
+                    retry.play().catch(() => { })
+                }, 100)
+            })
+        }
+    } catch {
+        // Silencioso — áudio não é crítico
+    }
+}
+
 export function useRealtimeNotifications(userId: string | null) {
     const { showToast } = useNotificationToast()
-    // Ref para evitar closure stale no handler
     const showToastRef = useRef(showToast)
     showToastRef.current = showToast
 
@@ -18,14 +41,8 @@ export function useRealtimeNotifications(userId: string | null) {
         }
 
         subscribeToNotifications(userId, (n) => {
-            // Toca som — novo elemento a cada vez garante replay
-            try {
-                const audio = new Audio('/sounds/notification.mp3')
-                audio.volume = 0.6
-                audio.play().catch(() => { })
-            } catch { }
+            playNotificationSound()
 
-            // Mostra toast
             showToastRef.current({
                 id: n.id,
                 tipo: n.tipo ?? 'sistema',
@@ -35,13 +52,9 @@ export function useRealtimeNotifications(userId: string | null) {
                 createdAt: n.created_at ?? new Date().toISOString(),
             })
 
-            // Avisa Bell e RecentActivity
             window.dispatchEvent(
                 new CustomEvent('scoutjr:notification', { detail: n })
             )
         })
-
-        // Não fechamos o canal no cleanup do StrictMode
-        // Só fechamos quando userId vira null (logout)
     }, [userId])
 }

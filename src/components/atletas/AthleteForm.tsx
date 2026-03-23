@@ -14,6 +14,7 @@ import {
 import { cn } from '@/lib/utils'
 import { AthleteProfilePreview } from '@/components/atletas/AthleteProfilePreview'
 import { ImageUpload } from '@/components/ui/ImageUpload'
+import { CitySelect } from '@/components/ui/CitySelect'
 
 // Labels das etapas — 6 etapas para o AthleteForm standalone
 const STEP_LABELS = ['Dados', 'Habilidades', 'Mídia', 'Conquistas', 'Visualizar', 'Privacidade']
@@ -211,17 +212,17 @@ function Step1({ data, setData, onNext }: any) {
 
       <div className="grid grid-cols-2 gap-3">
         <FieldGroup>
-          <Label>Estado</Label>
           <Select
             options={ESTADOS}
             value={data.estado}
-            onChange={(e: any) => setData({ ...data, estado: e.target.value })}
+            onChange={(e: any) => setData({ ...data, estado: e.target.value, cidade: '' })}
             placeholder="Selecione"
           />
         </FieldGroup>
         <FieldGroup>
           <Label>Cidade</Label>
-          <Input
+          <CitySelect
+            estado={data.estado}
             value={data.cidade}
             onChange={(e: any) => setData({ ...data, cidade: e.target.value })}
             placeholder="Ex: Porto Alegre"

@@ -60,6 +60,8 @@ export async function updateProfile(formData: FormData) {
 
   revalidatePath('/configuracoes')
   revalidatePath('/dashboard')
+  revalidatePath('/ranking')
+  revalidatePath('/busca')
   return { success: true }
 }
 
@@ -82,6 +84,9 @@ export async function updateEscolinhaLocalizacao(formData: FormData) {
   if (error) return { error: 'Erro ao atualizar localização: ' + error.message }
 
   revalidatePath('/configuracoes')
+  revalidatePath('/dashboard')
+  revalidatePath('/ranking')
+  revalidatePath('/busca')
   return { success: true }
 }
 
@@ -122,6 +127,9 @@ export async function updateEscolinhaFotos(formData: FormData) {
   if (error) return { error: 'Erro ao atualizar fotos: ' + error.message }
 
   revalidatePath('/configuracoes')
+  revalidatePath('/dashboard')
+  revalidatePath('/ranking')
+  revalidatePath('/busca')
   return { success: true }
 }
 
@@ -194,6 +202,8 @@ export async function updateAtleta(formData: FormData) {
   revalidatePath('/configuracoes')
   revalidatePath(`/perfil/${atletaId}`)
   revalidatePath('/dashboard')
+  revalidatePath('/ranking')
+  revalidatePath('/busca')
   return { success: true }
 }
 

@@ -29,7 +29,7 @@ export default async function RootLayout({
   }
 
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" data-scroll-behavior="smooth">
       <body className={inter.className}>
 
         {/*

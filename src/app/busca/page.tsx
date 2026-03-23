@@ -1,11 +1,14 @@
-import { createSupabaseServer } from '@/lib/supabase-server'
 import { redirect } from 'next/navigation'
+import { createSupabaseServer } from '@/lib/supabase-server'
 import { NavbarDashboard } from '@/components/layout/Navbar'
 import { NavbarPublic } from '@/components/layout/Navbar'
 import { Search, SlidersHorizontal, X } from 'lucide-react'
 import { POSICOES, ESTADOS } from '@/lib/utils'
 import { PositionAlertButton } from '@/components/busca/PositionAlertButton'
 import { Avatar } from '@/components/ui/Avatar'
+import { SearchSidebar } from '@/components/busca/SearchSidebar'
+
+export const dynamic = 'force-dynamic'
 
 export default async function BuscaPage({
   searchParams,
@@ -21,6 +24,20 @@ export default async function BuscaPage({
   if (user) {
     const { data: profileData } = await supabase.from('profiles').select('*').eq('user_id', user.id).single()
     profile = profileData
+
+    console.log('DEBUG SEARCH:', {
+      userId: user.id,
+      email: user.email,
+      profileExists: !!profile,
+      profileStatus: profile?.status,
+      profileIsAdmin: profile?.is_admin
+    })
+
+    // Strict Lockout for unverified users
+    if (profile && profile.status !== 'ativo' && !profile.is_admin) {
+      console.log('SEARCH REDIRECTING TO WAITING PAGE...')
+      redirect('/aguardando-verificacao')
+    }
 
     if (profile?.role === 'escolinha') {
       const { data: escolinhaData } = await supabase.from('escolinhas').select('id, verificado, foto_url').eq('user_id', user.id).single()
@@ -39,6 +56,7 @@ export default async function BuscaPage({
       destaque_ativo, foto_url
     `)
     .eq('visivel', true)
+    .eq('status', 'ativo')
     .order('destaque_ativo', { ascending: false })
     .order('habilidade_visao', { ascending: false })
     .limit(48)
@@ -46,10 +64,11 @@ export default async function BuscaPage({
   if (params.nome) query = query.ilike('nome', `%${params.nome}%`)
   if (params.posicao) query = query.eq('posicao', params.posicao)
   if (params.estado) query = query.eq('estado', params.estado)
+  if (params.cidade) query = query.eq('cidade', params.cidade)
 
   const { data: atletas } = await query
 
-  const hasFilters = params.nome || params.posicao || params.estado
+  const hasFilters = params.nome || params.posicao || params.estado || params.cidade
 
   const userFotoUrl = profile?.role === 'escolinha'
     ? (escolinha?.foto_url ?? profile?.foto_url ?? null)
@@ -141,7 +160,15 @@ export default async function BuscaPage({
             {params.estado && (
               <div className="flex items-center gap-1 bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full">
                 {params.estado}
-                <a href={`/busca?${new URLSearchParams({ ...params, estado: '' }).toString()}`}>
+                <a href={`/busca?${new URLSearchParams({ ...params, estado: '', cidade: '' }).toString()}`}>
+                  <X size={10} />
+                </a>
+              </div>
+            )}
+            {params.cidade && (
+              <div className="flex items-center gap-1 bg-amber-100 text-amber-700 text-xs px-2 py-1 rounded-full">
+                {params.cidade}
+                <a href={`/busca?${new URLSearchParams({ ...params, cidade: '' }).toString()}`}>
                   <X size={10} />
                 </a>
               </div>
@@ -153,73 +180,7 @@ export default async function BuscaPage({
 
           {/* Sidebar filters — desktop only */}
           <aside className="hidden lg:block lg:col-span-1">
-            <div className="bg-white border border-neutral-200 rounded-xl p-5 sticky top-20">
-              <div className="flex justify-between items-center mb-4">
-                <span className="text-sm font-medium flex items-center gap-2">
-                  <SlidersHorizontal size={15} /> Filtros
-                </span>
-                {hasFilters && (
-                  <a href="/busca" className="text-xs text-green-600 hover:text-green-700">Limpar</a>
-                )}
-              </div>
-
-              <form method="GET" className="flex flex-col gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-neutral-400 uppercase tracking-wide mb-1.5">Nome</label>
-                  <div className="relative">
-                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
-                    <input
-                      name="nome"
-                      defaultValue={params.nome}
-                      placeholder="Nome do atleta..."
-                      className="w-full pl-9 pr-3 py-2 text-sm border border-neutral-200 rounded-lg outline-none focus:border-green-400 bg-white"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-neutral-400 uppercase tracking-wide mb-1.5">Posição</label>
-                  <div className="grid grid-cols-3 gap-1.5">
-                    <a
-                      href={`/busca?${new URLSearchParams({ ...params, posicao: '' }).toString()}`}
-                      className={`text-center py-1.5 text-xs border rounded-lg transition-colors ${!params.posicao ? 'bg-green-100 border-green-400 text-green-700 font-medium' : 'border-neutral-200 text-neutral-500 hover:border-neutral-300'
-                        }`}
-                    >
-                      Todos
-                    </a>
-                    {POSICOES.map(p => (
-                      <a
-                        key={p.value}
-                        href={`/busca?${new URLSearchParams({ ...params, posicao: p.value }).toString()}`}
-                        className={`text-center py-1.5 text-xs border rounded-lg transition-colors ${params.posicao === p.value ? 'bg-green-100 border-green-400 text-green-700 font-medium' : 'border-neutral-200 text-neutral-500 hover:border-neutral-300'
-                          }`}
-                      >
-                        {p.value}
-                      </a>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-neutral-400 uppercase tracking-wide mb-1.5">Estado</label>
-                  <select
-                    name="estado"
-                    defaultValue={params.estado}
-                    className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-lg outline-none focus:border-green-400 bg-white"
-                  >
-                    <option value="">Todos</option>
-                    {ESTADOS.map(e => <option key={e.value} value={e.value}>{e.label}</option>)}
-                  </select>
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full py-2 text-sm bg-green-700 text-white rounded-lg hover:bg-green-800 transition-colors font-medium"
-                >
-                  Buscar
-                </button>
-              </form>
-            </div>
+            <SearchSidebar params={params} />
           </aside>
 
           {/* Results */}

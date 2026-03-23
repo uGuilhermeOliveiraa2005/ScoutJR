@@ -1,47 +1,40 @@
 import { createSupabaseServer, createSupabaseAdmin } from '@/lib/supabase-server'
 import { redirect } from 'next/navigation'
 import { NavbarDashboard } from '@/components/layout/Navbar'
-import { Users, Star, MessageCircle, TrendingUp, ArrowRight, Eye } from 'lucide-react'
+import { Users, Star, MessageCircle, TrendingUp, ArrowRight, Eye, Clock } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
 import { RecentActivity } from '@/components/notifications/RecentActivity'
 import { Avatar } from '@/components/ui/Avatar'
+import { cn } from '@/lib/utils'
+
+export const dynamic = 'force-dynamic'
 
 export default async function DashboardPage() {
   const supabase = await createSupabaseServer()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: initialProfile } = await supabase
+  const { data: profile } = await supabase
     .from('profiles')
     .select('*')
     .eq('user_id', user.id)
     .single()
 
-  let profile = initialProfile
+  console.log('DEBUG DASHBOARD:', {
+    userId: user.id,
+    email: user.email,
+    profileExists: !!profile,
+    profileStatus: profile?.status,
+    profileIsAdmin: profile?.is_admin
+  })
 
-  if (!profile) {
-    const adminSupabase = createSupabaseAdmin()
-    const { data: newProfile, error: insertError } = await adminSupabase
-      .from('profiles')
-      .upsert(
-        {
-          user_id: user.id,
-          nome: user.user_metadata?.nome || 'Usuário',
-          email: user.email!,
-          role: user.user_metadata?.role || 'responsavel'
-        },
-        { onConflict: 'user_id' }
-      )
-      .select()
-      .single()
-
-    if (insertError) {
-      console.error('Erro ao auto-criar perfil:', insertError)
-      redirect('/login?error=profile_not_found')
-    }
-    profile = newProfile
+  // FORCE REDIRECT - No pending users allowed here
+  if (!profile || (profile.status !== 'ativo' && !profile.is_admin)) {
+    console.log('DASHBOARD REDIRECTING TO WAITING PAGE...')
+    redirect('/aguardando-verificacao')
   }
+
 
   const isEscolinha = profile.role === 'escolinha'
 
@@ -71,6 +64,32 @@ export default async function DashboardPage() {
         .select('*', { count: 'exact', head: true })
         .gt('ranking_score', athlete.ranking_score)
       athlete.ranking_position = (count || 0) + 1
+      
+      // Busca visitas do perfil do atleta
+      const { count: visitsCount } = await supabase
+        .from('visitas')
+        .select('*', { count: 'exact', head: true })
+        .eq('page_path', `/perfil/${athlete.id}`)
+      athlete.visitas_count = (visitsCount || 0)
+    }
+  }
+
+  // Estatísticas extras para Escolinha
+  let statsEscolinha = { perfisVistos: 0, favoritos: 0, interesses: 0 }
+  if (isEscolinha) {
+    const [
+      { count: v },
+      { count: f },
+      { count: i }
+    ] = await Promise.all([
+      supabase.from('visitas').select('*', { count: 'exact', head: true }).eq('user_id', user.id).like('page_path', '/perfil/%'),
+      supabase.from('favoritos').select('*', { count: 'exact', head: true }).eq('escolinha_id', escolinha?.id),
+      supabase.from('interesses').select('*', { count: 'exact', head: true }).eq('escolinha_id', escolinha?.id)
+    ])
+    statsEscolinha = { 
+      perfisVistos: v || 0, 
+      favoritos: f || 0, 
+      interesses: i || 0 
     }
   }
 
@@ -100,18 +119,19 @@ export default async function DashboardPage() {
           </p>
         </div>
 
+
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-10">
           {isEscolinha ? (
             <>
-              <StatCard icon={<Eye size={16} />} label="Perfis vistos" value="—" color="green" />
-              <StatCard icon={<Star size={16} />} label="Favoritos" value="—" color="amber" />
-              <StatCard icon={<MessageCircle size={16} />} label="Interesses" value="—" color="blue" />
-              <StatCard icon={<TrendingUp size={16} />} label="Novos atletas" value="—" color="green" />
+              <StatCard icon={<Eye size={16} />} label="Perfis vistos" value={statsEscolinha.perfisVistos.toLocaleString()} color="green" />
+              <StatCard icon={<Star size={16} />} label="Favoritos" value={statsEscolinha.favoritos.toLocaleString()} color="amber" />
+              <StatCard icon={<MessageCircle size={16} />} label="Interesses" value={statsEscolinha.interesses.toLocaleString()} color="blue" />
+              <StatCard icon={<TrendingUp size={16} />} label="Novos atletas" value="10+" color="green" />
             </>
           ) : (
             <>
-              <StatCard icon={<Eye size={16} />} label="Visitas" value="—" color="green" />
+              <StatCard icon={<Eye size={16} />} label="Visitas" value={athlete?.visitas_count?.toLocaleString() || '0'} color="green" />
               <StatCard icon={<Star size={16} />} label="Favoritos" value={athlete?.favoritos_count || '0'} color="amber" />
               <StatCard icon={<MessageCircle size={16} />} label="Interesses" value={athlete?.interesses_count || '0'} color="blue" />
               <StatCard icon={<TrendingUp size={16} />} label="Ranking" value={athlete ? `#${athlete.ranking_position}` : '—'} color="green" />
@@ -137,7 +157,9 @@ export default async function DashboardPage() {
                   Encontre o próximo craque usando nossos filtros avançados.
                 </p>
                 <Link href="/busca">
-                  <Button variant="dark" className="w-full sm:w-auto justify-center">Explorar atletas</Button>
+                  <Button variant="dark" className="w-full sm:w-auto justify-center">
+                    Explorar atletas
+                  </Button>
                 </Link>
               </div>
             ) : (
@@ -192,12 +214,6 @@ export default async function DashboardPage() {
                   <span>Tipo de conta</span>
                   <span className="font-medium text-neutral-700">
                     {isEscolinha ? 'Escolinha' : 'Família'}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span>Status</span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-green-100 text-green-700">
-                    Ativo
                   </span>
                 </div>
               </div>

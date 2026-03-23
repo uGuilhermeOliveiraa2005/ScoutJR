@@ -82,7 +82,7 @@ export function NotificationsBell({ userId }: { userId: string }) {
       {isOpen && (
         <>
           <div
-            className="fixed inset-0 z-40 bg-black/20 backdrop-blur-[2px] md:bg-transparent md:backdrop-blur-0"
+            className="fixed inset-0 z-40 bg-neutral-900/10 md:bg-transparent"
             onClick={() => setIsOpen(false)}
           />
           <div className="fixed inset-x-4 top-20 md:absolute md:inset-auto md:right-0 md:top-full mt-2 md:w-80 bg-white border border-neutral-200 rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">

@@ -3,6 +3,7 @@
 
 import { createSupabaseServer, createSupabaseAdmin } from '@/lib/supabase-server'
 import { revalidatePath } from 'next/cache'
+import { redirect } from 'next/navigation'
 
 async function notificarEscolinhasPorPosicao(
   atletaId: string,
@@ -91,6 +92,7 @@ export async function createAthlete(data: any) {
       aceitar_mensagens: data.mensagens,
       foto_url: data.fotoUrl || null,
       fotos_adicionais: data.fotosAdicionais || [],
+      status: 'pendente',
     })
     .select()
     .single()
@@ -129,8 +131,9 @@ export async function createAthlete(data: any) {
 
   revalidatePath('/dashboard')
   revalidatePath('/busca')
+  revalidatePath('/ranking')
 
-  return { success: true, id: athlete.id }
+  redirect('/aguardando-verificacao')
 }
 
 export async function updateAthlete(id: string, data: any) {
@@ -183,6 +186,7 @@ export async function updateAthlete(id: string, data: any) {
       aceitar_mensagens: data.mensagens,
       foto_url: data.fotoUrl || null,
       fotos_adicionais: data.fotosAdicionais || [],
+      status: 'pendente',
     })
     .eq('id', id)
     .select('id')
@@ -222,6 +226,7 @@ export async function updateAthlete(id: string, data: any) {
   revalidatePath('/dashboard')
   revalidatePath(`/perfil/${id}`)
   revalidatePath('/busca')
+  revalidatePath('/ranking')
 
   return { success: true }
 }

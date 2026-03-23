@@ -1,5 +1,5 @@
 import { createSupabaseServer } from '@/lib/supabase-server'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import { NavbarPublic, NavbarDashboard, Footer } from '@/components/layout/Navbar'
 import { Avatar } from '@/components/ui/Avatar'
 import {
@@ -9,6 +9,8 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
+
+export const dynamic = 'force-dynamic'
 
 export default async function PerfilEscolinhaPage({
   params,
@@ -54,6 +56,20 @@ export default async function PerfilEscolinhaPage({
       .eq('user_id', user.id)
       .single()
     profile = p
+
+    console.log('DEBUG PERFIL ESCOLINHA:', {
+      userId: user.id,
+      email: user.email,
+      profileExists: !!profile,
+      profileStatus: profile?.status,
+      profileIsAdmin: profile?.is_admin
+    })
+
+    // Strict Lockout for unverified users
+    if (profile && profile.status !== 'ativo' && !profile.is_admin) {
+      console.log('PERFIL ESCOLINHA REDIRECTING TO WAITING PAGE...')
+      redirect('/aguardando-verificacao')
+    }
   }
 
   const userFotoUrl = profile?.foto_url ?? null
@@ -251,7 +267,8 @@ export default async function PerfilEscolinhaPage({
                               colorClass="bg-green-400 text-white"
                             />
                             <div className="min-w-0">
-                              <div className="text-xs font-semibold text-neutral-900 truncate group-hover:text-green-700 transition-colors">
+                              <div
+                                className="text-xs font-semibold text-neutral-900 truncate group-hover:text-green-700 transition-colors">
                                 {atleta.nome.split(' ')[0]}
                               </div>
                               <div className="text-[10px] text-neutral-400">{atleta.posicao}</div>

@@ -18,10 +18,12 @@ import { ESTADOS } from '@/lib/utils'
 import {
   Users, Landmark, ArrowLeft, ArrowRight, Eye, MapPin,
   MessageCircle, CircleCheckBig, Plus, Trash2, Trophy, Image as ImageIcon,
+  Clock,
 } from 'lucide-react'
 import { cn, formatPhone, formatCNPJ } from '@/lib/utils'
 import { toast } from 'sonner'
 import { AthleteProfilePreview } from '@/components/atletas/AthleteProfilePreview'
+import { CitySelect } from '@/components/ui/CitySelect'
 
 type Tipo = 'responsavel' | 'escolinha'
 
@@ -158,6 +160,7 @@ function CadastroForm() {
           aceitar_mensagens: atletaData.mensagens,
           foto_url: atleta_foto_url,
           fotos_adicionais: atleta_fotos_adicionais,
+          status: 'pendente',
         })
         .select('id')
         .single()
@@ -229,6 +232,7 @@ function CadastroForm() {
             foto_url: foto_url_final,
             descricao: data.descricao,
             fotos_adicionais: fotos_adicionais_final,
+            status: 'pendente',
           },
         },
       })
@@ -424,11 +428,17 @@ function CadastroForm() {
                 <div className="grid grid-cols-2 gap-3">
                   <FieldGroup>
                     <Label>Estado</Label>
-                    <Select options={ESTADOS} placeholder="Selecione" error={formEscolinha.formState.errors.estado?.message} {...formEscolinha.register('estado')} />
+                    <Select options={ESTADOS} placeholder="Selecione" error={formEscolinha.formState.errors.estado?.message} 
+                      {...formEscolinha.register('estado', { onChange: () => formEscolinha.setValue('cidade', '') })} />
                   </FieldGroup>
                   <FieldGroup>
                     <Label>Cidade</Label>
-                    <Input placeholder="Porto Alegre" error={formEscolinha.formState.errors.cidade?.message} {...formEscolinha.register('cidade')} />
+                    <CitySelect
+                      estado={formEscolinha.watch('estado')}
+                      value={formEscolinha.watch('cidade')}
+                      onChange={e => formEscolinha.setValue('cidade', e.target.value, { shouldValidate: true })}
+                      error={formEscolinha.formState.errors.cidade?.message}
+                    />
                   </FieldGroup>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -597,11 +607,17 @@ function AtletaSteps({ step, setStep, data, setData, loading, serverError, onSub
         <div className="grid grid-cols-2 gap-3">
           <FieldGroup>
             <Label>Estado</Label>
-            <Select options={ESTADOS} placeholder="Selecione" value={data.estado} onChange={(e: any) => setData({ ...data, estado: e.target.value })} />
+            <Select options={ESTADOS} placeholder="Selecione" value={data.estado} 
+              onChange={(e: any) => setData({ ...data, estado: e.target.value, cidade: '' })} />
           </FieldGroup>
           <FieldGroup>
             <Label>Cidade</Label>
-            <Input placeholder="Porto Alegre" value={data.cidade} onChange={(e: any) => setData({ ...data, cidade: e.target.value })} />
+            <CitySelect
+              estado={data.estado}
+              value={data.cidade}
+              onChange={(e: any) => setData({ ...data, cidade: e.target.value })}
+              placeholder="Porto Alegre"
+            />
           </FieldGroup>
         </div>
         <FieldGroup>
@@ -881,20 +897,22 @@ function SuccessScreen({ tipo }: { tipo: Tipo }) {
   return (
     <div className="min-h-screen bg-neutral-100 flex items-center justify-center px-4">
       <div className="w-full max-w-md bg-white border border-neutral-200 rounded-2xl p-8 sm:p-10 text-center shadow-sm">
-        <div className="text-green-400 flex justify-center mb-4"><CircleCheckBig size={48} /></div>
-        <h2 className="font-display text-3xl sm:text-4xl text-green-700 mb-3 text-center">
-          {tipo === 'responsavel' ? 'PERFIL PUBLICADO!' : 'CONTA CRIADA!'}
+        <div className="text-amber-400 flex justify-center mb-4"><Clock size={48} /></div>
+        <h2 className="font-display text-3xl sm:text-4xl text-neutral-800 mb-3 text-center uppercase">
+          Cadastro Recebido!
         </h2>
-        <p className="text-xs sm:text-sm text-neutral-500 leading-relaxed mb-2 text-center">
+        <p className="text-xs sm:text-sm text-neutral-500 leading-relaxed mb-4 text-center">
           {tipo === 'responsavel'
-            ? 'O atleta já está visível para as escolinhas.'
-            : 'Sua conta de escolinha foi criada com sucesso.'}
+            ? 'O perfil do atleta foi criado e agora passará por uma análise técnica de segurança.'
+            : 'Os dados da sua escolinha foram enviados para nossa equipe de verificação.'}
         </p>
-        <p className="text-[10px] sm:text-xs text-neutral-400 mb-6 sm:mb-8 text-center">
-          Verifique sua caixa de entrada para confirmar o e-mail.
-        </p>
+        <div className="bg-amber-50 border border-amber-100 rounded-xl p-3.5 mb-6 text-left">
+          <p className="text-[10px] sm:text-xs text-amber-700 leading-relaxed font-medium">
+            💡 <strong>O que acontece agora?</strong><br />
+            Nossa equipe revisará os dados em até 24h. Você receberá um e-mail assim que sua conta for aprovada e o acesso total for liberado.
+          </p>
+        </div>
         <div className="flex flex-col gap-2.5 sm:gap-3">
-          <Link href="/login"><Button variant="dark" className="w-full justify-center">Fazer login</Button></Link>
           <Link href="/"><Button variant="outline" className="w-full justify-center">Voltar ao início</Button></Link>
         </div>
       </div>

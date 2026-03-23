@@ -6,6 +6,7 @@ import { formatPhone, formatCNPJ, ESTADOS } from '@/lib/utils'
 import { updateProfile, updateEscolinhaLocalizacao, updateEscolinhaFotos } from './actions'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
+import { CitySelect } from '@/components/ui/CitySelect'
 
 export function ProfileForm({ profile, escolinha, isEscolinha }: any) {
   const router = useRouter()
@@ -225,7 +226,7 @@ export function ProfileForm({ profile, escolinha, isEscolinha }: any) {
               <Field label="Estado">
                 <select
                   value={estado}
-                  onChange={e => setEstado(e.target.value)}
+                  onChange={e => { setEstado(e.target.value); setCidade('') }}
                   className={`${inputClass} appearance-none`}
                 >
                   <option value="">Selecione</option>
@@ -233,11 +234,11 @@ export function ProfileForm({ profile, escolinha, isEscolinha }: any) {
                 </select>
               </Field>
               <Field label="Cidade">
-                <input
+                <CitySelect
+                  estado={estado}
                   value={cidade}
                   onChange={e => setCidade(e.target.value)}
-                  className={inputClass}
-                  placeholder="Porto Alegre"
+                  placeholder="Selecione a cidade"
                 />
               </Field>
             </div>

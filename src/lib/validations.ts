@@ -35,6 +35,16 @@ export const loginSchema = z.object({
   password: z.string().min(1, 'Senha é obrigatória'),
 })
 
+export type StatusVerificacao = 'pendente' | 'ativo' | 'rejeitado'
+
+export const profileSchema = z.object({
+  nome: fullNameRule,
+  email: emailRule,
+  telefone: phoneRule,
+  status: z.enum(['pendente', 'ativo', 'rejeitado']).default('pendente'),
+  is_admin: z.boolean().default(false),
+})
+
 export const cadastroResponsavelSchema = z.object({
   nome: fullNameRule,
   email: emailRule,
@@ -115,6 +125,7 @@ export const atletaSchema = z.object({
   habilidade_fisico: z.coerce.number().min(1).max(99),
   habilidade_finalizacao: z.coerce.number().min(1).max(99),
   habilidade_passes: z.coerce.number().min(1).max(99),
+  status: z.enum(['pendente', 'ativo', 'rejeitado']).default('pendente'),
 })
 
 // -----------------------------------------------
