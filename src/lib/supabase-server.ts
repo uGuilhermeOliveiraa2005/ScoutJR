@@ -53,3 +53,24 @@ export function createSupabaseAdmin() {
     },
   })
 }
+
+// -----------------------------------------------
+// Helper de Verificação de Perfil
+// -----------------------------------------------
+export async function checkUserVerification() {
+  const supabase = await createSupabaseServer()
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  if (!user) return { user: null, profile: null, isVerified: false, isAdmin: false }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('user_id', user.id)
+    .single()
+
+  const isAdmin = profile?.is_admin || false
+  const isVerified = (profile?.status === 'ativo' || isAdmin)
+
+  return { user, profile, isVerified, isAdmin }
+}

@@ -1,4 +1,4 @@
-import { createSupabaseServer } from '@/lib/supabase-server'
+import { checkUserVerification } from '@/lib/supabase-server'
 import { redirect } from 'next/navigation'
 import { signOutAction } from './actions'
 import { Clock, ShieldCheck, Mail, LogOut } from 'lucide-react'
@@ -8,28 +8,13 @@ import Link from 'next/link'
 export const dynamic = 'force-dynamic'
 
 export default async function WaitingVerificationPage() {
-  const supabase = await createSupabaseServer()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, profile, isVerified } = await checkUserVerification()
   
   if (!user) {
     redirect('/login')
   }
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('status, nome, is_admin')
-    .eq('user_id', user.id)
-    .single()
-
-  console.log('DEBUG WAITING PAGE:', { 
-    userId: user.id, 
-    email: user.email,
-    profileStatus: profile?.status, 
-    profileIsAdmin: profile?.is_admin 
-  })
-
-  if (profile?.status === 'ativo' || profile?.is_admin) {
-    console.log('REDIRECTING TO DASHBOARD...')
+  if (isVerified) {
     redirect('/dashboard')
   }
 

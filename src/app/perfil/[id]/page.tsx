@@ -1,72 +1,22 @@
 import { createSupabaseServer } from '@/lib/supabase-server'
 import { notFound, redirect } from 'next/navigation'
+import { headers } from 'next/headers'
 import { NavbarPublic } from '@/components/layout/Navbar'
 import { NavbarDashboard } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Navbar'
 import { Badge, SkillBar } from '@/components/ui/index'
 import { Avatar } from '@/components/ui/Avatar'
 import { POSICAO_LABEL, ESTADO_LABEL, calcularIdade } from '@/lib/utils'
-import { headers } from 'next/headers'
-import { MapPin, Landmark, Star, Send, Trophy, Target, Award, Play, BarChart2, ArrowLeft, Edit2, Eye } from 'lucide-react'
+import { MapPin, Landmark, Star, Send, Trophy, Target, Award, Play, BarChart2, ArrowLeft, Edit2 } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
 import { AthleteActions } from '@/components/atletas/AthleteActions'
 import { MediaGallery } from '@/components/atletas/MediaGallery'
 
-export const dynamic = 'force-dynamic'
-
-export default async function PerfilAtletaPage({
-  params,
-}: {
-  params: Promise<{ id: string }>
-}) {
+export default async function PerfilAtletaPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = await createSupabaseServer()
   const { data: { user } } = await supabase.auth.getUser()
-
-  let profile = null
-  let isEscolinha = false
-  let escolinhaId = null
-  let escolinha_data: any = null
-  let initialIsFavorite = false
-  let initialHasInterest = false
-
-  if (user) {
-    const { data: profileData } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('user_id', user.id)
-      .single()
-    profile = profileData
-
-    console.log('DEBUG PERFIL ATLETA:', {
-      userId: user.id,
-      email: user.email,
-      profileExists: !!profile,
-      profileStatus: profile?.status,
-      profileIsAdmin: profile?.is_admin
-    })
-
-    // Strict Lockout for unverified users
-    if (profile && profile.status !== 'ativo' && !profile.is_admin) {
-      console.log('PERFIL ATLETA REDIRECTING TO WAITING PAGE...')
-      redirect('/aguardando-verificacao')
-    }
-
-    isEscolinha = profile?.role === 'escolinha'
-
-    if (isEscolinha) {
-      const { data: c } = await supabase.from('escolinhas').select('id, foto_url, verificado').eq('user_id', user.id).single()
-      if (c) {
-        escolinhaId = c.id
-        escolinha_data = c
-        const { data: fav } = await supabase.from('favoritos').select('id').eq('atleta_id', id).eq('escolinha_id', c.id).single()
-        initialIsFavorite = !!fav
-        const { data: int } = await supabase.from('interesses').select('id').eq('atleta_id', id).eq('escolinha_id', c.id).single()
-        initialHasInterest = !!int
-      }
-    }
-  }
 
   const { data: atleta } = await supabase
     .from('atletas')
@@ -82,7 +32,6 @@ export default async function PerfilAtletaPage({
     const heads = await headers()
     const ip = heads.get('x-forwarded-for')?.split(',')[0] || heads.get('x-real-ip') || '127.0.0.1'
 
-    // Chama a RPC de forma assíncrona (não await para não atrasar o LCP)
     supabase.rpc('fn_registrar_visita', {
       p_page_path: `/perfil/${id}`,
       p_ip_address: ip,
@@ -92,195 +41,251 @@ export default async function PerfilAtletaPage({
     console.error('Erro ao registrar visita:', err)
   }
 
+  let profile = null
+  let isEscolinha = false
+  let escolinhaId = null
+  let escolinha_data: any = null
+  let initialIsFavorite = false
+  let initialHasInterest = false
+
+  if (user) {
+    const { data: p } = await supabase.from('profiles').select('*').eq('user_id', user.id).single()
+    profile = p
+    
+    // Strict Lockout for unverified users
+    if (profile && profile.status !== 'ativo' && !profile.is_admin) {
+      redirect('/aguardando-verificacao')
+    }
+
+    isEscolinha = p?.role === 'escolinha'
+
+    if (isEscolinha) {
+      const { data: c } = await supabase.from('escolinhas').select('id, foto_url').eq('user_id', user.id).single()
+      if (c) {
+        escolinhaId = c.id
+        escolinha_data = c
+        const { data: fav } = await supabase.from('favoritos').select('id').eq('atleta_id', id).eq('escolinha_id', c.id).single()
+        initialIsFavorite = !!fav
+        const { data: int } = await supabase.from('interesses').select('id').eq('atleta_id', id).eq('escolinha_id', c.id).single()
+        initialHasInterest = !!int
+      }
+    }
+  }
+
+  const isOwner = user && profile && atleta.responsavel_id === profile.id
+
   const userFotoUrl = isEscolinha
     ? (escolinha_data?.foto_url ?? profile?.foto_url ?? null)
     : (profile?.foto_url ?? null)
 
-  const isOwner = user && profile?.id === atleta.responsavel_id
+  const idade = calcularIdade(atleta.data_nascimento)
+  const statsAtual = atleta.atleta_stats?.sort((a: any, b: any) => b.temporada - a.temporada)[0]
+
+  const habilidades = [
+    { label: 'Técnica', value: atleta.habilidade_tecnica, color: 'green' as const },
+    { label: 'Velocidade', value: atleta.habilidade_velocidade, color: 'amber' as const },
+    { label: 'Visão', value: atleta.habilidade_visao, color: 'green' as const },
+    { label: 'Físico', value: atleta.habilidade_fisico, color: 'amber' as const },
+    { label: 'Finalização', value: atleta.habilidade_finalizacao, color: 'green' as const },
+    { label: 'Passes', value: atleta.habilidade_passes, color: 'green' as const },
+  ]
+
+  const Navbar = user && profile
+    ? <NavbarDashboard
+      userName={profile.nome}
+      userRole={profile.role}
+      userId={user.id}
+      userFotoUrl={userFotoUrl}
+    />
+    : <NavbarPublic />
 
   return (
     <>
-      {user && profile ? (
-        <NavbarDashboard
-          userName={profile.nome}
-          userRole={profile.role}
-          verificado={escolinha_data?.verificado ?? false}
-          userId={user.id}
-          userFotoUrl={userFotoUrl}
-        />
-      ) : (
-        <NavbarPublic />
-      )}
+      {Navbar}
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-6 pb-32 lg:pb-8">
 
-      <main className="min-h-screen bg-white">
-        {/* Header/Cover Section */}
-        <div className="relative bg-neutral-900 overflow-hidden pt-16 sm:pt-20">
-          <div className="absolute inset-0 opacity-20">
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black" />
-          </div>
+        <Link href="/busca" className="inline-flex items-center gap-1.5 text-xs sm:text-sm text-neutral-400 hover:text-neutral-700 mb-4 transition-colors">
+          <ArrowLeft size={13} /> Voltar para busca
+        </Link>
 
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 relative pb-10 sm:pb-16 flex flex-col md:flex-row gap-6 sm:gap-10 items-center md:items-end">
-            {/* Foto de Perfil */}
-            <div className="relative group flex-shrink-0 animate-in fade-in zoom-in duration-500">
-               <Avatar 
-                src={atleta.foto_url} 
-                nome={atleta.nome} 
-                size="xl" 
-                className="border-4 border-white shadow-2xl"
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 items-start">
+
+          {/* COLUNA 1: Perfil & Ações */}
+          <aside className="flex flex-col gap-6 lg:self-start">
+
+            {/* Card Principal de Perfil */}
+            <div className="bg-white border border-neutral-200 rounded-3xl overflow-hidden shadow-sm">
+              <div className="bg-green-100 px-5 py-6 flex items-center gap-4 relative overflow-hidden">
+                <Avatar
+                  src={atleta.foto_url}
+                  nome={atleta.nome}
+                  size="xl"
+                  colorClass="bg-green-400 text-white"
+                  className="z-10 border-2 border-white shadow-sm flex-shrink-0"
+                />
+                <div className="font-display text-7xl text-green-400/20 absolute right-4 -bottom-4 leading-none select-none pointer-events-none">
+                  {atleta.posicao}
+                </div>
+                <div className="flex-1 z-10 min-w-0">
+                  <h1 className="font-display text-2xl text-neutral-900 leading-tight mb-0.5 truncate">{atleta.nome}</h1>
+                  <p className="text-[10px] sm:text-xs text-neutral-500 font-bold uppercase tracking-widest truncate">{POSICAO_LABEL[atleta.posicao]}</p>
+                </div>
+              </div>
+              <div className="p-6">
+                <div className="flex flex-wrap gap-2 mb-4">
+                  <Badge variant="outline" className="bg-neutral-50 px-3 py-1 text-xs">{idade} anos</Badge>
+                  {atleta.exibir_cidade && <Badge variant="outline" className="bg-neutral-50 px-3 py-1 text-xs">{atleta.cidade}, {atleta.estado}</Badge>}
+                  <Badge variant="outline" className="bg-neutral-50 px-3 py-1 text-xs">{atleta.pe_dominante === 'destro' ? 'Destro' : atleta.pe_dominante === 'canhoto' ? 'Canhoto' : 'Ambidestro'}</Badge>
+                </div>
+                {atleta.escolinha_atual && (
+                  <div className="flex items-center gap-2 text-sm text-neutral-600 mb-5 bg-neutral-50 p-3 rounded-xl border border-neutral-100 font-bold uppercase tracking-tight">
+                    <Landmark size={14} className="text-neutral-400" />
+                    {atleta.escolinha_atual}
+                  </div>
+                )}
+
+                {isEscolinha ? (
+                  <div className="fixed bottom-0 inset-x-0 bg-white/90 backdrop-blur-md border-t border-neutral-200 p-4 z-50 lg:relative lg:bottom-auto lg:inset-auto lg:bg-transparent lg:border-t-0 lg:p-0 lg:z-auto">
+                    <div className="max-w-6xl mx-auto lg:max-w-none">
+                      <AthleteActions
+                        atletaId={atleta.id}
+                        escolinhaId={escolinhaId}
+                        initialIsFavorite={initialIsFavorite}
+                        initialHasInterest={initialHasInterest}
+                        aceitarMensagens={atleta.aceitar_mensagens}
+                      />
+                    </div>
+                  </div>
+                ) : !user ? (
+                  <Link href="/login" className="block mt-4">
+                    <Button variant="dark" className="w-full justify-center py-4 font-bold tracking-widest uppercase">ENTRAR PARA CONTATAR</Button>
+                  </Link>
+                ) : isOwner ? (
+                  <Link href={`/perfil/${atleta.id}/editar`} className="block mt-4">
+                    <Button variant="outline" className="w-full justify-center py-4 font-bold tracking-widest uppercase gap-2 border-green-200 text-green-700 bg-green-50/50 hover:bg-green-100 transition-all shadow-sm">
+                      <Edit2 size={16} /> EDITAR MEU PERFIL
+                    </Button>
+                  </Link>
+                ) : profile?.role === 'responsavel' ? (
+                  <div className="bg-neutral-50 border border-neutral-100 rounded-2xl p-4 mt-4 text-center">
+                    <p className="text-[10px] text-neutral-500 font-bold tracking-widest uppercase">
+                      ACESSO RESTRITO A ESCOLINHAS 🛡️
+                    </p>
+                  </div>
+                ) : null}
+              </div>
+            </div>
+
+            {/* Stats Rápidas (Desktop Sidebar) */}
+            {statsAtual && (
+              <div className="hidden lg:block bg-white border border-neutral-200 rounded-3xl p-6 shadow-sm">
+                <div className="flex items-center gap-2 mb-5">
+                  <BarChart2 size={16} className="text-green-600" />
+                  <span className="text-xs font-bold uppercase tracking-widest text-neutral-500">Temporada {statsAtual.temporada}</span>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  {[
+                    ['Jogos', statsAtual.jogos],
+                    ['Gols', statsAtual.gols],
+                    ['Assists', statsAtual.assistencias],
+                    ['Nota média', statsAtual.nota_media],
+                  ].map(([label, value]) => (
+                    <div key={label as string} className="bg-neutral-50 rounded-2xl p-4 text-center border border-neutral-100">
+                      <div className="font-display text-2xl text-green-700 leading-none">{value as number}</div>
+                      <div className="text-[10px] text-neutral-400 mt-2 font-bold uppercase tracking-tighter">{label as string}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </aside>
+
+          {/* COLUNA 2: Conteúdo Principal */}
+          <div className="lg:col-span-2 flex flex-col gap-6">
+
+            {/* Foto de Capa */}
+            {atleta.foto_url ? (
+              <div className="relative aspect-video rounded-3xl overflow-hidden shadow-lg border border-neutral-200 bg-neutral-100 group">
+                <img src={atleta.foto_url} alt={`Capa de ${atleta.nome}`} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
+              </div>
+            ) : (
+              <div className="aspect-video rounded-3xl border-2 border-dashed border-neutral-200 flex items-center justify-center bg-neutral-50 font-display text-neutral-300">
+                SCJR
+              </div>
+            )}
+
+            {/* Stats Mobile */}
+            {statsAtual && (
+              <div className="lg:hidden grid grid-cols-4 gap-2 bg-white border border-neutral-200 rounded-2xl p-4">
+                {[
+                  ['Jogos', statsAtual.jogos],
+                  ['Gols', statsAtual.gols],
+                  ['Assist', statsAtual.assistencias],
+                  ['Nota', statsAtual.nota_media],
+                ].map(([label, value]) => (
+                  <div key={label as string} className="text-center">
+                    <div className="font-display text-2xl text-green-700 leading-none">{value as number}</div>
+                    <div className="text-[9px] text-neutral-400 mt-0.5 uppercase font-bold tracking-tighter">{label as string}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {atleta.descricao && (
+              <Section title="Sobre o atleta">
+                <p className="text-sm text-neutral-600 leading-relaxed text-justify">{atleta.descricao}</p>
+              </Section>
+            )}
+
+            <Section title="Habilidades">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-4">
+                {habilidades.map(h => (
+                  <SkillBar key={h.label} label={h.label} value={h.value} color={h.color} />
+                ))}
+              </div>
+            </Section>
+
+            {(atleta.altura_cm || atleta.peso_kg) && (
+              <Section title="Dados físicos">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  {atleta.altura_cm && <DataItem label="Altura" value={`${atleta.altura_cm}cm`} />}
+                  {atleta.peso_kg && <DataItem label="Peso" value={`${atleta.peso_kg}kg`} />}
+                  <DataItem label="Pé" value={atleta.pe_dominante === 'destro' ? 'Destro' : atleta.pe_dominante === 'canhoto' ? 'Canhoto' : 'Ambidestro'} />
+                  {atleta.posicao_secundaria && <DataItem label="Posição sec." value={POSICAO_LABEL[atleta.posicao_secundaria]} />}
+                </div>
+              </Section>
+            )}
+
+            <Section title="Galeria & Vídeos">
+              <MediaGallery
+                photos={atleta.fotos_adicionais || []}
+                videos={atleta.atleta_videos || []}
               />
-              {atleta.destaque_ativo && (
-                <div className="absolute -top-3 -right-3 bg-amber-400 text-amber-950 p-2.5 rounded-full shadow-lg border-2 border-white animate-bounce">
-                  <Star size={18} fill="currentColor" />
-                </div>
-              )}
-            </div>
+            </Section>
 
-            {/* Nome e Info Básica */}
-            <div className="text-center md:text-left flex-1 animate-in fade-in slide-in-from-left duration-500 delay-150">
-              <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md px-3 py-1 rounded-full text-white/80 text-[10px] sm:text-xs font-semibold tracking-wider mb-3">
-                <Landmark size={12} className="text-green-400" />
-                {atleta.posicao?.toUpperCase() || 'POSIÇÃO'} • {atleta.clube_atual?.toUpperCase() || 'SEM CLUBE'}
-              </div>
-              
-              <h1 className="font-display text-4xl sm:text-5xl md:text-6xl text-white tracking-tight leading-none mb-3">
-                {atleta.nome.toUpperCase()}
-              </h1>
-
-              <div className="flex flex-wrap justify-center md:justify-start items-center gap-4 sm:gap-6 text-white/60 text-xs sm:text-sm">
-                <div className="flex items-center gap-2">
-                  <MapPin size={14} className="text-green-500" />
-                  {atleta.cidade}, {atleta.estado}
-                </div>
-                <div className="flex items-center gap-2">
-                  <Trophy size={14} className="text-amber-500" />
-                  {calcularIdade(atleta.data_nascimento)} ANOS
-                </div>
-                <div className="flex items-center gap-2">
-                  <Star size={14} className="text-blue-500" />
-                  {atleta.pe_dominante === 'canhoto' ? 'CANHOTO' : atleta.pe_dominante === 'destro' ? 'DESTRO' : 'AMBIDESTRO'}
-                </div>
-              </div>
-            </div>
-
-            {/* Botões de Ação */}
-            <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto animate-in fade-in slide-in-from-right duration-500 delay-300">
-              {isOwner ? (
-                <Link href="/configuracoes">
-                  <Button variant="outline" className="w-full sm:w-auto bg-white/5 border-white/20 text-white hover:bg-white/10 py-6 px-8 rounded-2xl flex items-center justify-center gap-2">
-                    <Edit2 size={16} /> Editar Perfil
-                  </Button>
-                </Link>
-              ) : (
-                <AthleteActions 
-                  atletaId={id}
-                  escolinhaId={escolinhaId}
-                  initialIsFavorite={initialIsFavorite}
-                  initialHasInterest={initialHasInterest}
-                  aceitarMensagens={atleta.aceitar_mensagens}
-                />
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Informações detalhadas */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-16">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 sm:gap-16">
-            
-            {/* Coluna Esquerda: Skills e Atributos */}
-            <div className="lg:col-span-2 space-y-12">
-              
-              {/* Descrição */}
-              {atleta.descricao && (
-                <section className="animate-in fade-in duration-700">
-                  <h2 className="font-display text-2xl text-neutral-900 mb-6 flex items-center gap-3">
-                    <span className="w-2 h-8 bg-green-500 rounded-full" />
-                    SOBRE O ATLETA
-                  </h2>
-                  <p className="text-neutral-600 leading-relaxed text-base sm:text-lg">
-                    {atleta.descricao}
-                  </p>
-                </section>
-              )}
-
-              {/* Habilidades Técnicas */}
-              <section className="animate-in fade-in duration-700 delay-200">
-                <h2 className="font-display text-2xl text-neutral-900 mb-8 flex items-center gap-3">
-                  <span className="w-2 h-8 bg-blue-500 rounded-full" />
-                  ATRIBUTOS TÉCNICOS
-                </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-8">
-                  <SkillBar label="Técnica" value={atleta.habilidade_tecnica} />
-                  <SkillBar label="Velocidade" value={atleta.habilidade_velocidade} />
-                  <SkillBar label="Visão de Jogo" value={atleta.habilidade_visao} />
-                  <SkillBar label="Físico" value={atleta.habilidade_fisico} />
-                  <SkillBar label="Finalização" value={atleta.habilidade_finalizacao} />
-                  <SkillBar label="Passes" value={atleta.habilidade_passes} />
-                </div>
-              </section>
-
-              {/* Galeria de Mídia */}
-              <section className="animate-in fade-in duration-700 delay-400">
-                <h2 className="font-display text-2xl text-neutral-900 mb-8 flex items-center gap-3">
-                  <span className="w-2 h-8 bg-amber-500 rounded-full" />
-                  MÍDIA E DESTAQUES
-                </h2>
-                <MediaGallery 
-                  photos={atleta.fotos_adicionais || []} 
-                  videos={atleta.atleta_videos || []} 
-                />
-              </section>
-            </div>
-
-            {/* Coluna Direita: Conquistas e Sidebar */}
-            <div className="space-y-12">
-              
-              {/* Conquistas (Trophies) */}
-              <section className="animate-in fade-in slide-in-from-right duration-700 delay-300">
-                <h2 className="font-display text-xl text-neutral-900 mb-6 flex items-center gap-3">
-                  <Trophy size={20} className="text-amber-500" />
-                  CONQUISTAS
-                </h2>
-                <div className="space-y-4">
-                  {atleta.atleta_conquistas && atleta.atleta_conquistas.length > 0 ? (
-                    atleta.atleta_conquistas.map((conquista: any) => (
-                      <div key={conquista.id} className="bg-neutral-50 border border-neutral-100 p-5 rounded-2xl group hover:bg-neutral-100 transition-colors">
-                        <div className="text-xs font-bold text-amber-600 mb-1">{conquista.ano}</div>
-                        <div className="font-semibold text-neutral-900 mb-1 group-hover:text-amber-700 transition-colors">{conquista.titulo}</div>
-                        {conquista.descricao && (
-                          <div className="text-xs text-neutral-500 leading-relaxed font-medium">{conquista.descricao}</div>
+            {atleta.atleta_conquistas && atleta.atleta_conquistas.length > 0 && (
+              <Section title="Conquistas & Hall da Fama">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {atleta.atleta_conquistas.map((c: any) => (
+                    <div key={c.id} className="group bg-amber-50/50 border border-amber-100 rounded-3xl p-5 flex gap-5 transition-all hover:shadow-xl hover:bg-white active:scale-[0.98]">
+                      <div className="w-14 h-14 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center flex-shrink-0 group-hover:rotate-12 transition-transform shadow-inner">
+                        <Trophy size={28} fill="currentColor" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-start mb-2">
+                          <h3 className="text-sm font-black text-neutral-900 leading-tight uppercase tracking-tighter">{c.titulo}</h3>
+                          <span className="text-[10px] font-black text-white bg-amber-600 px-2 py-0.5 rounded-full shadow-sm">{c.ano}</span>
+                        </div>
+                        {c.descricao && (
+                          <p className="text-xs text-neutral-500 leading-relaxed line-clamp-2">{c.descricao}</p>
                         )}
                       </div>
-                    ))
-                  ) : (
-                    <div className="py-10 text-center bg-neutral-50 rounded-2xl border border-dashed border-neutral-200">
-                      <Trophy size={24} className="text-neutral-300 mx-auto mb-2" />
-                      <p className="text-xs text-neutral-400 font-medium">Nenhuma conquista registrada.</p>
                     </div>
-                  )}
+                  ))}
                 </div>
-              </section>
-
-              {/* Sidebar Info Card */}
-              <div className="bg-green-700 rounded-3xl p-8 text-white shadow-xl animate-in fade-in duration-700 delay-500">
-                <h3 className="font-display text-xl mb-6 flex items-center gap-3 border-b border-white/10 pb-4">
-                  RESUMO DO ATLETA
-                </h3>
-                <div className="space-y-6">
-                  <SidebarItem label="Altura" value={atleta.atleta_stats?.[0]?.altura ? `${atleta.atleta_stats[0].altura} cm` : '—'} />
-                  <SidebarItem label="Peso" value={atleta.atleta_stats?.[0]?.peso ? `${atleta.atleta_stats[0].peso} kg` : '—'} />
-                  <SidebarItem label="Clube Atual" value={atleta.clube_atual || 'Sem clube'} />
-                  <SidebarItem label="Pé Dominante" value={atleta.pe_dominante === 'canhoto' ? 'Canhoto' : atleta.pe_dominante === 'destro' ? 'Destro' : 'Ambidestro'} />
-                  <SidebarItem label="Visibilidade" value={atleta.visivel ? 'Perfil Público' : 'Privado'} />
-                </div>
-                
-                {!isOwner && (
-                  <Button className="w-full mt-10 py-7 bg-white text-green-700 hover:bg-green-50 rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg">
-                    <Send size={18} /> ENVIAR MENSAGEM
-                  </Button>
-                )}
-              </div>
-            </div>
+              </Section>
+            )}
           </div>
         </div>
       </main>
@@ -289,11 +294,22 @@ export default async function PerfilAtletaPage({
   )
 }
 
-function SidebarItem({ label, value }: { label: string; value: string }) {
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div>
-      <div className="text-white/50 text-[10px] uppercase font-bold tracking-widest mb-1">{label}</div>
-      <div className="text-base font-semibold">{value}</div>
+    <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
+      <div className="px-4 sm:px-5 py-3 sm:py-3.5 border-b border-neutral-100">
+        <h2 className="text-xs sm:text-sm font-medium text-neutral-700">{title}</h2>
+      </div>
+      <div className="p-4 sm:p-5">{children}</div>
+    </div>
+  )
+}
+
+function DataItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="bg-neutral-50 rounded-lg p-2.5 sm:p-3">
+      <div className="text-[9px] sm:text-xs text-neutral-400 uppercase tracking-wide mb-0.5 sm:mb-1">{label}</div>
+      <div className="text-xs sm:text-sm font-medium text-neutral-900">{value}</div>
     </div>
   )
 }

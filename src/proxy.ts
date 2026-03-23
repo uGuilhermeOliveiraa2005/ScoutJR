@@ -49,10 +49,27 @@ export default async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
-  if (isAdminRoute && user) {
+  if (isProtected && user) {
     const { data: profile } = await supabase
-      .from('profiles').select('role').eq('user_id', user.id).single()
-    if (profile?.role !== 'admin') {
+      .from('profiles')
+      .select('status, is_admin')
+      .eq('user_id', user.id)
+      .single()
+
+    const needsVerification = profile && profile.status !== 'ativo' && !profile.is_admin
+    
+    // Se precisa de verificação e NÃO está na página de espera -> Redireciona para espera
+    if (needsVerification && !pathname.startsWith('/aguardando-verificacao')) {
+      return NextResponse.redirect(new URL('/aguardando-verificacao', request.url))
+    }
+
+    // Se NÃO precisa de verificação mas está na página de espera -> Redireciona para dashboard
+    if (!needsVerification && pathname.startsWith('/aguardando-verificacao')) {
+      return NextResponse.redirect(new URL('/dashboard', request.url))
+    }
+
+    // Check Admin Route specifically
+    if (isAdminRoute && !profile?.is_admin) {
       return NextResponse.redirect(new URL('/dashboard', request.url))
     }
   }

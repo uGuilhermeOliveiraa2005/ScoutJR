@@ -212,6 +212,7 @@ function Step1({ data, setData, onNext }: any) {
 
       <div className="grid grid-cols-2 gap-3">
         <FieldGroup>
+          <Label>Estado</Label>
           <Select
             options={ESTADOS}
             value={data.estado}
@@ -608,7 +609,7 @@ function SuccessScreen({ mode, athleteId }: { mode: 'create' | 'edit'; athleteId
         <p className="text-sm text-neutral-500 mb-8 leading-relaxed">
           {mode === 'create'
             ? 'Parabéns! O perfil do seu atleta está completo e pronto para ser descoberto pelas melhores escolinhas do Brasil.'
-            : 'As alterações foram salvas com sucesso e já estão visíveis para as escolinhas.'}
+            : 'As alterações foram salvas com sucesso e já estão ativas em seu perfil!'}
         </p>
         <div className="space-y-3">
           <Link href={mode === 'create' ? '/dashboard' : `/perfil/${athleteId}`} className="block">

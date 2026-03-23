@@ -186,7 +186,6 @@ export async function updateAthlete(id: string, data: any) {
       aceitar_mensagens: data.mensagens,
       foto_url: data.fotoUrl || null,
       fotos_adicionais: data.fotosAdicionais || [],
-      status: 'pendente',
     })
     .eq('id', id)
     .select('id')

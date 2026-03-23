@@ -92,7 +92,7 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     /* Prevent horizontal scroll on mobile */
-    overflow-x: hidden;
+    overflow-x: clip;
   }
 
   /* Custom scrollbar */

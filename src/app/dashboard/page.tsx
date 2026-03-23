@@ -1,4 +1,4 @@
-import { createSupabaseServer, createSupabaseAdmin } from '@/lib/supabase-server'
+import { createSupabaseServer, checkUserVerification } from '@/lib/supabase-server'
 import { redirect } from 'next/navigation'
 import { NavbarDashboard } from '@/components/layout/Navbar'
 import { Users, Star, MessageCircle, TrendingUp, ArrowRight, Eye, Clock } from 'lucide-react'
@@ -11,29 +11,11 @@ import { cn } from '@/lib/utils'
 export const dynamic = 'force-dynamic'
 
 export default async function DashboardPage() {
+  const { user, profile, isVerified } = await checkUserVerification()
   const supabase = await createSupabaseServer()
-  const { data: { user } } = await supabase.auth.getUser()
+
   if (!user) redirect('/login')
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('user_id', user.id)
-    .single()
-
-  console.log('DEBUG DASHBOARD:', {
-    userId: user.id,
-    email: user.email,
-    profileExists: !!profile,
-    profileStatus: profile?.status,
-    profileIsAdmin: profile?.is_admin
-  })
-
-  // FORCE REDIRECT - No pending users allowed here
-  if (!profile || (profile.status !== 'ativo' && !profile.is_admin)) {
-    console.log('DASHBOARD REDIRECTING TO WAITING PAGE...')
-    redirect('/aguardando-verificacao')
-  }
+  if (!profile || !isVerified) redirect('/aguardando-verificacao')
 
 
   const isEscolinha = profile.role === 'escolinha'
