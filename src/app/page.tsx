@@ -51,7 +51,7 @@ function HeroSection() {
   return (
     <section className="relative w-full overflow-hidden bg-[#0A1A14]">
       {/* Dynamic Background Elements */}
-      <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
+      <div className="absolute inset-0 bg-[url('/noise.svg')] opacity-20 mix-blend-overlay"></div>
       <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[70%] rounded-[100%] bg-green-500/20 blur-[120px] pointer-events-none"></div>
       <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[80%] rounded-[100%] bg-amber-500/10 blur-[150px] pointer-events-none"></div>
       
