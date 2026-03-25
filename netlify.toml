@@ -1,9 +1,9 @@
 [build]
   command = "npm run build"
-  publish = ".next"
+  publish = ".netlify"
 
-# O Netlify detecta automaticamente o Next.js e instala o plugin necessário (Next.js Runtime),
-# mas você pode forçar configurações específicas aqui se necessário no futuro.
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
 
 [[headers]]
   for = "/*"
