@@ -1,7 +1,7 @@
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-  // Ignora os erros de TypeScript durante o build da Vercel
+  // Ignora os erros de TypeScript durante o build em produção
   typescript: {
     ignoreBuildErrors: true,
   },
