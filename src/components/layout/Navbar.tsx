@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
-import { Menu, X, LogOut, Settings, LayoutDashboard, ShieldCheck, Trophy, Search } from 'lucide-react'
+import { Menu, X, LogOut, Settings, LayoutDashboard, ShieldCheck, Trophy, Search, Info, Users, Building2, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
 import { createSupabaseBrowser } from '@/lib/supabase'
@@ -52,18 +52,24 @@ export function NavbarPublic() {
         <div className="md:hidden border-t border-neutral-100 bg-white shadow-xl animate-in fade-in slide-in-from-top-2 duration-200">
           <nav className="px-4 py-3 flex flex-col gap-0.5">
             {[
-              { href: '/#como-funciona', label: 'Como funciona' },
-              { href: '/#para-quem', label: 'Para quem' },
-              { href: '/ranking', label: '🏆 Ranking' },
-              { href: '/#escolinhas', label: 'Para escolinhas' },
+              { href: '/#como-funciona', label: 'Como funciona', icon: <Info size={18} /> },
+              { href: '/#para-quem', label: 'Para quem', icon: <Users size={18} /> },
+              { href: '/ranking', label: 'Ranking', icon: <Trophy size={18} /> },
+              { href: '/#escolinhas', label: 'Para escolinhas', icon: <Building2 size={18} /> },
             ].map(item => (
               <Link
                 key={item.href}
                 href={item.href}
-                className="text-sm font-medium py-3 px-3 rounded-lg text-neutral-700 hover:bg-neutral-50 hover:text-neutral-900 transition-colors"
+                className="flex items-center justify-between py-3.5 px-4 rounded-xl text-neutral-700 hover:bg-neutral-50 active:bg-neutral-100 transition-all border border-transparent hover:border-neutral-100 group"
                 onClick={() => setOpen(false)}
               >
-                {item.label}
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-neutral-50 flex items-center justify-center text-neutral-400 group-hover:bg-green-50 group-hover:text-green-600 transition-colors">
+                    {item.icon}
+                  </div>
+                  <span className="text-sm font-semibold tracking-tight">{item.label}</span>
+                </div>
+                <ChevronRight size={14} className="text-neutral-300 group-hover:text-green-400 group-hover:translate-x-0.5 transition-all" />
               </Link>
             ))}
           </nav>
