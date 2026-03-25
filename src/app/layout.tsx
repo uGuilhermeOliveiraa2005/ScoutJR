@@ -9,8 +9,9 @@ import { createSupabaseServer } from '@/lib/supabase-server'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'ScoutJR',
-  description: 'Plataforma de talentos do futebol infantil',
+  title: 'ScoutJR | A maior vitrine digital para talentos do futebol de base',
+  description: 'Conectamos jovens atletas a olheiros e escolinhas de futebol em todo o Brasil. Crie seu currículo digital, compartilhe lances e inicie sua carreira profissional hoje.',
+  keywords: ['futebol infantil', 'categorias de base', 'olheiro de futebol', 'peneiras de futebol', 'scoutjr', 'talento do futebol'],
 }
 
 export const viewport = {

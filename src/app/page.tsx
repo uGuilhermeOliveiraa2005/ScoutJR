@@ -72,15 +72,15 @@ function HeroSection() {
             </div>
 
             <h1 className="font-display text-5xl sm:text-6xl md:text-7xl lg:text-[7rem] leading-[0.85] tracking-tight text-white mb-6 uppercase break-words hyphens-auto mt-2">
-              O futuro do <br />
+              O FUTURO DO <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-300 filter drop-shadow-[0_0_20px_rgba(74,222,128,0.3)]">
-                Futebol
+                FUTEBOL DE BASE
               </span> <br />
-              Começa aqui.
+              COMEÇA AQUI.
             </h1>
 
             <p className="text-neutral-300 text-lg sm:text-xl leading-relaxed mb-10 max-w-xl font-light">
-              Conectamos jovens talentos e escolinhas de todo o Brasil. Pais criam o perfil, olheiros descobrem o próximo craque. Simples, gratuito e seguro.
+              A vitrine profissional que o talento do seu filho merece. No ScoutJR, conectamos jovens promessas a olheiros e escolinhas de todo o Brasil através de um currículo digital completo e seguro.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
@@ -309,8 +309,8 @@ function HowItWorksBento() {
           <div className="inline-flex items-center gap-2 bg-green-50 text-green-700 text-xs font-bold px-4 py-2 rounded-full mb-6 uppercase tracking-widest border border-green-100">
             Simples e Direto
           </div>
-          <h2 className="font-display text-5xl sm:text-6xl text-neutral-900 leading-none">
-            3 PASSOS PARA O <span className="text-green-500">SUCESSO</span>
+          <h2 className="font-display text-5xl sm:text-6xl text-neutral-900 leading-none uppercase">
+            3 passos para iniciar sua <br/> <span className="text-green-500">carreira no futebol</span>
           </h2>
           <p className="mt-6 text-lg text-neutral-500">
             Nossa plataforma descomplica a jornada. O atleta foca em jogar bem, nós focamos em mostrar seu talento para as pessoas certas.
@@ -328,7 +328,7 @@ function HowItWorksBento() {
               <div className="w-14 h-14 rounded-2xl bg-white shadow-sm border border-neutral-100 flex items-center justify-center text-neutral-700 mb-6 group-hover:text-green-600 transition-colors">
                 <UserPlus size={28} />
               </div>
-              <h3 className="text-xl sm:text-2xl font-bold text-neutral-900 mb-3">Criação do Perfil</h3>
+              <h3 className="text-xl sm:text-2xl font-bold text-neutral-900 mb-3">Crie seu Perfil de Atleta</h3>
               <p className="text-neutral-500 leading-relaxed text-sm sm:text-base">
                 Os pais ou responsáveis cadastram o atleta. Adicione posição, pé dominante, altura, fotos e os melhores lances em vídeo. É fácil e totalmente gratuito.
               </p>
@@ -345,7 +345,7 @@ function HowItWorksBento() {
                 <div className="w-14 h-14 rounded-2xl bg-white shadow-sm border border-neutral-100 flex items-center justify-center text-neutral-700 mb-6 group-hover:text-amber-500 transition-colors">
                   <Search size={28} />
                 </div>
-                <h3 className="text-xl sm:text-2xl font-bold text-neutral-900 mb-3">Escolinhas em Busca</h3>
+                <h3 className="text-xl sm:text-2xl font-bold text-neutral-900 mb-3">Seja Visto por Olheiros</h3>
                 <p className="text-neutral-500 leading-relaxed text-sm sm:text-base">
                   Olheiros e treinadores usam nossa busca avançada. Eles filtram por idade, posição e região para encontrar exatamente a peça que falta nos seus elencos.
                 </p>
@@ -375,7 +375,7 @@ function HowItWorksBento() {
                  <Handshake size={32} />
                </div>
                <div className="flex-1 text-center md:text-left">
-                 <h3 className="text-xl sm:text-2xl font-bold text-neutral-900 mb-2">Conexão Realizada</h3>
+                 <h3 className="text-xl sm:text-2xl font-bold text-neutral-900 mb-2">Conquiste sua Oportunidade</h3>
                  <p className="text-neutral-500 leading-relaxed text-sm sm:text-base max-w-3xl">
                    Quando a escolinha gosta do perfil, ela envia uma mensagem. Vocês trocam contatos com total segurança e o sonho começa a virar realidade fora das telas. A decisão final é sempre da família.
                  </p>
@@ -404,8 +404,8 @@ function ForWhoSplitSection() {
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10">
         <div className="text-center mb-16 sm:mb-24">
-          <h2 className="font-display text-5xl sm:text-6xl text-white">
-            DOIS LADOS. <span className="text-green-400">UMA PAIXÃO.</span>
+          <h2 className="font-display text-5xl sm:text-6xl text-white uppercase">
+            A ponte entre o <span className="text-green-400">talento e a oportunidade</span>
           </h2>
           <p className="mt-4 text-neutral-400 text-lg">Criamos a ponte perfeita entre a promessa e a oportunidade.</p>
         </div>
