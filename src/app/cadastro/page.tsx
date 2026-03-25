@@ -18,7 +18,7 @@ import { ESTADOS } from '@/lib/utils'
 import {
   Users, Landmark, ArrowLeft, ArrowRight, Eye, MapPin,
   MessageCircle, CircleCheckBig, Plus, Trash2, Trophy, Image as ImageIcon,
-  Clock,
+  Clock, Building2, Mail, Phone, FileText
 } from 'lucide-react'
 import { cn, formatPhone, formatCNPJ, translateAuthError } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -592,13 +592,19 @@ function CadastroForm() {
                 <Label>Fotos da Estrutura (Máx. 3)</Label>
                 <Input type="file" accept="image/*" multiple className="pt-2" onChange={async e => {
                   if (e.target.files && e.target.files.length > 0) {
-                    const selected = Array.from(e.target.files).slice(0, 3)
+                    const newFiles = Array.from(e.target.files)
+                    const remainingSlots = 3 - escolinhaFotos.length
+                    if (remainingSlots <= 0) {
+                      toast.error('Máximo de 3 fotos atingido')
+                      return
+                    }
+                    const selected = newFiles.slice(0, remainingSlots)
                     const withPreview = await Promise.all(selected.map(f => new Promise(resolve => {
                       const reader = new FileReader()
                       reader.onload = ev => resolve(Object.assign(f, { preview: ev.target?.result as string }))
                       reader.readAsDataURL(f)
                     })))
-                    setEscolinhaFotos(withPreview as any[])
+                    setEscolinhaFotos(prev => [...prev, ...withPreview] as any[])
                   }
                 }} />
                 {escolinhaFotos.length > 0 && (
@@ -627,20 +633,60 @@ function CadastroForm() {
               <div className="font-display text-3xl sm:text-4xl text-neutral-400 mb-1.5 leading-none">04</div>
               <h2 className="text-lg sm:text-xl font-medium mb-1">Tudo certo!</h2>
               <p className="text-xs sm:text-sm text-neutral-500 mb-4 sm:mb-6">Revise suas informações e finalize o cadastro.</p>
-              <div className="border border-neutral-200 rounded-xl overflow-hidden mb-5 sm:mb-6">
-                {[
-                  { title: 'Acesso a todos os perfis', sub: 'Visualize perfis completos com stats e vídeos' },
-                  { title: 'Filtros avançados', sub: 'Posição, idade, cidade, habilidades e mais' },
-                  { title: 'Contato direto', sub: 'Envie mensagens para as famílias' },
-                ].map((item, i) => (
-                  <div key={i} className="flex items-center gap-3 sm:gap-4 p-3.5 sm:p-4 border-b border-neutral-100 last:border-none">
-                    <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-green-100 text-green-700 flex items-center justify-center flex-shrink-0 font-display text-sm">{i + 1}</div>
+              <div className="bg-neutral-50 border border-neutral-200 rounded-2xl p-5 mb-6">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="w-16 h-16 rounded-xl bg-white border border-neutral-200 overflow-hidden flex-shrink-0">
+                    {escolinhaPreview ? <img src={escolinhaPreview} alt="Logo" className="w-full h-full object-cover" /> : <Building2 className="w-full h-full p-4 text-neutral-300" />}
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-neutral-900 leading-tight">{formEscolinha.watch('nome') || 'Nome não informado'}</h3>
+                    <p className="text-xs text-neutral-500 uppercase font-bold tracking-wider mt-1">{formEscolinha.watch('cnpj') || 'CNPJ não informado'}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="flex items-start gap-3">
+                    <MapPin size={16} className="text-green-600 mt-0.5" />
                     <div>
-                      <div className="text-xs sm:text-sm font-medium">{item.title}</div>
-                      <div className="text-[10px] sm:text-xs text-neutral-400">{item.sub}</div>
+                      <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Localização</div>
+                      <div className="text-sm text-neutral-700">{formEscolinha.watch('cidade')}, {formEscolinha.watch('estado')}</div>
                     </div>
                   </div>
-                ))}
+                  <div className="flex items-start gap-3">
+                    <Mail size={16} className="text-green-600 mt-0.5" />
+                    <div>
+                      <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">E-mail de contato</div>
+                      <div className="text-sm text-neutral-700">{formEscolinha.watch('email')}</div>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <Phone size={16} className="text-green-600 mt-0.5" />
+                    <div>
+                      <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">WhatsApp / Telefone</div>
+                      <div className="text-sm text-neutral-700">{formEscolinha.watch('telefone')}</div>
+                    </div>
+                  </div>
+                  {formEscolinha.watch('descricao') && (
+                    <div className="flex items-start gap-3">
+                      <FileText size={16} className="text-green-600 mt-0.5" />
+                      <div>
+                        <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Sobre</div>
+                        <div className="text-sm text-neutral-700 line-clamp-2 leading-relaxed">{formEscolinha.watch('descricao')}</div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {escolinhaFotos.length > 0 && (
+                  <div className="mt-6 pt-6 border-t border-neutral-200/50">
+                    <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-3">Estrutura ({escolinhaFotos.length}/3)</div>
+                    <div className="flex gap-2">
+                       {escolinhaFotos.map((file, i) => (
+                         <img key={i} src={file.preview} className="w-12 h-12 rounded-lg object-cover border border-neutral-200" alt="Estrutura" />
+                       ))}
+                    </div>
+                  </div>
+                )}
               </div>
               {serverError && (
                 <div className="bg-red-50 border border-red-200 text-red-600 text-xs sm:text-sm rounded-lg px-3 sm:px-4 py-2.5 mb-4">{serverError}</div>
