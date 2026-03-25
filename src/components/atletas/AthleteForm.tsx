@@ -41,6 +41,8 @@ export function AthleteForm({ initialData, athleteId, mode, onSubmit }: AthleteF
     cidade: initialData?.cidade || '',
     posicao: initialData?.posicao || 'MEI',
     peDominante: initialData?.pe_dominante || 'destro',
+    altura_cm: initialData?.altura_cm || '',
+    peso_kg: initialData?.peso_kg || '',
     escolinhaAtual: initialData?.escolinha_atual || '',
     habilidades: [
       initialData?.habilidade_tecnica ?? 75,
@@ -51,6 +53,7 @@ export function AthleteForm({ initialData, athleteId, mode, onSubmit }: AthleteF
       initialData?.habilidade_passes ?? 79,
     ],
     fotoUrl: initialData?.foto_url || '',
+    capaUrl: initialData?.capa_url || '',
     fotosAdicionais: initialData?.fotos_adicionais || [],
     videos: initialData?.atleta_videos?.map((v: any) => ({ url: v.url, titulo: v.titulo })) || [],
     conquistas: initialData?.atleta_conquistas?.map((c: any) => ({
@@ -233,6 +236,17 @@ function Step1({ data, setData, onNext }: any) {
 
       <div className="grid grid-cols-2 gap-3">
         <FieldGroup>
+          <Label>Altura (cm)</Label>
+          <Input type="number" min="100" max="220" placeholder="Ex: 175" value={data.altura_cm} onChange={(e: any) => setData({ ...data, altura_cm: e.target.value })} />
+        </FieldGroup>
+        <FieldGroup>
+          <Label>Peso (kg)</Label>
+          <Input type="number" min="20" max="120" placeholder="Ex: 68" value={data.peso_kg} onChange={(e: any) => setData({ ...data, peso_kg: e.target.value })} />
+        </FieldGroup>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <FieldGroup>
           <Label>Pé dominante</Label>
           <Select
             options={[
@@ -354,13 +368,22 @@ function Step3({ data, setData, onBack, onNext }: any) {
         <p className="text-xs text-neutral-400">Adicione fotos e links de vídeos para impressionar as escolinhas.</p>
       </div>
 
-      <ImageUpload
-        label="Foto de Capa / Perfil"
-        description="Resolução recomendada: 1280x720 (16:9). Esta será a imagem principal do perfil."
-        value={data.fotoUrl}
-        onChange={url => setData({ ...data, fotoUrl: url })}
-        aspectRatio="16/9"
-      />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <ImageUpload
+          label="Foto de Perfil (Avatar)"
+          description="Aparece na moldura de perfil (Quadrado/Redondo)."
+          value={data.fotoUrl}
+          onChange={url => setData({ ...data, fotoUrl: url })}
+          aspectRatio="1/1"
+        />
+        <ImageUpload
+          label="Foto de Capa (Banner)"
+          description="Resolução recomendada: 1280x720 (16:9). Vai ser a imagem principal do topo."
+          value={data.capaUrl}
+          onChange={url => setData({ ...data, capaUrl: url })}
+          aspectRatio="16/9"
+        />
+      </div>
 
       <div className="space-y-4">
         <Label className="flex items-center gap-2"><ImageIcon size={14} /> Fotos Adicionais (Galeria)</Label>

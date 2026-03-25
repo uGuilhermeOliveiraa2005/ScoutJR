@@ -51,7 +51,7 @@ export default async function PerfilAtletaPage({ params }: { params: Promise<{ i
   if (user) {
     const { data: p } = await supabase.from('profiles').select('*').eq('user_id', user.id).single()
     profile = p
-    
+
     // Strict Lockout for unverified users
     if (profile && profile.status !== 'ativo' && !profile.is_admin) {
       redirect('/aguardando-verificacao')
@@ -96,6 +96,7 @@ export default async function PerfilAtletaPage({ params }: { params: Promise<{ i
       userRole={profile.role}
       userId={user.id}
       userFotoUrl={userFotoUrl}
+      isAdmin={profile.is_admin}
     />
     : <NavbarPublic />
 
@@ -136,6 +137,8 @@ export default async function PerfilAtletaPage({ params }: { params: Promise<{ i
                   <Badge variant="outline" className="bg-neutral-50 px-3 py-1 text-xs">{idade} anos</Badge>
                   {atleta.exibir_cidade && <Badge variant="outline" className="bg-neutral-50 px-3 py-1 text-xs">{atleta.cidade}, {atleta.estado}</Badge>}
                   <Badge variant="outline" className="bg-neutral-50 px-3 py-1 text-xs">{atleta.pe_dominante === 'destro' ? 'Destro' : atleta.pe_dominante === 'canhoto' ? 'Canhoto' : 'Ambidestro'}</Badge>
+                  {atleta.altura_cm && <Badge variant="outline" className="bg-neutral-50 px-3 py-1 text-xs">{atleta.altura_cm} cm</Badge>}
+                  {atleta.peso_kg && <Badge variant="outline" className="bg-neutral-50 px-3 py-1 text-xs">{atleta.peso_kg} kg</Badge>}
                 </div>
                 {atleta.escolinha_atual && (
                   <div className="flex items-center gap-2 text-sm text-neutral-600 mb-5 bg-neutral-50 p-3 rounded-xl border border-neutral-100 font-bold uppercase tracking-tight">
@@ -204,7 +207,12 @@ export default async function PerfilAtletaPage({ params }: { params: Promise<{ i
           <div className="lg:col-span-2 flex flex-col gap-6">
 
             {/* Foto de Capa */}
-            {atleta.foto_url ? (
+            {atleta.capa_url ? (
+              <div className="relative aspect-video rounded-3xl overflow-hidden shadow-lg border border-neutral-200 bg-neutral-100 group">
+                <img src={atleta.capa_url} alt={`Capa de ${atleta.nome}`} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
+              </div>
+            ) : atleta.foto_url ? (
               <div className="relative aspect-video rounded-3xl overflow-hidden shadow-lg border border-neutral-200 bg-neutral-100 group">
                 <img src={atleta.foto_url} alt={`Capa de ${atleta.nome}`} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { KeyRound } from 'lucide-react'
 import { updatePassword } from './actions'
 import { toast } from 'sonner'
+import { translateAuthError } from '@/lib/utils'
 
 export function PasswordChangeForm() {
   const [isOpen, setIsOpen] = useState(false)
@@ -16,7 +17,7 @@ export function PasswordChangeForm() {
     const fd = new FormData(e.currentTarget)
     const res = await updatePassword(fd)
     if (res?.error) {
-       toast.error(res.error)
+       toast.error(translateAuthError(res.error))
     } else {
        toast.success('Senha alterada com sucesso!')
        e.currentTarget.reset()

@@ -1,11 +1,13 @@
 import { createSupabaseServer } from '@/lib/supabase-server'
 import { redirect } from 'next/navigation'
 import { NavbarDashboard } from '@/components/layout/Navbar'
-import { Shield, Bell, User, AlertTriangle, UserCircle, Building2 } from 'lucide-react'
+import { Shield, Bell, User, AlertTriangle, UserCircle, Building2, LogOut } from 'lucide-react'
 import { DeleteAccountModal } from './DeleteAccountModal'
 import { ProfileForm } from './ProfileForm'
 import { AtletaConfigForm } from './AtletaConfigForm'
 import { PasswordChangeForm } from './PasswordChangeForm'
+import { TwoFactorAuthForm } from './TwoFactorAuthForm'
+import { LogoutButton } from './LogoutButton'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,6 +27,12 @@ export default async function ConfiguracoesPage() {
     profileStatus: profile?.status,
     profileIsAdmin: profile?.is_admin
   })
+
+  // MFA Status
+  const { data: mfaData } = await supabase.auth.mfa.listFactors()
+  const totpFactors = mfaData?.totp || []
+  const enrolledFactorId = totpFactors.find((f: any) => f.status === 'verified')?.id
+  const hasEnrolled2FA = !!enrolledFactorId
 
   // Strict Lockout for unverified users
   if (profile.status !== 'ativo' && !profile.is_admin) {
@@ -64,6 +72,7 @@ export default async function ConfiguracoesPage() {
         userRole={profile.role}
         userId={user.id}
         userFotoUrl={userFotoUrl}
+        isAdmin={profile.is_admin}
       />
 
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-5 sm:py-8 pb-24 md:pb-8">
@@ -118,15 +127,7 @@ export default async function ConfiguracoesPage() {
             <div className="flex flex-col gap-3">
               <PasswordChangeForm />
               <hr className="border-neutral-100" />
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-xs sm:text-sm font-medium">Autenticação em dois fatores</div>
-                  <div className="text-[10px] sm:text-xs text-neutral-400">Aumenta a segurança da conta</div>
-                </div>
-                <button className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm bg-green-700 text-white rounded-lg hover:bg-green-800 transition-colors flex-shrink-0">
-                  Ativar
-                </button>
-              </div>
+              <TwoFactorAuthForm enrolled={hasEnrolled2FA} factorId={enrolledFactorId} />
             </div>
           </Section>
 
@@ -161,6 +162,11 @@ export default async function ConfiguracoesPage() {
               <DeleteAccountModal hasAssinatura={false} isVerificado={false} />
             </div>
           </Section>
+          
+          {/* ── Sair da conta (Mobile Focus) ── */}
+          <div className="mt-4 sm:hidden pb-4">
+             <LogoutButton />
+          </div>
 
         </div>
       </main>
@@ -168,13 +174,15 @@ export default async function ConfiguracoesPage() {
   )
 }
 
+
+
 function Section({ icon, title, children }: {
   icon: React.ReactNode
   title: string
   children: React.ReactNode
 }) {
   return (
-    <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
+    <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden shadow-sm">
       <div className="flex items-center gap-2.5 sm:gap-3 px-4 sm:px-5 py-3 sm:py-4 border-b border-neutral-100 bg-neutral-50/50">
         <div className="text-neutral-400">{icon}</div>
         <h2 className="text-xs sm:text-sm font-semibold text-neutral-700 uppercase tracking-wide">{title}</h2>

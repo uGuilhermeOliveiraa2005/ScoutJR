@@ -79,6 +79,8 @@ export async function createAthlete(data: any) {
       estado: data.estado,
       cidade: data.cidade,
       pe_dominante: data.peDominante,
+      altura_cm: data.altura_cm || null,
+      peso_kg: data.peso_kg || null,
       escolinha_atual: data.escolinhaAtual || null,
       posicao: data.posicao,
       habilidade_tecnica: data.habilidades[0],
@@ -91,6 +93,7 @@ export async function createAthlete(data: any) {
       exibir_cidade: data.exibirCidade,
       aceitar_mensagens: data.mensagens,
       foto_url: data.fotoUrl || null,
+      capa_url: data.capaUrl || null,
       fotos_adicionais: data.fotosAdicionais || [],
       status: 'pendente',
     })
@@ -173,6 +176,8 @@ export async function updateAthlete(id: string, data: any) {
       estado: data.estado,
       cidade: data.cidade,
       pe_dominante: data.peDominante,
+      altura_cm: data.altura_cm || null,
+      peso_kg: data.peso_kg || null,
       escolinha_atual: data.escolinhaAtual || null,
       posicao: data.posicao,
       habilidade_tecnica: data.habilidades[0],
@@ -185,6 +190,7 @@ export async function updateAthlete(id: string, data: any) {
       exibir_cidade: data.exibirCidade,
       aceitar_mensagens: data.mensagens,
       foto_url: data.fotoUrl || null,
+      capa_url: data.capaUrl || null,
       fotos_adicionais: data.fotosAdicionais || [],
     })
     .eq('id', id)

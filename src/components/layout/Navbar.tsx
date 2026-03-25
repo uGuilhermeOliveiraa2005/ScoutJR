@@ -90,14 +90,15 @@ export function NavbarDashboard({
   verificado,
   userId,
   userFotoUrl,
+  isAdmin,
 }: {
   userName: string
   userRole: string
   verificado?: boolean
   userId?: string
   userFotoUrl?: string | null
+  isAdmin?: boolean
 }) {
-  const [menuOpen, setMenuOpen] = useState(false)
   const router = useRouter()
   const pathname = usePathname()
   const supabase = createSupabaseBrowser()
@@ -112,17 +113,25 @@ export function NavbarDashboard({
     { href: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={14} /> },
     { href: '/busca', label: 'Explorar', icon: <Search size={14} /> },
     { href: '/ranking', label: 'Ranking', icon: <Trophy size={14} /> },
+    ...(isAdmin ? [{ href: '/admin/verificacoes', label: 'Admin', icon: <ShieldCheck size={14} /> }] : []),
     { href: '/configuracoes', label: 'Config.', icon: <Settings size={14} /> },
   ]
 
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-neutral-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-3">
-        <Link href="/dashboard" className="font-display text-xl sm:text-2xl tracking-widest text-green-700 flex-shrink-0">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
+        
+        {/* Desktop Logo */}
+        <Link href="/dashboard" className="hidden md:flex font-display text-2xl tracking-widest text-green-700 flex-shrink-0">
           SCOUT<span className="text-amber-500">JR</span>
         </Link>
 
-        {/* Desktop nav */}
+        {/* Mobile Logo */}
+        <Link href="/dashboard" className="md:hidden font-display text-2xl tracking-widest text-green-700 flex-shrink-0">
+          SCOUT<span className="text-amber-500">JR</span>
+        </Link>
+
+        {/* Desktop Nav Items (Center) */}
         <nav className="hidden md:flex items-center gap-4 lg:gap-6 flex-1 justify-center">
           {navItems.map(item => (
             <Link
@@ -141,50 +150,39 @@ export function NavbarDashboard({
           ))}
         </nav>
 
-        {/* Desktop user area */}
-        <div className="hidden md:flex items-center gap-2 lg:gap-4 flex-shrink-0">
+        {/* User Area (Mobile & Desktop) */}
+        <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
+          {/* Notifications */}
           {userId && <NotificationsBell userId={userId} />}
+          
+          {/* Vertical Separator */}
+          <div className="h-6 w-px bg-neutral-200 mx-1 sm:mx-2" />
 
-          <div className="flex items-center gap-2 border-l border-neutral-100 pl-2 lg:pl-4">
-            <Avatar
-              src={userFotoUrl}
-              nome={userName}
-              size="sm"
-              colorClass="bg-green-100 text-green-700"
-            />
-            <span className="text-sm font-medium text-neutral-700 hidden lg:block">
-              {userName?.split(' ')[0]}
-            </span>
-            {verificado && (
-              <div className="hidden lg:flex items-center gap-1 bg-green-100 text-green-700 text-xs font-medium px-2 py-0.5 rounded-full">
-                <ShieldCheck size={11} />
-                Verificado
-              </div>
-            )}
+          {/* Profile & Logout Group */}
+          <div className="flex items-center gap-2 sm:gap-5">
+            <Link href="/configuracoes" className="flex items-center gap-2">
+               <Avatar
+                 src={userFotoUrl}
+                 nome={userName}
+                 size="sm"
+                 colorClass="bg-green-100 text-green-700"
+                 className="border-2 border-white shadow-sm"
+               />
+               <span className="text-sm font-bold text-neutral-900 truncate max-w-[70px] sm:max-w-none">
+                 {userName?.split(' ')[0]}
+               </span>
+            </Link>
+            
+            {/* Logout Button (Icon link on mobile, Icon+Text on desktop) */}
+            <button 
+               onClick={handleLogout} 
+               className="flex items-center gap-1.5 text-neutral-400 hover:text-red-500 transition-colors py-1"
+               aria-label="Sair"
+            >
+              <LogOut size={16} />
+              <span className="hidden sm:inline text-xs font-medium">Sair</span>
+            </button>
           </div>
-          <Button variant="ghost" size="sm" onClick={handleLogout} className="text-neutral-500">
-            <LogOut size={14} />
-            <span className="hidden lg:inline">Sair</span>
-          </Button>
-        </div>
-
-        {/* Mobile: avatar + bell + hamburger */}
-        <div className="md:hidden flex items-center gap-1.5 sm:gap-2">
-          {userId && <NotificationsBell userId={userId} />}
-          <Avatar
-            src={userFotoUrl}
-            nome={userName}
-            size="sm"
-            colorClass="bg-green-100 text-green-700"
-            className="ml-1"
-          />
-          <button
-            className="p-1.5 rounded-lg hover:bg-neutral-100 transition-colors"
-            onClick={() => setMenuOpen(!menuOpen)}
-            aria-label="Menu"
-          >
-            {menuOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
         </div>
       </div>
 
@@ -201,12 +199,12 @@ export function NavbarDashboard({
                   ? 'text-green-700'
                   : 'text-neutral-400 hover:text-neutral-600'
               )}
-              onClick={() => setMenuOpen(false)}
             >
               <span className="text-[20px]">
                 {item.href === '/dashboard' && <LayoutDashboard size={20} />}
                 {item.href === '/busca' && <Search size={20} />}
                 {item.href === '/ranking' && <Trophy size={20} />}
+                {item.href === '/admin/verificacoes' && <ShieldCheck size={20} />}
                 {item.href === '/configuracoes' && <Settings size={20} />}
               </span>
               <span className="text-[9px] font-medium leading-none">{item.label}</span>
@@ -214,71 +212,6 @@ export function NavbarDashboard({
           ))}
         </div>
       </div>
-
-      {/* Mobile drawer menu */}
-      {menuOpen && (
-        <div className="md:hidden fixed inset-0 z-40 top-14" onClick={() => setMenuOpen(false)}>
-          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" />
-          <div
-            className="absolute right-0 top-0 w-72 h-full bg-white shadow-2xl animate-in slide-in-from-right duration-200"
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="p-5 border-b border-neutral-100">
-              <div className="flex items-center gap-3">
-                <Avatar
-                  src={userFotoUrl}
-                  nome={userName}
-                  size="lg"
-                  colorClass="bg-green-100 text-green-700"
-                />
-                <div>
-                  <div className="text-sm font-semibold text-neutral-900">{userName}</div>
-                  <div className="text-[10px] text-neutral-400 uppercase tracking-widest font-medium mt-0.5">
-                    {userRole === 'escolinha' ? 'Escolinha' : 'Responsável'}
-                  </div>
-                  {verificado && (
-                    <div className="flex items-center gap-1 text-[10px] text-green-700 font-medium mt-1">
-                      <ShieldCheck size={10} /> Verificado
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-            <nav className="p-3 flex flex-col gap-1">
-              {[
-                { href: '/dashboard', icon: <LayoutDashboard size={16} />, label: 'Dashboard' },
-                { href: '/busca', icon: <Search size={16} />, label: 'Explorar talentos' },
-                { href: '/ranking', icon: <Trophy size={16} />, label: 'Ranking' },
-                { href: '/configuracoes', icon: <Settings size={16} />, label: 'Configurações' },
-              ].map(item => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={cn(
-                    'flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-colors',
-                    pathname === item.href
-                      ? 'bg-green-50 text-green-700'
-                      : 'text-neutral-600 hover:bg-neutral-50'
-                  )}
-                  onClick={() => setMenuOpen(false)}
-                >
-                  <span className="text-neutral-400">{item.icon}</span>
-                  {item.label}
-                </Link>
-              ))}
-            </nav>
-            <div className="absolute bottom-8 left-0 right-0 px-5">
-              <Button
-                variant="outline"
-                onClick={handleLogout}
-                className="w-full h-11 text-red-500 border-red-100 hover:bg-red-50 justify-center"
-              >
-                <LogOut size={15} /> Sair da conta
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </header>
   )
 }

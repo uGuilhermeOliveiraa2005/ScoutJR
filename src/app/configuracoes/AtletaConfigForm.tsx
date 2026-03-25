@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { Camera, Loader2, Eye, MapPin, MessageCircle, ImageIcon } from 'lucide-react'
-import { ESTADOS, POSICAO_LABEL, cn } from '@/lib/utils'
+import { ESTADOS, POSICAO_LABEL, cn, translateAuthError } from '@/lib/utils'
 import { updateAtleta } from './actions'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
@@ -46,9 +46,12 @@ const initialHab = {
 export function AtletaConfigForm({ atleta }: { atleta: any }) {
     const router = useRouter()
     const fileInputRef = useRef<HTMLInputElement>(null)
+    const capaInputRef = useRef<HTMLInputElement>(null)
     const [loading, setLoading] = useState(false)
     const [preview, setPreview] = useState('')
     const [selectedFile, setSelectedFile] = useState<File | null>(null)
+    const [capaPreview, setCapaPreview] = useState('')
+    const [selectedCapa, setSelectedCapa] = useState<File | null>(null)
 
     // Dados básicos
     const [nome, setNome] = useState(atleta?.nome ?? '')
@@ -98,11 +101,17 @@ export function AtletaConfigForm({ atleta }: { atleta: any }) {
         setAceitarMsg(atleta?.aceitar_mensagens ?? false)
         setPreview('')
         setSelectedFile(null)
+        setCapaPreview('')
+        setSelectedCapa(null)
     }, [atleta])
 
     const currentFoto = atleta?.foto_url ?? ''
     const validFoto = currentFoto && currentFoto !== 'null' ? currentFoto : ''
     const displayFoto = preview || validFoto
+
+    const currentCapa = atleta?.capa_url ?? ''
+    const validCapa = currentCapa && currentCapa !== 'null' ? currentCapa : ''
+    const displayCapa = capaPreview || validCapa
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -118,15 +127,17 @@ export function AtletaConfigForm({ atleta }: { atleta: any }) {
         fd.append('pe_dominante', peDominante)
         fd.append('escolinha_atual', escolinhaAt)
         fd.append('current_foto_url', validFoto)
+        fd.append('current_capa_url', validCapa)
         fd.append('visivel', String(visivel))
         fd.append('exibir_cidade', String(exibirCidade))
         fd.append('aceitar_mensagens', String(aceitarMensagens))
         Object.entries(habilidades).forEach(([k, v]) => fd.append(k, String(v)))
         if (selectedFile) fd.append('foto_url', selectedFile)
+        if (selectedCapa) fd.append('capa_url', selectedCapa)
 
         const res = await updateAtleta(fd)
         setLoading(false)
-        if (res?.error) toast.error(res.error)
+        if (res?.error) toast.error(translateAuthError(res.error))
         else { toast.success('Perfil do atleta atualizado!'); setSelectedFile(null); router.refresh() }
     }
 
@@ -135,37 +146,76 @@ export function AtletaConfigForm({ atleta }: { atleta: any }) {
     return (
         <form onSubmit={handleSubmit} className="flex flex-col gap-6">
 
-            {/* Foto de capa */}
-            <div>
-                <label className="block text-[10px] font-bold text-neutral-400 uppercase tracking-wide mb-3">
-                    Foto de capa / perfil
-                </label>
-                <div className="flex items-center gap-4">
-                    <div
-                        className="relative w-20 h-20 rounded-xl bg-neutral-100 border-2 border-dashed border-neutral-300 overflow-hidden cursor-pointer group flex-shrink-0"
-                        onClick={() => fileInputRef.current?.click()}
-                    >
-                        {displayFoto
-                            ? <img src={displayFoto} className="w-full h-full object-cover" alt="Capa" />
-                            : <ImageIcon size={24} className="absolute inset-0 m-auto text-neutral-400" />}
-                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Camera size={18} className="text-white" />
+            {/* Fotos */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                {/* Foto de Perfil */}
+                <div>
+                    <label className="block text-[10px] font-bold text-neutral-400 uppercase tracking-wide mb-3">
+                        Foto de Perfil
+                    </label>
+                    <div className="flex items-center gap-4">
+                        <div
+                            className="relative w-20 h-20 rounded-full bg-neutral-100 border-2 border-dashed border-neutral-300 overflow-hidden cursor-pointer group flex-shrink-0"
+                            onClick={() => fileInputRef.current?.click()}
+                        >
+                            {displayFoto
+                                ? <img src={displayFoto} className="w-full h-full object-cover" alt="Perfil" />
+                                : <ImageIcon size={24} className="absolute inset-0 m-auto text-neutral-400" />}
+                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Camera size={18} className="text-white" />
+                            </div>
+                        </div>
+                        <input ref={fileInputRef} type="file" accept="image/*" className="hidden"
+                            onChange={e => {
+                                const file = e.target.files?.[0]
+                                if (file) {
+                                    setSelectedFile(file)
+                                    const reader = new FileReader()
+                                    reader.onload = ev => setPreview(ev.target?.result as string)
+                                    reader.readAsDataURL(file)
+                                }
+                            }} />
+                        <div>
+                            <div className="text-xs font-medium text-neutral-700 mb-0.5">Avatar</div>
+                            <div className="text-[10px] text-neutral-400">
+                                {selectedFile ? `📎 ${selectedFile.name}` : 'Alterar avatar'}
+                            </div>
                         </div>
                     </div>
-                    <input ref={fileInputRef} type="file" accept="image/*" className="hidden"
-                        onChange={e => {
-                            const file = e.target.files?.[0]
-                            if (file) {
-                                setSelectedFile(file)
-                                const reader = new FileReader()
-                                reader.onload = ev => setPreview(ev.target?.result as string)
-                                reader.readAsDataURL(file)
-                            }
-                        }} />
-                    <div>
-                        <div className="text-xs font-medium text-neutral-700 mb-0.5">Foto do atleta</div>
-                        <div className="text-[10px] text-neutral-400">
-                            {selectedFile ? `📎 ${selectedFile.name}` : 'Clique para alterar'}
+                </div>
+
+                {/* Foto de Capa */}
+                <div>
+                    <label className="block text-[10px] font-bold text-neutral-400 uppercase tracking-wide mb-3">
+                        Foto de Capa
+                    </label>
+                    <div className="flex items-center gap-4">
+                        <div
+                            className="relative w-32 h-20 rounded-xl bg-neutral-100 border-2 border-dashed border-neutral-300 overflow-hidden cursor-pointer group flex-shrink-0"
+                            onClick={() => capaInputRef.current?.click()}
+                        >
+                            {displayCapa
+                                ? <img src={displayCapa} className="w-full h-full object-cover" alt="Capa" />
+                                : <ImageIcon size={24} className="absolute inset-0 m-auto text-neutral-400" />}
+                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Camera size={18} className="text-white" />
+                            </div>
+                        </div>
+                        <input ref={capaInputRef} type="file" accept="image/*" className="hidden"
+                            onChange={e => {
+                                const file = e.target.files?.[0]
+                                if (file) {
+                                    setSelectedCapa(file)
+                                    const reader = new FileReader()
+                                    reader.onload = ev => setCapaPreview(ev.target?.result as string)
+                                    reader.readAsDataURL(file)
+                                }
+                            }} />
+                        <div>
+                            <div className="text-xs font-medium text-neutral-700 mb-0.5">Banner</div>
+                            <div className="text-[10px] text-neutral-400">
+                                {selectedCapa ? `📎 ${selectedCapa.name}` : 'Alterar capa'}
+                            </div>
                         </div>
                     </div>
                 </div>

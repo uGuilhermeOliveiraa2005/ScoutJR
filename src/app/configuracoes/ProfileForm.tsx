@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { Camera, Loader2, User, ImageIcon, Trash2 } from 'lucide-react'
-import { formatPhone, formatCNPJ, ESTADOS } from '@/lib/utils'
+import { formatPhone, formatCNPJ, ESTADOS, translateAuthError } from '@/lib/utils'
 import { updateProfile, updateEscolinhaLocalizacao, updateEscolinhaFotos } from './actions'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
@@ -71,7 +71,7 @@ export function ProfileForm({ profile, escolinha, isEscolinha }: any) {
     if (selectedFile) fd.append('foto_url', selectedFile)
     const res = await updateProfile(fd)
     setLoading(false)
-    if (res?.error) { toast.error(res.error) }
+    if (res?.error) { toast.error(translateAuthError(res.error)) }
     else { toast.success('Dados atualizados!'); setSelectedFile(null); router.refresh() }
   }
 
@@ -85,7 +85,7 @@ export function ProfileForm({ profile, escolinha, isEscolinha }: any) {
     fd.append('cnpj', cnpj)
     const res = await updateEscolinhaLocalizacao(fd)
     setLoadingLoc(false)
-    if (res?.error) toast.error(res.error)
+    if (res?.error) toast.error(translateAuthError(res.error))
     else { toast.success('Localização atualizada!'); router.refresh() }
   }
 
@@ -124,7 +124,7 @@ export function ProfileForm({ profile, escolinha, isEscolinha }: any) {
     novasFotos.forEach((f, i) => fd.append(`foto_nova_${i}`, f.file))
     const res = await updateEscolinhaFotos(fd)
     setLoadingFotos(false)
-    if (res?.error) toast.error(res.error)
+    if (res?.error) toast.error(translateAuthError(res.error))
     else { toast.success('Fotos atualizadas!'); setNovasFotos([]); router.refresh() }
   }
 

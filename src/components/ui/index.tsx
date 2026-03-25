@@ -15,11 +15,11 @@ function Badge({
   className?: string
 }) {
   const variants: Record<BadgeVariant, string> = {
-    green:   'bg-green-100 text-green-700',
-    amber:   'bg-amber-100 text-amber-700',
-    blue:    'bg-blue-100 text-blue-700',
-    red:     'bg-red-100 text-red-600',
-    gray:    'bg-neutral-200 text-neutral-600',
+    green: 'bg-green-100 text-green-700',
+    amber: 'bg-amber-100 text-amber-700',
+    blue: 'bg-blue-100 text-blue-700',
+    red: 'bg-red-100 text-red-600',
+    gray: 'bg-neutral-200 text-neutral-600',
     outline: 'border border-neutral-200 text-neutral-600 bg-transparent',
   }
   return (
@@ -69,10 +69,10 @@ function Skeleton({ className }: { className?: string }) {
 type AvatarColor = 'green' | 'amber' | 'blue' | 'red' | 'purple'
 
 const avatarColors: Record<AvatarColor, string> = {
-  green:  'bg-green-100 text-green-700',
-  amber:  'bg-amber-100 text-amber-700',
-  blue:   'bg-blue-100 text-blue-700',
-  red:    'bg-red-100 text-red-600',
+  green: 'bg-green-100 text-green-700',
+  amber: 'bg-amber-100 text-amber-700',
+  blue: 'bg-blue-100 text-blue-700',
+  red: 'bg-red-100 text-red-600',
   purple: 'bg-purple-100 text-purple-700',
 }
 

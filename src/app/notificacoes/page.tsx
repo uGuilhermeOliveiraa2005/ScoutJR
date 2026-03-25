@@ -40,6 +40,7 @@ export default async function NotificacoesPage() {
         verificado={escolinha?.verificado ?? false}
         userId={user.id}
         userFotoUrl={userFotoUrl}
+        isAdmin={profile.is_admin}
       />
 
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-5 sm:py-8 pb-24 md:pb-8">

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { forwardRef, useEffect, useState } from 'react'
 import { Select } from './Form'
 
 interface CitySelectProps {
@@ -11,12 +11,13 @@ interface CitySelectProps {
   error?: string
   disabled?: boolean
   className?: string
+  name?: string
 }
 
 // Cache simples em memória para as cidades
 const citiesCache: Record<string, { value: string; label: string }[]> = {}
 
-export function CitySelect({
+export const CitySelect = forwardRef<HTMLSelectElement, CitySelectProps>(({
   estado,
   value,
   onChange,
@@ -24,7 +25,8 @@ export function CitySelect({
   error,
   disabled,
   className,
-}: CitySelectProps) {
+  name,
+}, ref) => {
   const [cities, setCities] = useState<{ value: string; label: string }[]>([])
   const [loading, setLoading] = useState(false)
 
@@ -65,6 +67,8 @@ export function CitySelect({
 
   return (
     <Select
+      ref={ref}
+      name={name}
       options={cities}
       value={value}
       onChange={onChange}
@@ -80,4 +84,6 @@ export function CitySelect({
       className={className}
     />
   )
-}
+})
+
+CitySelect.displayName = 'CitySelect'

@@ -81,6 +81,7 @@ export default async function BuscaPage({
       verificado={escolinha?.verificado ?? false}
       userId={user.id}
       userFotoUrl={userFotoUrl}
+      isAdmin={profile.is_admin}
     />
   ) : <NavbarPublic />
 

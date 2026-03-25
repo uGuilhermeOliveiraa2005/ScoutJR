@@ -56,9 +56,19 @@ export default async function RootLayout({
           */}
           <Toaster
             position="bottom-right"
-            richColors
             closeButton
-            toastOptions={{ style: { borderRadius: '12px' } }}
+            toastOptions={{
+              className: "font-display border-0 shadow-2xl rounded-2xl p-4 flex gap-3 items-start",
+              classNames: {
+                toast: "bg-white data-[type=success]:bg-green-50 data-[type=error]:bg-red-50 data-[type=info]:bg-blue-50 data-[type=warning]:bg-amber-50 backdrop-blur-3xl data-[type=success]:border-green-200 data-[type=error]:border-red-200 border",
+                title: "text-base font-black text-neutral-900 tracking-tight",
+                description: "text-xs text-neutral-500 font-medium leading-relaxed mt-1",
+                actionButton: "bg-green-600 text-white rounded-xl px-4 py-2 text-xs font-bold shadow-sm hover:bg-green-700 transition-colors uppercase tracking-widest",
+                cancelButton: "bg-neutral-100 text-neutral-600 rounded-xl px-4 py-2 text-xs font-bold hover:bg-neutral-200 transition-colors uppercase tracking-widest",
+                icon: "mt-0.5",
+                closeButton: "bg-white border text-sm border-neutral-200 text-neutral-400 hover:text-neutral-900 hover:bg-neutral-50 rounded-full transition-all shadow-sm flex items-center justify-center p-1"
+              }
+            }}
           />
 
         </NotificationToastProvider>

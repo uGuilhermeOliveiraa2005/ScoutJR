@@ -49,6 +49,7 @@ export async function updateProfile(formData: FormData) {
     await admin.from('escolinhas').upsert({
       user_id: user.id,
       nome,
+      telefone,
       foto_url: final_foto_url,
       logo_url: final_foto_url,
       descricao,
@@ -148,7 +149,7 @@ export async function updateAtleta(formData: FormData) {
 
   const admin = createSupabaseAdmin()
 
-  // Upload foto se houver
+  // Upload foto perfil se houver
   const foto_file = formData.get('foto_url') as File | null
   const current_foto_url = formData.get('current_foto_url') as string
   let final_foto_url = current_foto_url
@@ -160,6 +161,21 @@ export async function updateAtleta(formData: FormData) {
     if (!upErr) {
       const { data: { publicUrl } } = admin.storage.from('media').getPublicUrl(fileName)
       final_foto_url = publicUrl
+    }
+  }
+
+  // Upload foto capa se houver
+  const capa_file = formData.get('capa_url') as File | null
+  const current_capa_url = formData.get('current_capa_url') as string
+  let final_capa_url = current_capa_url
+
+  if (capa_file && capa_file.size > 0) {
+    const ext = capa_file.name.split('.').pop()
+    const fileName = `atleta_capa/${Math.random().toString(36).substring(2)}_${Date.now()}.${ext}`
+    const { error: upErr } = await admin.storage.from('media').upload(fileName, capa_file)
+    if (!upErr) {
+      const { data: { publicUrl } } = admin.storage.from('media').getPublicUrl(fileName)
+      final_capa_url = publicUrl
     }
   }
 
@@ -190,6 +206,7 @@ export async function updateAtleta(formData: FormData) {
       habilidade_finalizacao: habilidades[4],
       habilidade_passes: habilidades[5],
       foto_url: final_foto_url || null,
+      capa_url: final_capa_url || null,
       visivel: formData.get('visivel') === 'true',
       exibir_cidade: formData.get('exibir_cidade') === 'true',
       aceitar_mensagens: formData.get('aceitar_mensagens') === 'true',
@@ -219,13 +236,45 @@ export async function updatePassword(formData: FormData) {
   return { success: true }
 }
 
-// ── Excluir conta ────────────────────────────────────────────
 export async function deleteAccount() {
   const supabase = await createSupabaseServer()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Não autorizado' }
+  
   const admin = createSupabaseAdmin()
+
+  // Buscar profile para apagar dependências primeiro
+  const { data: profile } = await admin
+    .from('profiles')
+    .select('id, role')
+    .eq('user_id', user.id)
+    .single()
+
+  if (profile) {
+    // 1. Apagar atletas (se responsável)
+    if (profile.role === 'responsavel') {
+      await admin.from('atletas').delete().eq('responsavel_id', profile.id)
+    } 
+    // 2. Apagar dados da escolinha (se escolinha)
+    else if (profile.role === 'escolinha') {
+      await admin.from('escolinhas').delete().eq('user_id', user.id)
+    }
+
+    // 3. Apagar notificações
+    try {
+      await admin.from('notificacoes').delete().eq('user_id', user.id)
+    } catch {}
+
+    // 4. Apagar o profile
+    await admin.from('profiles').delete().eq('id', profile.id)
+  }
+
+  // 5. Finalmente, apagar do banco de dados Auth
   const { error } = await admin.auth.admin.deleteUser(user.id)
-  if (error) return { error: 'Falha ao excluir conta.' }
+  if (error) {
+    console.error('Erro ao excluir conta:', error)
+    return { error: 'Falha ao excluir conta. Verifique se há pendências.' }
+  }
+  
   return { success: true }
 }

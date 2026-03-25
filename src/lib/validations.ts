@@ -71,7 +71,7 @@ export const cadastroEscolinhaSchema = z.object({
   email: emailRule,
   telefone: phoneRule,
   estado: z.string().min(2, 'Selecione o estado'),
-  cidade: z.string().trim().min(2, 'Informe a cidade'),
+  cidade: z.string().min(2, 'Informe a cidade'),
   foto_url: z.any().optional(),
   descricao: z.string().optional(),
   fotos_adicionais: z.any().optional(),
@@ -126,6 +126,8 @@ export const atletaSchema = z.object({
   habilidade_finalizacao: z.coerce.number().min(1).max(99),
   habilidade_passes: z.coerce.number().min(1).max(99),
   status: z.enum(['pendente', 'ativo', 'rejeitado']).default('pendente'),
+  foto_url: z.any().optional(),
+  capa_url: z.any().optional(),
 })
 
 // -----------------------------------------------

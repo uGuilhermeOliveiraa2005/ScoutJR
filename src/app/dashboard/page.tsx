@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils'
 export const dynamic = 'force-dynamic'
 
 export default async function DashboardPage() {
-  const { user, profile, isVerified } = await checkUserVerification()
+  const { user, profile, isVerified, isAdmin } = await checkUserVerification()
   const supabase = await createSupabaseServer()
 
   if (!user) redirect('/login')
@@ -86,6 +86,7 @@ export default async function DashboardPage() {
         userRole={profile.role}
         userId={user.id}
         userFotoUrl={userFotoUrl}
+        isAdmin={isAdmin}
       />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-5 sm:py-8 pb-24 md:pb-8">
 

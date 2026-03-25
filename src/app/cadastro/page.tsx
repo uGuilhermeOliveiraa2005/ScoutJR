@@ -20,10 +20,13 @@ import {
   MessageCircle, CircleCheckBig, Plus, Trash2, Trophy, Image as ImageIcon,
   Clock,
 } from 'lucide-react'
-import { cn, formatPhone, formatCNPJ } from '@/lib/utils'
+import { cn, formatPhone, formatCNPJ, translateAuthError } from '@/lib/utils'
 import { toast } from 'sonner'
 import { AthleteProfilePreview } from '@/components/atletas/AthleteProfilePreview'
 import { CitySelect } from '@/components/ui/CitySelect'
+import { TermsContent } from '@/components/legal/TermsContent'
+import { PrivacyContent } from '@/components/legal/PrivacyContent'
+import { X, Scale, Lock as LockIcon } from 'lucide-react'
 
 type Tipo = 'responsavel' | 'escolinha'
 
@@ -44,16 +47,20 @@ function CadastroForm() {
   const [done, setDone] = useState(false)
   const [serverError, setServerError] = useState('')
   const [isUploading, setIsUploading] = useState(false)
+  const [showLegal, setShowLegal] = useState<{ type: 'terms' | 'privacy', open: boolean }>({ type: 'terms', open: false })
   const supabase = createSupabaseBrowser()
 
   const [atletaData, setAtletaData] = useState({
     nomeAtleta: '', descricao: '', dataNascimento: '',
     estado: '', cidade: '', posicao: 'MEI', peDominante: 'destro',
+    altura_cm: '', peso_kg: '',
     escolinhaAtual: '',
     habilidades: [75, 68, 82, 60, 71, 79],
-    // fotoUrl pode ser File (selecionado) ou string (URL já enviada)
-    fotoUrl: null as File | string | null,
-    fotoPreview: '',          // ← URL de preview local (sempre string)
+    // Fotos
+    fotoPerfilUrl: null as File | string | null,
+    fotoPerfilPreview: '',
+    fotoCapaUrl: null as File | string | null,
+    fotoCapaPreview: '',
     fotosAdicionais: [] as any[],
     videos: [] as { url: string; titulo: string }[],
     conquistas: [] as { titulo: string; ano: string; descricao: string }[],
@@ -68,8 +75,14 @@ function CadastroForm() {
   const totalSteps = labels.length
   const progressPercent = ((step - 1) / (totalSteps - 1)) * 100
 
-  const formResp = useForm<CadastroResponsavelInput>({ resolver: zodResolver(cadastroResponsavelSchema) })
-  const formEscolinha = useForm<CadastroEscolinhaInput>({ resolver: zodResolver(cadastroEscolinhaSchema) })
+  const formResp = useForm<CadastroResponsavelInput>({ 
+    resolver: zodResolver(cadastroResponsavelSchema),
+    defaultValues: { nome: '', email: '', telefone: '', password: '', confirmPassword: '', aceito_termos: false }
+  })
+  const formEscolinha = useForm<CadastroEscolinhaInput>({ 
+    resolver: zodResolver(cadastroEscolinhaSchema),
+    defaultValues: { nome: '', cnpj: '', email: '', telefone: '', estado: '', cidade: '', password: '', confirmPassword: '', aceito_termos: false }
+  })
 
   // ── Submit responsável ──────────────────────────────────────
   async function submitResponsavel(data: CadastroResponsavelInput) {
@@ -81,9 +94,13 @@ function CadastroForm() {
         ? await uploadImage(data.foto_url, 'responsavel')
         : (data.foto_url ?? null)
 
-      const atleta_foto_url = atletaData.fotoUrl instanceof File
-        ? await uploadImage(atletaData.fotoUrl, 'atleta')
-        : (atletaData.fotoUrl ?? null)
+      const atleta_foto_perfil = atletaData.fotoPerfilUrl instanceof File
+        ? await uploadImage(atletaData.fotoPerfilUrl, 'atleta')
+        : (atletaData.fotoPerfilUrl ?? null)
+
+      const atleta_foto_capa = atletaData.fotoCapaUrl instanceof File
+        ? await uploadImage(atletaData.fotoCapaUrl, 'atleta_capa')
+        : (atletaData.fotoCapaUrl ?? null)
 
       const atleta_fotos_adicionais = await uploadImages(
         atletaData.fotosAdicionais.filter((f: any) => f instanceof File || (typeof f === 'string' && f)),
@@ -104,8 +121,8 @@ function CadastroForm() {
         },
       })
       if (signUpError) {
-        setServerError(signUpError.message)
-        toast.error(signUpError.message)
+        setServerError(translateAuthError(signUpError.message))
+        toast.error(translateAuthError(signUpError.message))
         return
       }
 
@@ -147,6 +164,8 @@ function CadastroForm() {
           estado: atletaData.estado,
           cidade: atletaData.cidade,
           pe_dominante: atletaData.peDominante,
+          altura_cm: atletaData.altura_cm || null,
+          peso_kg: atletaData.peso_kg || null,
           escolinha_atual: atletaData.escolinhaAtual || null,
           posicao: atletaData.posicao,
           habilidade_tecnica: atletaData.habilidades[0],
@@ -158,7 +177,8 @@ function CadastroForm() {
           visivel: atletaData.visivel,
           exibir_cidade: atletaData.exibirCidade,
           aceitar_mensagens: atletaData.mensagens,
-          foto_url: atleta_foto_url,
+          foto_url: atleta_foto_perfil,
+          capa_url: atleta_foto_capa,
           fotos_adicionais: atleta_fotos_adicionais,
           status: 'pendente',
         })
@@ -236,7 +256,7 @@ function CadastroForm() {
           },
         },
       })
-      if (error) { setServerError(error.message); toast.error(error.message); return }
+      if (error) { setServerError(translateAuthError(error.message)); toast.error(translateAuthError(error.message)); return }
       toast.success('Conta de escolinha criada com sucesso!')
       setDone(true)
     } catch {
@@ -250,36 +270,99 @@ function CadastroForm() {
   if (done) return <SuccessScreen tipo={tipo} />
 
   return (
-    <div className="min-h-screen bg-neutral-100 flex flex-col items-center justify-start px-4 py-8 sm:py-12">
-      <div className="w-full max-w-lg">
-
-        <div className="text-center mb-6 sm:mb-8">
-          <Link href="/" className="font-display text-2xl sm:text-3xl tracking-widest text-green-700 inline-block mb-1 sm:mb-2">
-            SCOUT<span className="text-amber-500">JR</span>
+    <div className="min-h-screen bg-white flex overflow-hidden font-sans">
+      
+      {/* Left Side: Branding (Hidden on mobile) */}
+      <div className="hidden lg:flex lg:w-1/2 bg-[#0A1A14] relative items-center justify-center p-12 overflow-hidden sticky top-0 h-screen">
+        {/* Background Effects */}
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
+        <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] rounded-full bg-green-500/10 blur-[120px]"></div>
+        <div className="absolute bottom-[-10%] left-[-10%] w-[60%] h-[60%] rounded-full bg-amber-500/5 blur-[120px]"></div>
+        
+        <div className="relative z-10 max-w-lg">
+          <Link href="/" className="inline-flex items-center gap-2 text-white/60 hover:text-white transition-colors mb-20 group">
+            <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
+            <span className="text-sm font-medium">Voltar para a home</span>
           </Link>
-        </div>
 
-        {/* Progress bar */}
-        <div className="mb-5 sm:mb-6">
-          <div className="relative h-1.5 bg-neutral-200 rounded-full mb-2.5 sm:mb-3 overflow-hidden">
-            <div
-              className="h-full bg-green-400 rounded-full transition-all duration-500"
-              style={{ width: `${progressPercent}%` }}
-            />
+          <div className="font-display text-7xl text-white leading-none mb-8 uppercase">
+            A JORNADA <br />
+            <span className="text-green-400">COMEÇA</span> <br />
+            AQUI.
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: `repeat(${totalSteps}, 1fr)` }}>
-            {labels.map((l, i) => (
-              <span key={l} className={cn(
-                'text-[8px] sm:text-[10px] font-bold uppercase tracking-tight text-center',
-                i + 1 === step ? 'text-green-700' : i + 1 < step ? 'text-green-400' : 'text-neutral-300'
-              )}>
-                {l}
-              </span>
+
+          <p className="text-neutral-400 text-lg leading-relaxed mb-12">
+            {tipo === 'responsavel' 
+              ? 'Dê o primeiro passo para o futuro do seu pequeno atleta. Cadastre-se e ganhe visibilidade nacional.' 
+              : 'Encontre e monitore a evolução das maiores promessas da base em um só lugar.'}
+          </p>
+
+          <div className="grid grid-cols-1 gap-6">
+            {[
+              { icon: <CircleCheckBig className="text-green-400" />, title: 'Passo a Passo', desc: 'Preenchimento intuitivo e rápido.' },
+              { icon: <Trophy className="text-amber-400" />, title: 'Visibilidade Real', desc: 'Seu perfil direto nas mãos de quem recruta.' },
+            ].map((item, i) => (
+              <div key={i} className="flex gap-4 p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm">
+                <div className="shrink-0 mt-1">{item.icon}</div>
+                <div>
+                  <div className="text-white font-bold text-sm mb-0.5">{item.title}</div>
+                  <div className="text-neutral-500 text-xs leading-relaxed">{item.desc}</div>
+                </div>
+              </div>
             ))}
           </div>
         </div>
+      </div>
 
-        <div className="bg-white border border-neutral-200 rounded-2xl p-5 sm:p-8 shadow-sm">
+      {/* Right Side: Form Wizard */}
+      <div className="w-full lg:w-1/2 flex items-start justify-center p-6 sm:p-12 bg-neutral-50 lg:bg-white overflow-y-auto max-h-screen custom-scrollbar">
+        <div className="w-full max-w-lg py-8 animate-fade-up">
+
+          <div className="lg:hidden mb-12 text-center">
+             <Link href="/" className="font-display text-3xl tracking-widest text-green-700">
+              SCOUT<span className="text-amber-500">JR</span>
+            </Link>
+          </div>
+
+          {/* Progress Header */}
+          <div className="mb-10">
+            <div className="flex items-end justify-between mb-4">
+              <div>
+                <span className="text-[10px] font-bold text-green-600 uppercase tracking-widest bg-green-50 px-2 py-1 rounded-md mb-2 inline-block">Etapa {step} de {totalSteps}</span>
+                <h1 className="text-3xl font-bold text-neutral-900 leading-tight">Criação de Conta</h1>
+              </div>
+              <div className="text-right">
+                <span className="text-2xl font-display text-neutral-300 tracking-tighter">{Math.round(progressPercent)}%</span>
+              </div>
+            </div>
+            <div className="relative h-2 bg-neutral-100 rounded-full overflow-hidden border border-neutral-200/50">
+              <div
+                className="absolute left-0 top-0 h-full bg-gradient-to-r from-green-600 to-green-400 rounded-full transition-all duration-700 ease-out shadow-[0_0_10px_rgba(22,163,74,0.3)]"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+            <div className="relative mt-4 -mx-4">
+              <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-neutral-50 lg:from-white to-transparent z-10 pointer-events-none" />
+              <div className="flex items-center gap-x-6 overflow-x-auto scrollbar-hide py-2 px-4 shadow-[inset_-20px_0_20px_-20px_rgba(0,0,0,0.05)]">
+                {labels.map((l, i) => (
+                  <div key={l} className={cn(
+                    'text-[9px] font-bold uppercase tracking-widest flex items-center gap-2 shrink-0 transition-all duration-300',
+                    i + 1 === step ? 'text-green-700 opacity-100 scale-110' : i + 1 < step ? 'text-green-600 opacity-80' : 'text-neutral-300 opacity-40'
+                  )}>
+                    <div className={cn(
+                      "w-2.5 h-2.5 rounded-full flex items-center justify-center transition-all duration-500",
+                      i + 1 <= step ? "bg-current shadow-[0_0_8px_rgba(34,197,94,0.3)]" : "bg-neutral-200"
+                    )}>
+                      {i + 1 < step && <CircleCheckBig size={8} className="text-white" />}
+                    </div>
+                    <span className="whitespace-nowrap">{l}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white lg:bg-transparent border border-neutral-200 lg:border-none rounded-2xl p-6 sm:p-0 shadow-sm lg:shadow-none">
 
           {/* STEP 1 — Tipo */}
           {step === 1 && (
@@ -354,7 +437,13 @@ function CadastroForm() {
                     <Label>Telefone / WhatsApp</Label>
                     <Input type="tel" placeholder="(51) 9 9999-9999"
                       error={formResp.formState.errors.telefone?.message}
-                      {...formResp.register('telefone', { onChange: e => { e.target.value = formatPhone(e.target.value) } })} />
+                      {...formResp.register('telefone', { 
+                        onChange: e => { 
+                          const val = formatPhone(e.target.value);
+                          e.target.value = val;
+                          formResp.setValue('telefone', val);
+                        } 
+                      })} />
                   </FieldGroup>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -369,11 +458,11 @@ function CadastroForm() {
                 </div>
                 <div className="bg-amber-50 border border-amber-100 rounded-lg p-3 text-xs text-amber-700 leading-relaxed">
                   Ao criar uma conta você confirma ser o responsável legal e concorda com os{' '}
-                  <Link href="/termos" className="underline">Termos de Uso</Link>.
+                  <button type="button" onClick={() => setShowLegal({ type: 'terms', open: true })} className="underline font-bold hover:text-amber-800 transition-colors">Termos de Uso</button>.
                 </div>
                 <label className="flex items-start gap-3 cursor-pointer">
                   <input type="checkbox" className="mt-0.5 accent-green-500" {...formResp.register('aceito_termos')} />
-                  <span className="text-xs text-neutral-500">Li e aceito os termos de uso e política de privacidade</span>
+                  <span className="text-xs text-neutral-500">Li e aceito os <button type="button" onClick={() => setShowLegal({ type: 'terms', open: true })} className="underline">termos de uso</button> e <button type="button" onClick={() => setShowLegal({ type: 'privacy', open: true })} className="underline">política de privacidade</button></span>
                 </label>
                 {formResp.formState.errors.aceito_termos && (
                   <p className="text-xs text-red-500">{formResp.formState.errors.aceito_termos.message}</p>
@@ -422,7 +511,13 @@ function CadastroForm() {
                   <FieldGroup>
                     <Label>Telefone</Label>
                     <Input type="tel" placeholder="(51) 3333-3333" error={formEscolinha.formState.errors.telefone?.message}
-                      {...formEscolinha.register('telefone', { onChange: e => { e.target.value = formatPhone(e.target.value) } })} />
+                      {...formEscolinha.register('telefone', { 
+                        onChange: e => { 
+                          const val = formatPhone(e.target.value);
+                          e.target.value = val;
+                          formEscolinha.setValue('telefone', val);
+                        } 
+                      })} />
                   </FieldGroup>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -435,6 +530,7 @@ function CadastroForm() {
                     <Label>Cidade</Label>
                     <CitySelect
                       estado={formEscolinha.watch('estado')}
+                      {...formEscolinha.register('cidade')}
                       value={formEscolinha.watch('cidade')}
                       onChange={e => formEscolinha.setValue('cidade', e.target.value, { shouldValidate: true })}
                       error={formEscolinha.formState.errors.cidade?.message}
@@ -453,7 +549,7 @@ function CadastroForm() {
                 </div>
                 <label className="flex items-start gap-3 cursor-pointer">
                   <input type="checkbox" className="mt-0.5 accent-green-500" {...formEscolinha.register('aceito_termos')} />
-                  <span className="text-xs text-neutral-500">Li e aceito os termos de uso e política de privacidade</span>
+                  <span className="text-xs text-neutral-500">Li e aceito os <button type="button" onClick={() => setShowLegal({ type: 'terms', open: true })} className="underline">termos de uso</button> e <button type="button" onClick={() => setShowLegal({ type: 'privacy', open: true })} className="underline">política de privacidade</button></span>
                 </label>
                 {formEscolinha.formState.errors.aceito_termos && (
                   <p className="text-xs text-red-500">{formEscolinha.formState.errors.aceito_termos.message}</p>
@@ -558,13 +654,69 @@ function CadastroForm() {
               </div>
             </div>
           )}
-        </div>
+          </div>
 
-        <p className="text-center text-xs sm:text-sm text-neutral-400 mt-5 sm:mt-6">
-          Já tem conta?{' '}
-          <Link href="/login" className="text-green-600 hover:text-green-700 font-medium">Entrar</Link>
-        </p>
+          <p className="text-center text-sm text-neutral-400 mt-12 mb-8">
+            Já possui uma conta? {' '}
+            <Link href="/login" className="text-green-600 hover:text-green-700 font-bold hover:underline underline-offset-4 decoration-2">
+              Entrar agora
+            </Link>
+          </p>
+        </div>
       </div>
+
+      {/* Legal Modal Overlay */}
+      {showLegal.open && (
+        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 sm:p-8 animate-in fade-in duration-300">
+          <div className="bg-white w-full max-w-4xl max-h-[90vh] rounded-[2rem] shadow-2xl overflow-hidden flex flex-col relative animate-in slide-in-from-bottom-8 duration-500">
+            {/* Modal Header */}
+            <div className="p-6 sm:p-8 border-b border-neutral-100 flex items-center justify-between shrink-0 bg-white">
+              <div className="flex items-center gap-4">
+                <button 
+                  onClick={() => setShowLegal({ ...showLegal, open: false })}
+                  className="w-10 h-10 rounded-full border border-neutral-200 flex items-center justify-center hover:bg-neutral-50 transition-colors"
+                >
+                  <ArrowLeft size={18} className="text-neutral-600" />
+                </button>
+                <div>
+                  <div className="flex items-center gap-2 text-green-700 mb-0.5">
+                    {showLegal.type === 'terms' ? <Scale size={18} /> : <LockIcon size={18} />}
+                    <span className="text-[10px] font-bold uppercase tracking-widest leading-none">ScoutJR Jurídico</span>
+                  </div>
+                  <h2 className="text-xl sm:text-2xl font-bold text-neutral-900 leading-tight">
+                    {showLegal.type === 'terms' ? 'Termos de Uso' : 'Privacidade & LGPD'}
+                  </h2>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowLegal({ ...showLegal, open: false })}
+                className="text-neutral-400 hover:text-neutral-900 transition-colors hidden sm:block"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="flex-1 overflow-y-auto p-6 sm:p-12 custom-scrollbar bg-neutral-50/30">
+              <div className="max-w-3xl mx-auto">
+                <p className="text-sm text-neutral-400 mb-10 border-l-2 border-green-500 pl-4 py-1 italic bg-green-50/50 rounded-r-md">
+                  {showLegal.type === 'terms' 
+                    ? 'Revisado e em vigor a partir de Março de 2026. Documento em compliance com o Marco Civil da Internet.'
+                    : 'A proteção dos dados das crianças, jovens e responsáveis é a raiz e fundação do ScoutJR.'}
+                </p>
+                {showLegal.type === 'terms' ? <TermsContent /> : <PrivacyContent />}
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-6 border-t border-neutral-100 flex justify-end shrink-0 bg-white gap-3">
+               <Button variant="outline" onClick={() => setShowLegal({ ...showLegal, open: false })}>
+                Fechar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -618,6 +770,16 @@ function AtletaSteps({ step, setStep, data, setData, loading, serverError, onSub
               onChange={(e: any) => setData({ ...data, cidade: e.target.value })}
               placeholder="Porto Alegre"
             />
+          </FieldGroup>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <FieldGroup>
+            <Label>Altura (cm)</Label>
+            <Input type="number" min="100" max="220" placeholder="Ex: 175" value={data.altura_cm} onChange={(e: any) => setData({ ...data, altura_cm: e.target.value })} />
+          </FieldGroup>
+          <FieldGroup>
+            <Label>Peso (kg)</Label>
+            <Input type="number" min="20" max="120" placeholder="Ex: 68" value={data.peso_kg} onChange={(e: any) => setData({ ...data, peso_kg: e.target.value })} />
           </FieldGroup>
         </div>
         <FieldGroup>
@@ -687,13 +849,49 @@ function AtletaSteps({ step, setStep, data, setData, loading, serverError, onSub
           <p className="text-xs sm:text-sm text-neutral-500 mb-4 sm:mb-6">Perfis com vídeos recebem até 8× mais interesse.</p>
         </div>
 
-        {/* Foto de capa — preview imediato */}
+        {/* Foto de Perfil */}
         <FieldGroup>
-          <Label className="flex items-center gap-2"><ImageIcon size={14} /> Foto de Capa / Perfil</Label>
+          <Label className="flex items-center gap-2"><ImageIcon size={14} /> Foto de Perfil (Avatar)</Label>
           <div className="flex items-center gap-4">
-            <div className="w-20 h-20 rounded-xl bg-neutral-100 border-2 border-dashed border-neutral-200 flex-shrink-0 overflow-hidden flex items-center justify-center text-neutral-400">
-              {data.fotoPreview
-                ? <img src={data.fotoPreview} alt="Capa" className="w-full h-full object-cover" />
+            <div className="w-20 h-20 rounded-full bg-neutral-100 border-2 border-dashed border-neutral-200 flex-shrink-0 overflow-hidden flex items-center justify-center text-neutral-400">
+              {data.fotoPerfilPreview
+                ? <img src={data.fotoPerfilPreview} alt="Perfil" className="w-full h-full object-cover" />
+                : <Users size={24} />}
+            </div>
+            <div className="flex-1">
+              <Input
+                type="file"
+                accept="image/*"
+                className="pt-2"
+                onChange={e => {
+                  const file = e.target.files?.[0]
+                  if (file) {
+                    const reader = new FileReader()
+                    reader.onload = ev => {
+                      setData((prev: any) => ({
+                        ...prev,
+                        fotoPerfilUrl: file,
+                        fotoPerfilPreview: ev.target?.result as string,
+                      }))
+                    }
+                    reader.readAsDataURL(file)
+                  } else {
+                    setData((prev: any) => ({ ...prev, fotoPerfilUrl: null, fotoPerfilPreview: '' }))
+                  }
+                }}
+              />
+              <p className="text-[10px] text-neutral-400 mt-1">Aparece na moldura de perfil (Quadrado/Redondo)</p>
+            </div>
+          </div>
+        </FieldGroup>
+
+        {/* Foto de Capa */}
+        <FieldGroup>
+          <Label className="flex items-center gap-2"><ImageIcon size={14} /> Foto de Capa (Banner)</Label>
+          <div className="flex items-center gap-4">
+            <div className="w-32 h-20 rounded-xl bg-neutral-100 border-2 border-dashed border-neutral-200 flex-shrink-0 overflow-hidden flex items-center justify-center text-neutral-400">
+              {data.fotoCapaPreview
+                ? <img src={data.fotoCapaPreview} alt="Capa" className="w-full h-full object-cover" />
                 : <ImageIcon size={24} />}
             </div>
             <div className="flex-1">
@@ -704,18 +902,17 @@ function AtletaSteps({ step, setStep, data, setData, loading, serverError, onSub
                 onChange={e => {
                   const file = e.target.files?.[0]
                   if (file) {
-                    // Gera preview local imediatamente
                     const reader = new FileReader()
                     reader.onload = ev => {
                       setData((prev: any) => ({
                         ...prev,
-                        fotoUrl: file,
-                        fotoPreview: ev.target?.result as string,
+                        fotoCapaUrl: file,
+                        fotoCapaPreview: ev.target?.result as string,
                       }))
                     }
                     reader.readAsDataURL(file)
                   } else {
-                    setData((prev: any) => ({ ...prev, fotoUrl: null, fotoPreview: '' }))
+                    setData((prev: any) => ({ ...prev, fotoCapaUrl: null, fotoCapaPreview: '' }))
                   }
                 }}
               />
@@ -895,25 +1092,64 @@ function AtletaSteps({ step, setStep, data, setData, loading, serverError, onSub
 
 function SuccessScreen({ tipo }: { tipo: Tipo }) {
   return (
-    <div className="min-h-screen bg-neutral-100 flex items-center justify-center px-4">
-      <div className="w-full max-w-md bg-white border border-neutral-200 rounded-2xl p-8 sm:p-10 text-center shadow-sm">
-        <div className="text-amber-400 flex justify-center mb-4"><Clock size={48} /></div>
-        <h2 className="font-display text-3xl sm:text-4xl text-neutral-800 mb-3 text-center uppercase">
-          Cadastro Recebido!
-        </h2>
-        <p className="text-xs sm:text-sm text-neutral-500 leading-relaxed mb-4 text-center">
-          {tipo === 'responsavel'
-            ? 'O perfil do atleta foi criado e agora passará por uma análise técnica de segurança.'
-            : 'Os dados da sua escolinha foram enviados para nossa equipe de verificação.'}
-        </p>
-        <div className="bg-amber-50 border border-amber-100 rounded-xl p-3.5 mb-6 text-left">
-          <p className="text-[10px] sm:text-xs text-amber-700 leading-relaxed font-medium">
-            💡 <strong>O que acontece agora?</strong><br />
-            Nossa equipe revisará os dados em até 24h. Você receberá um e-mail assim que sua conta for aprovada e o acesso total for liberado.
+    <div className="min-h-screen bg-white flex overflow-hidden font-sans">
+      {/* Left Side: Success Branding */}
+      <div className="hidden lg:flex lg:w-1/2 bg-[#0A1A14] relative items-center justify-center p-12 overflow-hidden">
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
+        <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] rounded-full bg-green-500/10 blur-[120px]"></div>
+        
+        <div className="relative z-10 max-w-lg text-center">
+          <div className="w-24 h-24 bg-green-500/20 border border-green-500/30 rounded-full flex items-center justify-center mx-auto mb-10 backdrop-blur-xl animate-pulse">
+            <CircleCheckBig size={48} className="text-green-400" />
+          </div>
+          <div className="font-display text-6xl text-white leading-none mb-6 uppercase">
+            ESTAMOS <br />
+            <span className="text-green-400">JUNTOS.</span>
+          </div>
+          <p className="text-neutral-400 text-lg leading-relaxed">
+            Seu cadastro é o primeiro passo para uma trajetória de sucesso no mundo do futebol.
           </p>
         </div>
-        <div className="flex flex-col gap-2.5 sm:gap-3">
-          <Link href="/"><Button variant="outline" className="w-full justify-center">Voltar ao início</Button></Link>
+      </div>
+
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 bg-neutral-50 lg:bg-white">
+        <div className="w-full max-w-md text-center animate-fade-up">
+          <div className="lg:hidden text-green-500 flex justify-center mb-8 bg-green-50 w-20 h-20 rounded-full items-center mx-auto shadow-sm">
+            <CircleCheckBig size={40} />
+          </div>
+          
+          <h2 className="text-3xl font-bold text-neutral-900 mb-4 leading-tight">
+            Cadastro Recebido!
+          </h2>
+          <p className="text-neutral-500 leading-relaxed mb-8">
+            {tipo === 'responsavel'
+              ? 'O perfil do atleta foi enviado e agora passará por uma análise técnica e de segurança de nossa equipe.'
+              : 'Os dados da sua escolinha foram enviados e estão em fase de aprovação.'}
+          </p>
+          
+          <div className="bg-amber-50 border border-amber-100/50 rounded-2xl p-6 mb-10 text-left shadow-sm">
+            <div className="flex gap-3 items-start">
+              <div className="bg-amber-100 p-2 rounded-lg shrink-0 mt-0.5">
+                <Clock size={16} className="text-amber-600" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-amber-800 mb-1">O que acontece agora?</p>
+                <p className="text-xs text-amber-700/80 leading-relaxed">
+                  Nossa equipe revisará as informações em até <strong>24 horas úteis</strong>. 
+                  Você receberá um e-mail de confirmação assim que o acesso total for liberado.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-4">
+            <Link href="/" className="w-full">
+              <Button variant="dark" size="lg" className="w-full h-12 rounded-xl text-base font-bold shadow-lg shadow-green-900/10">
+                Voltar ao Início
+              </Button>
+            </Link>
+            <p className="text-neutral-400 text-xs text-center font-medium">Siga-nos nas redes sociais para atualizações.</p>
+          </div>
         </div>
       </div>
     </div>

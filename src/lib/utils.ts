@@ -11,6 +11,18 @@ export function cn(...inputs: ClassValue[]) {
 // -----------------------------------------------
 // Formatters
 // -----------------------------------------------
+export function translateAuthError(message: string): string {
+  if (!message) return 'Ocorreu um erro inesperado.'
+  const lowerMsg = message.toLowerCase()
+  if (lowerMsg.includes('user already registered')) return 'Este e-mail já está em uso.'
+  if (lowerMsg.includes('password should be at least')) return 'A senha deve ter pelo menos 6 caracteres.'
+  if (lowerMsg.includes('invalid login credentials')) return 'E-mail ou senha incorretos.'
+  if (lowerMsg.includes('email not confirmed')) return 'E-mail não confirmado.'
+  if (lowerMsg.includes('user not found')) return 'Usuário não encontrado.'
+  if (lowerMsg.includes('rate limit')) return 'Muitas tentativas. Tente novamente mais tarde.'
+  return message // fallback
+}
+
 export function formatCurrency(value: number): string {
   return new Intl.NumberFormat('pt-BR', {
     style: 'currency',

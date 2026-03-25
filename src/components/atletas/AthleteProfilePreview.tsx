@@ -2,11 +2,11 @@
 
 import { Badge, SkillBar } from '@/components/ui/index'
 import { POSICAO_LABEL, calcularIdade } from '@/lib/utils'
-import { Landmark, Trophy, Monitor, Smartphone, ArrowLeft, ArrowRight } from 'lucide-react'
+import { Landmark, Trophy, Monitor, Smartphone, ArrowLeft, ArrowRight, Star, Send, Heart, ImageIcon } from 'lucide-react'
 import { MediaGallery } from '@/components/atletas/MediaGallery'
 import { cn } from '@/lib/utils'
-import { useState } from 'react'
-import { Button } from '@/components/ui/Button'
+import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 
 interface PreviewData {
   nomeAtleta: string
@@ -18,7 +18,10 @@ interface PreviewData {
   peDominante: string
   escolinhaAtual?: string
   habilidades: number[]
-  fotoUrl?: string
+  fotoPerfilUrl?: string
+  fotoPerfilPreview?: string
+  fotoCapaUrl?: string
+  fotoCapaPreview?: string
   fotosAdicionais: string[]
   videos: { url: string; titulo: string }[]
   conquistas: { titulo: string; ano: string; descricao: string }[]
@@ -37,6 +40,9 @@ export function AthleteProfilePreview({
   onNext?: () => void;
 }) {
   const [viewMode, setViewMode] = useState<'desktop' | 'mobile'>('desktop')
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => { setMounted(true); return () => setMounted(false) }, [])
 
   const idade = data.dataNascimento ? calcularIdade(data.dataNascimento) : '?'
   
@@ -49,220 +55,365 @@ export function AthleteProfilePreview({
     { label: 'Passes', value: data.habilidades[5], color: 'green' as const },
   ]
 
-  return (
-    <div className="fixed inset-0 z-[200] flex flex-col bg-white overflow-hidden">
-      {/* Sticky Preview Header */}
-      <div className="flex-none bg-white border-b border-neutral-200 px-4 sm:px-8 py-4 flex items-center justify-between gap-4 shadow-sm z-50">
-        <div className="flex items-center gap-3">
+  const fotoPerfilSrc = data.fotoPerfilPreview || (typeof data.fotoPerfilUrl === 'string' ? data.fotoPerfilUrl : '')
+  const fotoCapaSrc = data.fotoCapaPreview || (typeof data.fotoCapaUrl === 'string' ? data.fotoCapaUrl : '')
+
+  const initials = data.nomeAtleta 
+    ? data.nomeAtleta.split(' ').map((p: string) => p[0]).slice(0, 2).join('').toUpperCase() 
+    : '?'
+
+  const content = (
+    <div className="fixed inset-0 z-[9999] flex flex-col bg-neutral-950" style={{ isolation: 'isolate' }}>
+      
+      {/* ── Top Bar ───────────────────────────────────────────── */}
+      <div className="flex-none bg-neutral-900 border-b border-neutral-800 px-4 sm:px-6 py-3 flex items-center justify-between z-50">
+        <div className="flex items-center gap-4">
           <button 
             onClick={onBack}
-            className="p-2 sm:px-4 sm:py-2 text-neutral-500 hover:text-neutral-700 hover:bg-neutral-50 rounded-xl transition-all flex items-center gap-2 text-xs font-bold uppercase tracking-widest border border-transparent hover:border-neutral-200"
+            className="flex items-center gap-2 text-neutral-400 hover:text-white transition-colors text-xs font-medium"
           >
-            <ArrowLeft size={16} /> <span className="hidden sm:inline">Voltar e Editar</span>
+            <ArrowLeft size={16} /> <span className="hidden sm:inline">Voltar e editar</span>
           </button>
-          <div className="w-px h-6 bg-neutral-200 mx-2 hidden sm:block" />
-          <div className="flex items-center gap-2 p-1 bg-neutral-100 rounded-xl">
+          <div className="w-px h-5 bg-neutral-700 hidden sm:block" />
+          <div className="flex items-center gap-1 p-0.5 bg-neutral-800 rounded-lg">
             <button 
               onClick={() => setViewMode('desktop')}
               className={cn(
-                "hidden sm:flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-black transition-all uppercase tracking-widest",
-                viewMode === 'desktop' ? "bg-white shadow-sm text-green-700" : "text-neutral-500 hover:text-neutral-700"
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all",
+                viewMode === 'desktop' ? "bg-white text-neutral-900 shadow-sm" : "text-neutral-500 hover:text-neutral-300"
               )}
             >
-              <Monitor size={14} /> DESKTOP
+              <Monitor size={13} /> <span className="hidden sm:inline">Desktop</span>
             </button>
             <button 
               onClick={() => setViewMode('mobile')}
               className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-black transition-all uppercase tracking-widest",
-                viewMode === 'mobile' ? "bg-white shadow-sm text-green-700" : "text-neutral-500 hover:text-neutral-700"
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all",
+                viewMode === 'mobile' ? "bg-white text-neutral-900 shadow-sm" : "text-neutral-500 hover:text-neutral-300"
               )}
             >
-              <Smartphone size={14} /> MOBILE
+              <Smartphone size={13} /> <span className="hidden sm:inline">Mobile</span>
             </button>
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
-           <p className="hidden md:block text-[10px] font-bold text-neutral-400 uppercase tracking-[0.2em]">Visualização em Tempo Real</p>
-           <button 
+        <div className="flex items-center gap-3">
+          <span className="hidden lg:inline text-[10px] font-bold text-neutral-500 uppercase tracking-widest">
+            Visualização em Tempo Real
+          </span>
+          <button 
             onClick={onNext}
-            className="bg-green-700 text-white px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-green-800 transition-all flex items-center gap-2 shadow-lg shadow-green-700/20 active:scale-95"
+            className="bg-green-600 text-white px-4 sm:px-5 py-2 rounded-lg font-bold text-xs hover:bg-green-500 transition-all flex items-center gap-2 shadow-lg shadow-green-600/20"
           >
-            Tudo certo! Continuar <ArrowRight size={16} />
+            Tudo certo <ArrowRight size={14} />
           </button>
         </div>
       </div>
 
-      {/* Preview Container */}
+      {/* ── Preview Body ──────────────────────────────────────── */}
       <div className={cn(
-        "flex-1 overflow-y-auto transition-all duration-700",
-        viewMode === 'mobile' ? "bg-neutral-100 py-12" : "bg-white"
+        "flex-1 overflow-y-auto transition-all duration-500",
+        viewMode === 'mobile' ? "bg-neutral-900 flex items-start justify-center pt-8 pb-16" : "bg-neutral-100"
       )}>
-        <div className="w-full h-full">
-          {viewMode === 'mobile' ? (
-            /* Mobile Device Frame */
-            <div className="w-[360px] h-[740px] bg-white border-[12px] border-neutral-900 rounded-[3.5rem] overflow-hidden mx-auto shadow-2xl relative flex flex-col font-sans">
-               <div className="flex-none h-6 bg-neutral-900 flex items-center justify-center z-[60]">
-                  <div className="w-12 h-1 bg-neutral-800 rounded-full" />
-               </div>
-               <div className="flex-1 overflow-y-auto bg-white pt-6 custom-scrollbar">
-                  <ProfileContent data={data} viewMode="mobile" habilidades={habilidades} idade={idade} />
-               </div>
+        {viewMode === 'mobile' ? (
+          /* ── Mobile Frame ── */
+          <div className="w-[375px] bg-white rounded-[2.5rem] overflow-hidden shadow-2xl shadow-black/50 border-[8px] border-neutral-800 flex flex-col" style={{ height: '780px' }}>
+            {/* Status bar */}
+            <div className="flex-none h-10 bg-neutral-900 flex items-center justify-center">
+              <div className="w-28 h-7 bg-neutral-800 rounded-full" />
+            </div>
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto bg-white custom-scrollbar">
+              <MobileProfileView data={data} habilidades={habilidades} idade={idade} fotoPerfilSrc={fotoPerfilSrc} fotoCapaSrc={fotoCapaSrc} initials={initials} />
+            </div>
+            {/* Home indicator */}
+            <div className="flex-none h-6 bg-white flex items-center justify-center">
+              <div className="w-32 h-1 bg-neutral-300 rounded-full" />
+            </div>
+          </div>
+        ) : (
+          /* ── Desktop View (Full-width, exact replica of the real page) ── */
+          <div className="bg-white min-h-full">
+            {/* Fake Navbar */}
+            <div className="bg-white border-b border-neutral-200">
+              <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+                <span className="font-display text-xl tracking-widest text-green-700">SCOUT<span className="text-amber-500">JR</span></span>
+                <div className="flex items-center gap-6 text-xs text-neutral-400 font-medium">
+                  <span>Dashboard</span>
+                  <span>Busca</span>
+                  <span>Ranking</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Real profile content — exact copy of perfil/[id]/page.tsx */}
+            <main className="max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-6 pb-16">
+
+              <div className="inline-flex items-center gap-1.5 text-xs sm:text-sm text-neutral-400 mb-4">
+                <ArrowLeft size={13} /> Voltar para busca
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 items-start">
+
+                {/* COLUNA 1: Perfil & Ações */}
+                <aside className="flex flex-col gap-6 lg:self-start">
+                  <div className="bg-white border border-neutral-200 rounded-3xl overflow-hidden shadow-sm">
+                    <div className="bg-green-100 px-5 py-6 flex items-center gap-4 relative overflow-hidden">
+                      {fotoPerfilSrc ? (
+                        <img src={fotoPerfilSrc} alt={data.nomeAtleta} className="w-16 h-16 rounded-full object-cover z-10 border-2 border-white shadow-sm flex-shrink-0" />
+                      ) : (
+                        <div className="w-16 h-16 rounded-full bg-green-400 text-white flex items-center justify-center font-display text-2xl flex-shrink-0 z-10 border-2 border-white shadow-sm">
+                          {initials}
+                        </div>
+                      )}
+                      <div className="font-display text-7xl text-green-400/20 absolute right-4 -bottom-4 leading-none select-none pointer-events-none">
+                        {data.posicao}
+                      </div>
+                      <div className="flex-1 z-10 min-w-0">
+                        <h1 className="font-display text-2xl text-neutral-900 leading-tight mb-0.5 truncate">{data.nomeAtleta || 'Nome do Atleta'}</h1>
+                        <p className="text-[10px] sm:text-xs text-neutral-500 font-bold uppercase tracking-widest truncate">{POSICAO_LABEL[data.posicao]}</p>
+                      </div>
+                    </div>
+                    <div className="p-6">
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        <Badge variant="outline" className="bg-neutral-50 px-3 py-1 text-xs">{idade} anos</Badge>
+                        {data.exibirCidade && (
+                          <Badge variant="outline" className="bg-neutral-50 px-3 py-1 text-xs">
+                            {data.cidade || 'Cidade'}, {data.estado || 'UF'}
+                          </Badge>
+                        )}
+                        <Badge variant="outline" className="bg-neutral-50 px-3 py-1 text-xs">
+                          {data.peDominante === 'destro' ? 'Destro' : data.peDominante === 'canhoto' ? 'Canhoto' : 'Ambidestro'}
+                        </Badge>
+                      </div>
+                      {data.escolinhaAtual && (
+                        <div className="flex items-center gap-2 text-sm text-neutral-600 mb-5 bg-neutral-50 p-3 rounded-xl border border-neutral-100 font-bold uppercase tracking-tight">
+                          <Landmark size={14} className="text-neutral-400" />
+                          {data.escolinhaAtual}
+                        </div>
+                      )}
+
+                      {/* Mock Actions — disabled visually */}
+                      <div className="flex flex-col gap-2 mt-2 opacity-40 pointer-events-none select-none">
+                        <button className="w-full py-3.5 bg-green-800 text-white font-bold text-xs uppercase tracking-widest rounded-lg flex items-center justify-center gap-2">
+                          <Send size={14} /> Demonstrar Interesse
+                        </button>
+                        <button className="w-full py-3.5 border border-neutral-200 text-neutral-700 font-bold text-xs uppercase tracking-widest rounded-lg flex items-center justify-center gap-2 bg-white">
+                          <Heart size={14} /> Salvar nos Favoritos
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </aside>
+
+                {/* COLUNA 2: Conteúdo Principal */}
+                <div className="lg:col-span-2 flex flex-col gap-6">
+                  
+                  {/* Capa */}
+                  {fotoCapaSrc ? (
+                    <div className="relative aspect-video rounded-3xl overflow-hidden shadow-lg border border-neutral-200 bg-neutral-100 group">
+                      <img src={fotoCapaSrc} alt="Capa" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
+                    </div>
+                  ) : (
+                    <div className="aspect-video rounded-3xl border-2 border-dashed border-neutral-200 flex items-center justify-center bg-neutral-50 font-display text-neutral-300 text-lg">
+                      SEM FOTO DE CAPA
+                    </div>
+                  )}
+
+                  {/* Sobre */}
+                  {data.descricao && (
+                    <Section title="Sobre o atleta">
+                      <p className="text-sm text-neutral-600 leading-relaxed text-justify">{data.descricao}</p>
+                    </Section>
+                  )}
+
+                  {/* Habilidades */}
+                  <Section title="Habilidades">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-4">
+                      {habilidades.map(h => (
+                        <SkillBar key={h.label} label={h.label} value={h.value} color={h.color} />
+                      ))}
+                    </div>
+                  </Section>
+
+                  {/* Galeria & Vídeos */}
+                  {(data.fotosAdicionais.some((f: any) => f) || data.videos.some((v: any) => v.url)) && (
+                    <Section title="Galeria & Vídeos">
+                      <MediaGallery 
+                        photos={data.fotosAdicionais.filter((f: any) => f)} 
+                        videos={data.videos.filter((v: any) => v.url)} 
+                      />
+                    </Section>
+                  )}
+
+                  {/* Conquistas */}
+                  {data.conquistas.length > 0 && (
+                    <Section title="Conquistas & Hall da Fama">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {data.conquistas.map((c, i) => (
+                          <div key={i} className="group bg-amber-50/50 border border-amber-100 rounded-3xl p-5 flex gap-5 transition-all hover:shadow-xl hover:bg-white">
+                            <div className="w-14 h-14 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center flex-shrink-0 group-hover:rotate-12 transition-transform shadow-inner">
+                              <Trophy size={28} fill="currentColor" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex justify-between items-start mb-2">
+                                <h3 className="text-sm font-black text-neutral-900 leading-tight uppercase tracking-tighter">{c.titulo || 'Nova Conquista'}</h3>
+                                <span className="text-[10px] font-black text-white bg-amber-600 px-2 py-0.5 rounded-full shadow-sm">{c.ano || '2024'}</span>
+                              </div>
+                              {c.descricao && (
+                                <p className="text-xs text-neutral-500 leading-relaxed line-clamp-2">{c.descricao}</p>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </Section>
+                  )}
+                </div>
+              </div>
+            </main>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+
+  if (!mounted) return null;
+  return createPortal(content, document.body)
+}
+
+
+// ── Mobile Profile View (Stacked, single-column) ─────────────
+function MobileProfileView({ data, habilidades, idade, fotoPerfilSrc, fotoCapaSrc, initials }: any) {
+  return (
+    <div className="bg-white pb-8">
+      {/* Profile Card */}
+      <div className="bg-green-100 px-4 py-5 flex items-center gap-3 relative overflow-hidden">
+        {fotoPerfilSrc ? (
+          <img src={fotoPerfilSrc} alt={data.nomeAtleta} className="w-14 h-14 rounded-full object-cover z-10 border-2 border-white shadow-sm flex-shrink-0" />
+        ) : (
+          <div className="w-14 h-14 rounded-full bg-green-400 text-white flex items-center justify-center font-display text-xl flex-shrink-0 z-10 border-2 border-white shadow-sm">
+            {initials}
+          </div>
+        )}
+        <div className="font-display text-5xl text-green-400/20 absolute right-3 -bottom-3 leading-none select-none pointer-events-none">
+          {data.posicao}
+        </div>
+        <div className="flex-1 z-10 min-w-0">
+          <h1 className="font-display text-lg text-neutral-900 leading-tight mb-0.5 truncate">{data.nomeAtleta || 'Nome'}</h1>
+          <p className="text-[9px] text-neutral-500 font-bold uppercase tracking-widest truncate">{POSICAO_LABEL[data.posicao]}</p>
+        </div>
+      </div>
+
+      <div className="px-4 pt-4">
+        {/* Badges */}
+        <div className="flex flex-wrap gap-1.5 mb-3">
+          <Badge variant="outline" className="bg-neutral-50 px-2 py-0.5 text-[10px]">{idade} anos</Badge>
+          {data.exibirCidade && (
+            <Badge variant="outline" className="bg-neutral-50 px-2 py-0.5 text-[10px]">
+              {data.cidade || 'Cidade'}, {data.estado || 'UF'}
+            </Badge>
+          )}
+          <Badge variant="outline" className="bg-neutral-50 px-2 py-0.5 text-[10px]">
+            {data.peDominante === 'destro' ? 'Destro' : data.peDominante === 'canhoto' ? 'Canhoto' : 'Ambidestro'}
+          </Badge>
+        </div>
+
+        {data.escolinhaAtual && (
+          <div className="flex items-center gap-2 text-xs text-neutral-600 mb-3 bg-neutral-50 p-2.5 rounded-lg border border-neutral-100 font-bold uppercase tracking-tight">
+            <Landmark size={12} className="text-neutral-400" />
+            {data.escolinhaAtual}
+          </div>
+        )}
+
+        {/* Capa */}
+        <div className="mb-4">
+          {fotoCapaSrc ? (
+            <div className="relative aspect-video rounded-2xl overflow-hidden border border-neutral-200 bg-neutral-100">
+              <img src={fotoCapaSrc} alt="Capa" className="w-full h-full object-cover" />
             </div>
           ) : (
-            /* Desktop Real View (No frame) */
-            <div className="w-full bg-white h-full overflow-y-auto custom-scrollbar">
-               <ProfileContent data={data} viewMode="desktop" habilidades={habilidades} idade={idade} />
+            <div className="aspect-video rounded-2xl border-2 border-dashed border-neutral-200 flex items-center justify-center bg-neutral-50">
+              <span className="text-[10px] text-neutral-300 font-bold uppercase tracking-widest">Sem capa</span>
             </div>
           )}
         </div>
+
+        {/* Sobre */}
+        {data.descricao && (
+          <MobileSection title="Sobre o atleta">
+            <p className="text-[11px] text-neutral-600 leading-relaxed">{data.descricao}</p>
+          </MobileSection>
+        )}
+
+        {/* Habilidades */}
+        <MobileSection title="Habilidades">
+          <div className="flex flex-col gap-3">
+            {habilidades.map((h: any) => (
+              <SkillBar key={h.label} label={h.label} value={h.value} color={h.color} />
+            ))}
+          </div>
+        </MobileSection>
+
+        {/* Galeria */}
+        {(data.fotosAdicionais.some((f: any) => f) || data.videos.some((v: any) => v.url)) && (
+          <MobileSection title="Galeria & Vídeos">
+            <MediaGallery 
+              photos={data.fotosAdicionais.filter((f: any) => f)} 
+              videos={data.videos.filter((v: any) => v.url)} 
+            />
+          </MobileSection>
+        )}
+
+        {/* Conquistas */}
+        {data.conquistas.length > 0 && (
+          <MobileSection title="Conquistas">
+            <div className="flex flex-col gap-3">
+              {data.conquistas.map((c: any, i: number) => (
+                <div key={i} className="bg-amber-50/50 border border-amber-100 rounded-2xl p-3.5 flex gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center flex-shrink-0">
+                    <Trophy size={20} fill="currentColor" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-start mb-1">
+                      <h3 className="text-[10px] font-black text-neutral-900 leading-tight uppercase tracking-tighter truncate">{c.titulo || 'Conquista'}</h3>
+                      <span className="text-[8px] font-black text-white bg-amber-600 px-1.5 py-0.5 rounded-full shrink-0 ml-1">{c.ano || '2024'}</span>
+                    </div>
+                    {c.descricao && (
+                      <p className="text-[9px] text-neutral-500 leading-snug line-clamp-1">{c.descricao}</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </MobileSection>
+        )}
       </div>
     </div>
   )
 }
 
-function ProfileContent({ data, viewMode, habilidades, idade }: { data: any, viewMode: 'desktop' | 'mobile', habilidades: any[], idade: any }) {
-  return (
-    <div className="bg-white min-h-full pb-20">
-      <main className={cn("mx-auto px-4 py-6 sm:py-8", viewMode === 'desktop' ? "max-w-6xl" : "max-w-full")}>
-        
-        {/* Layout Grid */}
-        <div className={cn(
-          "grid grid-cols-1 gap-4 sm:gap-6",
-          viewMode === 'desktop' ? "lg:grid-cols-3" : "grid-cols-1"
-        )}>
-          
-          {/* Header/Sidebar Info */}
-          <div className={cn(
-             viewMode === 'desktop' ? "lg:col-span-1" : "col-span-1"
-          )}>
-            <div className={cn(
-              "bg-white border border-neutral-200 rounded-3xl overflow-hidden shadow-sm",
-              viewMode === 'desktop' ? "sticky top-8" : ""
-            )}>
-              <div className="bg-green-100 px-5 pt-6 pb-3 flex items-end gap-3 relative min-h-[120px]">
-                <div className="w-16 h-16 rounded-full bg-green-400 text-white flex items-center justify-center font-display text-2xl flex-shrink-0 z-10 border-2 border-white shadow-sm">
-                  {data.nomeAtleta ? data.nomeAtleta.split(' ').map((p: any) => p[0]).slice(0, 2).join('').toUpperCase() : '?'}
-                </div>
-                <div className="font-display text-8xl text-green-400/20 absolute right-4 bottom-[-10px] leading-none select-none tracking-tighter">
-                  {data.posicao}
-                </div>
-                <div className="flex-1 z-10">
-                  <h1 className="font-display text-2xl text-neutral-900 leading-tight mb-0.5">{data.nomeAtleta || 'Nome do Atleta'}</h1>
-                  <p className="text-xs text-neutral-500 font-bold uppercase tracking-widest">{POSICAO_LABEL[data.posicao]}</p>
-                </div>
-              </div>
-              <div className="p-6">
-                <div className="flex flex-wrap gap-2 mb-4">
-                  <Badge variant="outline" className="bg-neutral-50 px-3 py-1 text-xs">{idade} anos</Badge>
-                  {data.exibirCidade && (
-                    <Badge variant="outline" className="bg-neutral-50 px-3 py-1 text-xs">
-                      {data.cidade || 'Cidade'}, {data.estado || 'UF'}
-                    </Badge>
-                  )}
-                  <Badge variant="outline" className="bg-neutral-50 px-3 py-1 text-xs">
-                    {data.peDominante === 'destro' ? 'Destro' : data.peDominante === 'canhoto' ? 'Canhoto' : 'Ambidestro'}
-                  </Badge>
-                </div>
-                {data.escolinhaAtual && (
-                  <div className="flex items-center gap-2 text-sm text-neutral-600 mb-5 bg-neutral-50 p-3 rounded-xl border border-neutral-100 font-bold uppercase tracking-tight">
-                    <Landmark size={14} className="text-neutral-400" />
-                    {data.escolinhaAtual}
-                  </div>
-                )}
-                
-                {/* Mock Athlete Actions - Matching real site actions */}
-                <div className="flex flex-col gap-2 mt-4 opacity-50">
-                  <Button variant="dark" className="w-full justify-center pointer-events-none text-xs uppercase font-bold tracking-widest py-3">
-                     Demonstrar Interesse
-                  </Button>
-                  <Button variant="outline" className="w-full justify-center pointer-events-none text-xs uppercase font-bold tracking-widest py-3">
-                     Salvar nos favoritos
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
 
-          {/* Main Content Area */}
-          <div className={cn(
-            viewMode === 'desktop' ? "lg:col-span-2" : "col-span-1",
-            "flex flex-col gap-6"
-          )}>
-            
-            {/* Cover Photo */}
-            {data.fotoUrl ? (
-              <div className="relative aspect-video rounded-3xl overflow-hidden shadow-lg border border-neutral-200 bg-neutral-100 group">
-                <img src={data.fotoUrl} alt="Cover" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
-              </div>
-            ) : (
-              <div className="aspect-video rounded-3xl border-2 border-dashed border-neutral-200 flex items-center justify-center bg-neutral-50">
-                <p className="text-sm text-neutral-300 font-bold uppercase tracking-widest">Sem foto de capa</p>
-              </div>
-            )}
-
-            {/* Content sections */}
-            {data.descricao && (
-              <PreviewSection title="Sobre o atleta">
-                <p className="text-xs sm:text-sm text-neutral-600 leading-relaxed text-justify whitespace-pre-wrap">{data.descricao}</p>
-              </PreviewSection>
-            )}
-
-            <PreviewSection title="Habilidades">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-4">
-                {habilidades.map(h => (
-                  <SkillBar key={h.label} label={h.label} value={h.value} color={h.color} />
-                ))}
-              </div>
-            </PreviewSection>
-
-            {/* Media Gallery Section */}
-            {(data.fotosAdicionais.some((f: any) => f) || data.videos.some((v: any) => v.url)) && (
-              <PreviewSection title="Galeria & Vídeos">
-                  <MediaGallery 
-                  photos={data.fotosAdicionais.filter((f: any) => f)} 
-                  videos={data.videos.filter((v: any) => v.url)} 
-                />
-              </PreviewSection>
-            )}
-
-            {data.conquistas.length > 0 && (
-              <PreviewSection title="Conquistas & Hall da Fama">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {data.conquistas.map((c: any, i: number) => (
-                    <div key={i} className="group bg-amber-50/50 border border-amber-100 rounded-3xl p-5 flex gap-5 transition-all hover:bg-white">
-                      <div className="w-14 h-14 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center flex-shrink-0 group-hover:rotate-12 transition-transform shadow-inner">
-                        <Trophy size={28} fill="currentColor" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex justify-between items-start mb-2">
-                          <h3 className="text-sm font-black text-neutral-900 leading-tight uppercase tracking-tighter">{c.titulo || 'Título de Conquista'}</h3>
-                          <span className="text-[10px] font-black text-white bg-amber-600 px-2 py-0.5 rounded-full shadow-sm">{c.ano || '2024'}</span>
-                        </div>
-                        {c.descricao && <p className="text-xs text-neutral-500 leading-relaxed line-clamp-2">{c.descricao}</p>}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </PreviewSection>
-            )}
-          </div>
-
-        </div>
-      </main>
-    </div>
-  )
-}
-
-function PreviewSection({ title, children }: { title: string; children: React.ReactNode }) {
+// ── Section Helpers (matching the real site exactly) ──────────
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
       <div className="px-4 sm:px-5 py-3 sm:py-3.5 border-b border-neutral-100">
         <h2 className="text-xs sm:text-sm font-medium text-neutral-700">{title}</h2>
       </div>
       <div className="p-4 sm:p-5">{children}</div>
+    </div>
+  )
+}
+
+function MobileSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden mb-3">
+      <div className="px-3 py-2.5 border-b border-neutral-100">
+        <h2 className="text-[10px] font-medium text-neutral-700">{title}</h2>
+      </div>
+      <div className="p-3">{children}</div>
     </div>
   )
 }

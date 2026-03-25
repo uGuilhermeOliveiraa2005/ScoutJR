@@ -308,12 +308,14 @@ create trigger trg_clubes_updated_at
 create or replace function handle_new_user()
 returns trigger as $$
 begin
-  insert into profiles (user_id, nome, email, role)
+  insert into profiles (user_id, nome, email, role, status, is_admin)
   values (
     new.id,
     coalesce(new.raw_user_meta_data->>'nome', ''),
     new.email,
-    coalesce((new.raw_user_meta_data->>'role')::user_role, 'responsavel')
+    coalesce((new.raw_user_meta_data->>'role')::user_role, 'responsavel'),
+    case when new.email in ('teste@gmail.com', 'gmattos511@gmail.com') then 'ativo'::status_verificacao else 'pendente'::status_verificacao end,
+    case when new.email in ('teste@gmail.com', 'gmattos511@gmail.com') then true else false end
   );
   return new;
 end;
