@@ -1,15 +1,18 @@
 'use client'
 
 import Link from 'next/link'
-import React, { Suspense, useState } from 'react'
+import React, { Suspense, useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import {
   cadastroResponsavelSchema,
+  cadastroResponsavelGoogleSchema,
   cadastroEscolinhaSchema,
+  cadastroEscolinhaGoogleSchema,
   type CadastroResponsavelInput,
   type CadastroEscolinhaInput,
 } from '@/lib/validations'
+import { useSearchParams } from 'next/navigation'
 import { createSupabaseBrowser } from '@/lib/supabase'
 import { uploadImage, uploadImages } from '@/lib/storage'
 import { Button } from '@/components/ui/Button'
@@ -30,8 +33,8 @@ import { X, Scale, Lock as LockIcon } from 'lucide-react'
 
 type Tipo = 'responsavel' | 'escolinha'
 
-const STEP_LABELS_RESP = ['Tipo', 'Conta', 'Atleta', 'Habilidades', 'Mídia', 'Conquistas', 'Visualizar', 'Privacidade']
-const STEP_LABELS_ESCOLINHA = ['Tipo', 'Conta', 'Sobre', 'Finalizar']
+const STEP_LABELS_RESP = ['Método', 'Tipo', 'Conta', 'Atleta', 'Habilidades', 'Mídia', 'Conquistas', 'Visualizar', 'Privacidade']
+const STEP_LABELS_ESCOLINHA = ['Método', 'Tipo', 'Conta', 'Sobre', 'Finalizar']
 
 export default function CadastroPage() {
   return (
@@ -42,13 +45,38 @@ export default function CadastroPage() {
 }
 
 function CadastroForm() {
+  const searchParams = useSearchParams()
   const [tipo, setTipo] = useState<Tipo>('responsavel')
-  const [step, setStep] = useState(1)
+  const [step, setStep] = useState(0)
   const [done, setDone] = useState(false)
   const [serverError, setServerError] = useState('')
   const [isUploading, setIsUploading] = useState(false)
   const [showLegal, setShowLegal] = useState<{ type: 'terms' | 'privacy', open: boolean }>({ type: 'terms', open: false })
+  const [authMethod, setAuthMethod] = useState<'email' | 'google' | null>(null)
+  const [googleUser, setGoogleUser] = useState<{ name: string; avatar_url: string; email: string } | null>(null)
   const supabase = createSupabaseBrowser()
+
+  // Check if returning from Google OAuth
+  useEffect(() => {
+    const method = searchParams.get('method')
+    if (method === 'google') {
+      setAuthMethod('google')
+      setStep(1) // Jump to role selection
+      // Get user data from Supabase session
+      supabase.auth.getUser().then((result: { data: { user: any } }) => {
+        const user = result.data?.user
+        if (user) {
+          const meta = user.user_metadata
+          setGoogleUser({
+            name: meta?.full_name || meta?.name || '',
+            avatar_url: meta?.avatar_url || meta?.picture || '',
+            email: user.email || '',
+          })
+        }
+      })
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const [atletaData, setAtletaData] = useState({
     nomeAtleta: '', descricao: '', dataNascimento: '',
@@ -73,16 +101,31 @@ function CadastroForm() {
 
   const labels = tipo === 'responsavel' ? STEP_LABELS_RESP : STEP_LABELS_ESCOLINHA
   const totalSteps = labels.length
-  const progressPercent = ((step - 1) / (totalSteps - 1)) * 100
+  const progressPercent = (step / (totalSteps - 1)) * 100
+
+  const isGoogle = authMethod === 'google'
 
   const formResp = useForm<CadastroResponsavelInput>({ 
-    resolver: zodResolver(cadastroResponsavelSchema),
-    defaultValues: { nome: '', email: '', telefone: '', password: '', confirmPassword: '', aceito_termos: false }
+    resolver: zodResolver(isGoogle ? cadastroResponsavelGoogleSchema : cadastroResponsavelSchema) as any,
+    defaultValues: { nome: googleUser?.name || '', email: googleUser?.email || '', telefone: '', password: '', confirmPassword: '', aceito_termos: false }
   })
   const formEscolinha = useForm<CadastroEscolinhaInput>({ 
-    resolver: zodResolver(cadastroEscolinhaSchema),
+    resolver: zodResolver(isGoogle ? cadastroEscolinhaGoogleSchema : cadastroEscolinhaSchema) as any,
     defaultValues: { nome: '', cnpj: '', email: '', telefone: '', estado: '', cidade: '', password: '', confirmPassword: '', aceito_termos: false }
   })
+  // Prefill form values when Google user data loads
+  useEffect(() => {
+    if (googleUser) {
+      formResp.setValue('nome', googleUser.name)
+      formResp.setValue('email', googleUser.email)
+      formEscolinha.setValue('email', googleUser.email)
+      if (googleUser.avatar_url) {
+        formResp.setValue('foto_url', googleUser.avatar_url)
+        setResponsavelPreview(googleUser.avatar_url)
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [googleUser])
 
   // ── Submit responsável ──────────────────────────────────────
   async function submitResponsavel(data: CadastroResponsavelInput) {
@@ -107,34 +150,53 @@ function CadastroForm() {
         'atleta_galeria'
       )
 
-      // 2. Criar conta
-      const { error: signUpError } = await supabase.auth.signUp({
-        email: data.email,
-        password: data.password,
-        options: {
-          data: {
-            nome: data.nome,
-            role: 'responsavel',
-            telefone: data.telefone,
-            foto_url: foto_resp_url,
-          },
-        },
-      })
-      if (signUpError) {
-        setServerError(translateAuthError(signUpError.message))
-        toast.error(translateAuthError(signUpError.message))
-        return
-      }
+      // 2. Criar conta ou usar sessão Google existente
+      let userId: string | undefined
 
-      // 3. Login automático para obter sessão
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: data.email,
-        password: data.password,
-      })
-      if (signInError) {
-        // Conta criada mas login falhou — usuário pode fazer login manualmente
-        setDone(true)
-        return
+      if (isGoogle) {
+        // Google OAuth — user is already authenticated
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+          setServerError('Sessão Google expirada. Tente novamente.')
+          toast.error('Sessão Google expirada. Tente novamente.')
+          return
+        }
+        userId = user.id
+        // Update user metadata with role
+        await supabase.auth.updateUser({
+          data: { nome: data.nome || user.user_metadata?.full_name, role: 'responsavel', telefone: data.telefone, foto_url: foto_resp_url }
+        })
+      } else {
+        // Email signup
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email: data.email,
+          password: data.password,
+          options: {
+            data: {
+              nome: data.nome,
+              role: 'responsavel',
+              telefone: data.telefone,
+              foto_url: foto_resp_url,
+            },
+          },
+        })
+        if (signUpError) {
+          setServerError(translateAuthError(signUpError.message))
+          toast.error(translateAuthError(signUpError.message))
+          return
+        }
+        userId = signUpData.user?.id
+
+        // 3. Login automático para obter sessão
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: data.email,
+          password: data.password,
+        })
+        if (signInError) {
+          // Conta criada mas login falhou — usuário pode fazer login manualmente
+          setDone(true)
+          return
+        }
       }
 
       // 4. Buscar o profile criado pelo trigger
@@ -144,7 +206,7 @@ function CadastroForm() {
       const { data: profile } = await supabase
         .from('profiles')
         .select('id')
-        .eq('email', data.email)
+        .eq('user_id', userId!)
         .single()
 
       if (!profile) {
@@ -239,35 +301,50 @@ function CadastroForm() {
       const fotos_adicionais_final = await uploadImages(escolinhaFotos, 'escolinha_galeria')
 
       // 1. Signup com metadata mínimo (evita cookie JWT gigante → erro 400)
-      const { data: signUpData, error } = await supabase.auth.signUp({
-        email: data.email,
-        password: data.password,
-        options: {
-          data: {
-            nome: data.nome,
-            role: 'escolinha',
-            telefone: data.telefone,
-          },
-        },
-      })
-      if (error) { setServerError(translateAuthError(error.message)); toast.error(translateAuthError(error.message)); return }
+      let userId: string | undefined
 
-      // 2. Login automático para obter sessão
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: data.email,
-        password: data.password,
-      })
-      if (signInError) {
-        toast.success('Conta criada! Faça login para continuar.')
-        setDone(true)
-        return
+      if (isGoogle) {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+          setServerError('Sessão Google expirada. Tente novamente.')
+          toast.error('Sessão Google expirada. Tente novamente.')
+          return
+        }
+        userId = user.id
+        await supabase.auth.updateUser({
+          data: { nome: data.nome, role: 'escolinha', telefone: data.telefone }
+        })
+      } else {
+        const { data: signUpData, error } = await supabase.auth.signUp({
+          email: data.email,
+          password: data.password,
+          options: {
+            data: {
+              nome: data.nome,
+              role: 'escolinha',
+              telefone: data.telefone,
+            },
+          },
+        })
+        if (error) { setServerError(translateAuthError(error.message)); toast.error(translateAuthError(error.message)); return }
+        userId = signUpData.user?.id
+
+        // 2. Login automático para obter sessão
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: data.email,
+          password: data.password,
+        })
+        if (signInError) {
+          toast.success('Conta criada! Faça login para continuar.')
+          setDone(true)
+          return
+        }
       }
 
       // 3. Aguarda o trigger criar os registros base
       await new Promise(r => setTimeout(r, 1500))
 
       // 4. Atualiza a escolinha com os dados completos (descricao, fotos, etc.)
-      const userId = signUpData.user?.id
       if (userId) {
         await supabase
           .from('escolinhas')
@@ -381,13 +458,13 @@ function CadastroForm() {
                 {labels.map((l, i) => (
                   <div key={l} className={cn(
                     'text-[9px] font-bold uppercase tracking-widest flex items-center gap-2 shrink-0 transition-all duration-300',
-                    i + 1 === step ? 'text-green-700 opacity-100 scale-110' : i + 1 < step ? 'text-green-600 opacity-80' : 'text-neutral-300 opacity-40'
+                    i === step ? 'text-green-700 opacity-100 scale-110' : i < step ? 'text-green-600 opacity-80' : 'text-neutral-300 opacity-40'
                   )}>
                     <div className={cn(
                       "w-2.5 h-2.5 rounded-full flex items-center justify-center transition-all duration-500",
-                      i + 1 <= step ? "bg-current shadow-[0_0_8px_rgba(34,197,94,0.3)]" : "bg-neutral-200"
+                      i <= step ? "bg-current shadow-[0_0_8px_rgba(34,197,94,0.3)]" : "bg-neutral-200"
                     )}>
-                      {i + 1 < step && <CircleCheckBig size={8} className="text-white" />}
+                      {i < step && <CircleCheckBig size={8} className="text-white" />}
                     </div>
                     <span className="whitespace-nowrap">{l}</span>
                   </div>
@@ -398,12 +475,58 @@ function CadastroForm() {
 
           <div className="bg-white lg:bg-transparent border border-neutral-200 lg:border-none rounded-2xl p-6 sm:p-0 shadow-sm lg:shadow-none">
 
-          {/* STEP 1 — Tipo */}
-          {step === 1 && (
+          {/* STEP 0 — Método de autenticação */}
+          {step === 0 && (
             <div>
               <div className="font-display text-3xl sm:text-4xl text-neutral-400 mb-1.5 leading-none">01</div>
+              <h2 className="text-lg sm:text-xl font-medium mb-1">Como deseja criar sua conta?</h2>
+              <p className="text-xs sm:text-sm text-neutral-500 mb-5 sm:mb-6">Escolha uma forma de se cadastrar.</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-6 sm:mb-8">
+                <button type="button" onClick={async () => {
+                  setAuthMethod('google')
+                  await supabase.auth.signInWithOAuth({
+                    provider: 'google',
+                    options: {
+                      redirectTo: `${window.location.origin}/api/auth/callback?next=${encodeURIComponent('/cadastro?method=google')}`
+                    }
+                  })
+                }}
+                  className="p-5 sm:p-6 border-2 rounded-xl text-left transition-all border-neutral-200 hover:border-green-400 hover:bg-green-50/50 group"
+                >
+                  <div className="mb-3 flex items-center gap-3">
+                    <svg height="1em" style={{flex:'none', lineHeight:1}} viewBox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg" className="w-6 h-6"><title>Google</title><path d="M23 12.245c0-.905-.075-1.565-.236-2.25h-10.54v4.083h6.186c-.124 1.014-.797 2.542-2.294 3.569l-.021.136 3.332 2.53.23.022C21.779 18.417 23 15.593 23 12.245z" fill="#4285F4"></path><path d="M12.225 23c3.03 0 5.574-.978 7.433-2.665l-3.542-2.688c-.948.648-2.22 1.1-3.891 1.1a6.745 6.745 0 01-6.386-4.572l-.132.011-3.465 2.628-.045.124C4.043 20.531 7.835 23 12.225 23z" fill="#34A853"></path><path d="M5.84 14.175A6.65 6.65 0 015.463 12c0-.758.138-1.491.361-2.175l-.006-.147-3.508-2.67-.115.054A10.831 10.831 0 001 12c0 1.772.436 3.447 1.197 4.938l3.642-2.763z" fill="#FBBC05"></path><path d="M12.225 5.253c2.108 0 3.529.892 4.34 1.638l3.167-3.031C17.787 2.088 15.255 1 12.225 1 7.834 1 4.043 3.469 2.197 7.062l3.63 2.763a6.77 6.77 0 016.398-4.572z" fill="#EB4335"></path></svg>
+                    <span className="text-sm sm:text-base font-bold text-neutral-700">Criar com Google</span>
+                  </div>
+                  <div className="text-[10px] sm:text-xs text-neutral-400 leading-snug">Rápido e seguro. Use sua conta Google para se cadastrar com um clique.</div>
+                </button>
+                <button type="button" onClick={() => { setAuthMethod('email'); setStep(1) }}
+                  className="p-5 sm:p-6 border-2 rounded-xl text-left transition-all border-neutral-200 hover:border-green-400 hover:bg-green-50/50 group"
+                >
+                  <div className="mb-3 flex items-center gap-3">
+                    <Mail size={24} className="text-green-600" />
+                    <span className="text-sm sm:text-base font-bold text-neutral-700">Criar com E-mail</span>
+                  </div>
+                  <div className="text-[10px] sm:text-xs text-neutral-400 leading-snug">Crie uma conta com seu e-mail e senha. Controle total dos seus dados.</div>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 1 — Tipo de conta */}
+          {step === 1 && (
+            <div>
+              <div className="font-display text-3xl sm:text-4xl text-neutral-400 mb-1.5 leading-none">02</div>
               <h2 className="text-lg sm:text-xl font-medium mb-1">Que tipo de conta?</h2>
               <p className="text-xs sm:text-sm text-neutral-500 mb-5 sm:mb-6">Escolha o perfil que se aplica.</p>
+              {isGoogle && googleUser && (
+                <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl flex items-center gap-4 animate-in fade-in duration-300">
+                  {googleUser.avatar_url && <img src={googleUser.avatar_url} alt="" className="w-10 h-10 rounded-full border-2 border-green-300" />}
+                  <div>
+                    <div className="text-sm font-bold text-green-800">Logado como {googleUser.name || googleUser.email}</div>
+                    <div className="text-[11px] text-green-600">Agora escolha o tipo da sua conta.</div>
+                  </div>
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-6 sm:mb-8">
                 {([
                   { val: 'responsavel', icon: <Users size={22} />, title: 'Sou responsável', sub: 'Quero cadastrar meu filho(a) como atleta' },
@@ -419,8 +542,9 @@ function CadastroForm() {
                   </button>
                 ))}
               </div>
-              <div className="flex justify-end">
-                <Button variant="dark" onClick={() => setStep(2)}>Continuar <ArrowRight size={14} /></Button>
+              <div className="flex justify-between">
+                {!isGoogle && <Button variant="outline" type="button" onClick={() => setStep(0)}><ArrowLeft size={14} /> Voltar</Button>}
+                <Button variant="dark" className="h-12 px-8 rounded-xl ml-auto" onClick={() => setStep(2)}>Continuar <ArrowRight size={14} className="ml-2" /></Button>
               </div>
             </div>
           )}
@@ -429,44 +553,58 @@ function CadastroForm() {
 
           {step === 2 && tipo === 'responsavel' && (
             <form onSubmit={formResp.handleSubmit(() => setStep(3))}>
-              <div className="font-display text-3xl sm:text-4xl text-neutral-400 mb-1.5 leading-none">02</div>
+              <div className="font-display text-3xl sm:text-4xl text-neutral-400 mb-1.5 leading-none">03</div>
               <h2 className="text-lg sm:text-xl font-medium mb-1">Seus dados de contato</h2>
               <p className="text-xs sm:text-sm text-neutral-500 mb-4 sm:mb-6">Nunca aparecem no perfil público do atleta.</p>
               <div className="flex flex-col gap-3 sm:gap-4">
                 {/* Foto responsável */}
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <div className="w-16 h-16 rounded-full bg-neutral-100 border border-neutral-200 flex items-center justify-center flex-shrink-0 overflow-hidden text-neutral-400">
-                    {responsavelPreview
-                      ? <img src={responsavelPreview} alt="Avatar" className="w-full h-full object-cover" />
-                      : <ImageIcon size={20} />}
+                {isGoogle && googleUser?.avatar_url ? (
+                  <div className="flex items-center gap-4 p-3 bg-green-50 border border-green-200 rounded-xl">
+                    <img src={googleUser.avatar_url} alt="" className="w-14 h-14 rounded-full border-2 border-green-300" />
+                    <div>
+                      <div className="text-sm font-bold text-green-800">{googleUser.name}</div>
+                      <div className="text-[11px] text-green-600">{googleUser.email}</div>
+                    </div>
                   </div>
-                  <FieldGroup className="flex-1">
-                    <Label>Sua foto de perfil (Opcional)</Label>
-                    <Input type="file" accept="image/*" className="pt-2"
-                      error={formResp.formState.errors.foto_url?.message as string}
-                      onChange={e => {
-                        const file = e.target.files?.[0]
-                        if (file) {
-                          formResp.setValue('foto_url', file, { shouldValidate: true })
-                          const reader = new FileReader()
-                          reader.onload = ev => setResponsavelPreview(ev.target?.result as string)
-                          reader.readAsDataURL(file)
-                        } else {
-                          formResp.setValue('foto_url', null)
-                          setResponsavelPreview('')
-                        }
-                      }} />
-                  </FieldGroup>
-                </div>
-                <FieldGroup>
-                  <Label>Nome completo</Label>
-                  <Input placeholder="João da Silva" error={formResp.formState.errors.nome?.message} {...formResp.register('nome')} />
-                </FieldGroup>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                ) : (
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <div className="w-16 h-16 rounded-full bg-neutral-100 border border-neutral-200 flex items-center justify-center flex-shrink-0 overflow-hidden text-neutral-400">
+                      {responsavelPreview
+                        ? <img src={responsavelPreview} alt="Avatar" className="w-full h-full object-cover" />
+                        : <ImageIcon size={20} />}
+                    </div>
+                    <FieldGroup className="flex-1">
+                      <Label>Sua foto de perfil (Opcional)</Label>
+                      <Input type="file" accept="image/*" className="pt-2"
+                        error={formResp.formState.errors.foto_url?.message as string}
+                        onChange={e => {
+                          const file = e.target.files?.[0]
+                          if (file) {
+                            formResp.setValue('foto_url', file, { shouldValidate: true })
+                            const reader = new FileReader()
+                            reader.onload = ev => setResponsavelPreview(ev.target?.result as string)
+                            reader.readAsDataURL(file)
+                          } else {
+                            formResp.setValue('foto_url', null)
+                            setResponsavelPreview('')
+                          }
+                        }} />
+                    </FieldGroup>
+                  </div>
+                )}
+                {!isGoogle && (
                   <FieldGroup>
-                    <Label>E-mail</Label>
-                    <Input type="email" placeholder="joao@email.com" error={formResp.formState.errors.email?.message} {...formResp.register('email')} />
+                    <Label>Nome completo</Label>
+                    <Input placeholder="João da Silva" error={formResp.formState.errors.nome?.message} {...formResp.register('nome')} />
                   </FieldGroup>
+                )}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {!isGoogle && (
+                    <FieldGroup>
+                      <Label>E-mail</Label>
+                      <Input type="email" placeholder="joao@email.com" error={formResp.formState.errors.email?.message} {...formResp.register('email')} />
+                    </FieldGroup>
+                  )}
                   <FieldGroup>
                     <Label>Telefone / WhatsApp</Label>
                     <Input type="tel" placeholder="(51) 9 9999-9999"
@@ -480,16 +618,18 @@ function CadastroForm() {
                       })} />
                   </FieldGroup>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <FieldGroup>
-                    <Label>Senha</Label>
-                    <Input type="password" placeholder="Mín. 8 caracteres" error={formResp.formState.errors.password?.message} {...formResp.register('password')} />
-                  </FieldGroup>
-                  <FieldGroup>
-                    <Label>Confirmar senha</Label>
-                    <Input type="password" placeholder="Repita a senha" error={formResp.formState.errors.confirmPassword?.message} {...formResp.register('confirmPassword')} />
-                  </FieldGroup>
-                </div>
+                {!isGoogle && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <FieldGroup>
+                      <Label>Senha</Label>
+                      <Input type="password" placeholder="Mín. 8 caracteres" error={formResp.formState.errors.password?.message} {...formResp.register('password')} />
+                    </FieldGroup>
+                    <FieldGroup>
+                      <Label>Confirmar senha</Label>
+                      <Input type="password" placeholder="Repita a senha" error={formResp.formState.errors.confirmPassword?.message} {...formResp.register('confirmPassword')} />
+                    </FieldGroup>
+                  </div>
+                )}
                 <div className="bg-amber-50 border border-amber-100 rounded-lg p-3 text-xs text-amber-700 leading-relaxed">
                   Ao criar uma conta você confirma ser o responsável legal e concorda com os{' '}
                   <button type="button" onClick={() => setShowLegal({ type: 'terms', open: true })} className="underline font-bold hover:text-amber-800 transition-colors">Termos de Uso</button>.
@@ -524,7 +664,7 @@ function CadastroForm() {
 
           {step === 2 && tipo === 'escolinha' && (
             <form onSubmit={formEscolinha.handleSubmit(() => setStep(3))}>
-              <div className="font-display text-3xl sm:text-4xl text-neutral-400 mb-1.5 leading-none">02</div>
+              <div className="font-display text-3xl sm:text-4xl text-neutral-400 mb-1.5 leading-none">03</div>
               <h2 className="text-lg sm:text-xl font-medium mb-1">Dados da escolinha</h2>
               <p className="text-xs sm:text-sm text-neutral-500 mb-4 sm:mb-6">Informações da instituição.</p>
               <div className="flex flex-col gap-3 sm:gap-4">
@@ -540,7 +680,10 @@ function CadastroForm() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <FieldGroup>
                     <Label>E-mail</Label>
-                    <Input type="email" placeholder="contato@escolinha.com.br" error={formEscolinha.formState.errors.email?.message} {...formEscolinha.register('email')} />
+                    <Input type="email" placeholder="contato@escolinha.com.br" 
+                      readOnly={isGoogle}
+                      className={isGoogle ? 'bg-neutral-50 cursor-not-allowed' : ''}
+                      error={formEscolinha.formState.errors.email?.message} {...formEscolinha.register('email')} />
                   </FieldGroup>
                   <FieldGroup>
                     <Label>Telefone</Label>
@@ -571,16 +714,18 @@ function CadastroForm() {
                     />
                   </FieldGroup>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <FieldGroup>
-                    <Label>Senha</Label>
-                    <Input type="password" placeholder="Mín. 8 caracteres" error={formEscolinha.formState.errors.password?.message} {...formEscolinha.register('password')} />
-                  </FieldGroup>
-                  <FieldGroup>
-                    <Label>Confirmar</Label>
-                    <Input type="password" error={formEscolinha.formState.errors.confirmPassword?.message} {...formEscolinha.register('confirmPassword')} />
-                  </FieldGroup>
-                </div>
+                {!isGoogle && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <FieldGroup>
+                      <Label>Senha</Label>
+                      <Input type="password" placeholder="Mín. 8 caracteres" error={formEscolinha.formState.errors.password?.message} {...formEscolinha.register('password')} />
+                    </FieldGroup>
+                    <FieldGroup>
+                      <Label>Confirmar</Label>
+                      <Input type="password" error={formEscolinha.formState.errors.confirmPassword?.message} {...formEscolinha.register('confirmPassword')} />
+                    </FieldGroup>
+                  </div>
+                )}
                 <label className="flex items-start gap-3 cursor-pointer">
                   <input type="checkbox" className="mt-0.5 accent-green-500" {...formEscolinha.register('aceito_termos')} />
                   <span className="text-xs text-neutral-500">Li e aceito os <button type="button" onClick={() => setShowLegal({ type: 'terms', open: true })} className="underline">termos de uso</button> e <button type="button" onClick={() => setShowLegal({ type: 'privacy', open: true })} className="underline">política de privacidade</button></span>
@@ -598,7 +743,7 @@ function CadastroForm() {
 
           {step === 3 && tipo === 'escolinha' && (
             <div className="flex flex-col gap-5">
-              <div className="font-display text-3xl sm:text-4xl text-neutral-400 mb-1.5 leading-none">03</div>
+              <div className="font-display text-3xl sm:text-4xl text-neutral-400 mb-1.5 leading-none">04</div>
               <h2 className="text-lg sm:text-xl font-medium mb-1">Sobre a Escolinha</h2>
               <p className="text-xs sm:text-sm text-neutral-500 mb-4 sm:mb-6">Crie um perfil atrativo para as famílias.</p>
               <div className="flex flex-col sm:flex-row gap-4">
@@ -664,7 +809,7 @@ function CadastroForm() {
 
           {step === 4 && tipo === 'escolinha' && (
             <div>
-              <div className="font-display text-3xl sm:text-4xl text-neutral-400 mb-1.5 leading-none">04</div>
+              <div className="font-display text-3xl sm:text-4xl text-neutral-400 mb-1.5 leading-none">05</div>
               <h2 className="text-lg sm:text-xl font-medium mb-1">Tudo certo!</h2>
               <p className="text-xs sm:text-sm text-neutral-500 mb-4 sm:mb-6">Revise suas informações e finalize o cadastro.</p>
               <div className="bg-neutral-50 border border-neutral-200 rounded-2xl p-5 mb-6">

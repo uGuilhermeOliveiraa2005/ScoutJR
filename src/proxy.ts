@@ -46,13 +46,18 @@ export default async function proxy(request: NextRequest) {
   }
 
   if (isAuthRoute && user && !request.nextUrl.searchParams.has('error')) {
-    const { data: mfaLevel } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
-    const needsMfa = mfaLevel?.currentLevel !== 'aal2' && mfaLevel?.nextLevel === 'aal2'
+    // Permite que usuários recém-autenticados via Google finalizem seu cadastro
+    const isGoogleSignup = pathname === '/cadastro' && request.nextUrl.searchParams.get('method') === 'google'
     
-    if (!needsMfa) {
-      return NextResponse.redirect(new URL('/dashboard', request.url))
+    if (!isGoogleSignup) {
+      const { data: mfaLevel } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+      const needsMfa = mfaLevel?.currentLevel !== 'aal2' && mfaLevel?.nextLevel === 'aal2'
+      
+      if (!needsMfa) {
+        return NextResponse.redirect(new URL('/dashboard', request.url))
+      }
+      // Caso precise de MFA, permitimos que ele continue na rota de AUTH (login) para o desafio
     }
-    // Caso precise de MFA, permitimos que ele continue na rota de AUTH (login) para o desafio
   }
 
   if (isProtected && user) {

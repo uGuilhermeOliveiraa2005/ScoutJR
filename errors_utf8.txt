@@ -1,0 +1,17 @@
+﻿src/components/atletas/AthleteForm.tsx(222,14): error TS2304: Cannot find name 'posicoes'.
+src/components/atletas/AthleteForm.tsx(222,27): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/components/atletas/AthleteForm.tsx(252,10): error TS2304: Cannot find name 'habilidades'.
+src/components/atletas/AthleteForm.tsx(252,27): error TS7006: Parameter 'h' implicitly has an 'any' type.
+src/components/atletas/AthleteForm.tsx(252,30): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/components/atletas/AthleteForm.tsx(419,7): error TS2552: Cannot find name 'step'. Did you mean 'Step1'?
+src/components/atletas/AthleteForm.tsx(420,32): error TS2304: Cannot find name 'setData'.
+src/components/atletas/AthleteForm.tsx(420,45): error TS2304: Cannot find name 'data'.
+src/components/atletas/AthleteForm.tsx(420,67): error TS2304: Cannot find name 'data'.
+src/components/atletas/AthleteForm.tsx(422,24): error TS2304: Cannot find name 'data'.
+src/components/atletas/AthleteForm.tsx(422,76): error TS2304: Cannot find name 'setData'.
+src/components/atletas/AthleteForm.tsx(422,89): error TS2304: Cannot find name 'data'.
+src/components/atletas/AthleteForm.tsx(424,44): error TS2304: Cannot find name 'setData'.
+src/components/atletas/AthleteForm.tsx(424,57): error TS2304: Cannot find name 'data'.
+src/components/atletas/AthleteForm.tsx(424,75): error TS2304: Cannot find name 'data'.
+src/components/atletas/AthleteForm.tsx(426,5): error TS1108: A 'return' statement can only be used within a function body.
+src/components/atletas/AthleteForm.tsx(567,61): error TS2304: Cannot find name 'onSubmit'.

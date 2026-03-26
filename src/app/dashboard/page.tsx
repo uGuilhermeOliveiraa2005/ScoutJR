@@ -1,5 +1,6 @@
 import { createSupabaseServer, checkUserVerification } from '@/lib/supabase-server'
 import { redirect } from 'next/navigation'
+import { OAuthRoleSync } from '@/components/auth/OAuthRoleSync'
 import { NavbarDashboard } from '@/components/layout/Navbar'
 import { Users, Star, MessageCircle, TrendingUp, ArrowRight, Eye, Clock } from 'lucide-react'
 import Link from 'next/link'
@@ -81,6 +82,7 @@ export default async function DashboardPage() {
 
   return (
     <>
+      <OAuthRoleSync currentRole={profile.role} userId={user.id} />
       <NavbarDashboard
         userName={profile.nome}
         userRole={profile.role}

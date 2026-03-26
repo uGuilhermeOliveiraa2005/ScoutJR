@@ -60,6 +60,19 @@ export const cadastroResponsavelSchema = z.object({
   path: ['confirmPassword'],
 })
 
+// Google OAuth variant — no password fields needed
+export const cadastroResponsavelGoogleSchema = z.object({
+  nome: fullNameRule,
+  email: emailRule,
+  telefone: phoneRule,
+  password: z.string().optional(),
+  confirmPassword: z.string().optional(),
+  foto_url: z.any().optional(),
+  aceito_termos: z.boolean().refine(val => val === true, {
+    message: 'Você precisa aceitar os termos',
+  }),
+})
+
 export const cadastroEscolinhaSchema = z.object({
   nome: fullNameRule,
   cnpj: z
@@ -83,6 +96,29 @@ export const cadastroEscolinhaSchema = z.object({
 }).refine(data => data.password === data.confirmPassword, {
   message: 'Senhas não coincidem',
   path: ['confirmPassword'],
+})
+
+// Google OAuth variant — no password fields needed
+export const cadastroEscolinhaGoogleSchema = z.object({
+  nome: fullNameRule,
+  cnpj: z
+    .string()
+    .min(14, 'CNPJ obrigatório para escolinhas')
+    .refine(val => cnpj.isValid(val), {
+      message: 'CNPJ inválido ou matematicamente incorreto',
+    }),
+  email: emailRule,
+  telefone: phoneRule,
+  estado: z.string().min(2, 'Selecione o estado'),
+  cidade: z.string().min(2, 'Informe a cidade'),
+  foto_url: z.any().optional(),
+  descricao: z.string().optional(),
+  fotos_adicionais: z.any().optional(),
+  password: z.string().optional(),
+  confirmPassword: z.string().optional(),
+  aceito_termos: z.boolean().refine(val => val === true, {
+    message: 'Você precisa aceitar os termos',
+  }),
 })
 
 export const recuperarSenhaSchema = z.object({
@@ -146,7 +182,9 @@ export const buscaSchema = z.object({
 
 export type LoginInput = z.infer<typeof loginSchema>
 export type CadastroResponsavelInput = z.infer<typeof cadastroResponsavelSchema>
+export type CadastroResponsavelGoogleInput = z.infer<typeof cadastroResponsavelGoogleSchema>
 export type CadastroEscolinhaInput = z.infer<typeof cadastroEscolinhaSchema>
+export type CadastroEscolinhaGoogleInput = z.infer<typeof cadastroEscolinhaGoogleSchema>
 export type RecuperarSenhaInput = z.infer<typeof recuperarSenhaSchema>
 export type NovaSenhaInput = z.infer<typeof novaSenhaSchema>
 export type AtletaInput = z.infer<typeof atletaSchema>
