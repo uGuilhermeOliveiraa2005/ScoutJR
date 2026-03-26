@@ -46,22 +46,15 @@ export default async function proxy(request: NextRequest) {
   }
 
   if (isAuthRoute && user && !request.nextUrl.searchParams.has('error')) {
-    // Permite que usuários recém-autenticados via Google finalizem seu cadastro
     const isGoogleSignup = pathname === '/cadastro' && request.nextUrl.searchParams.get('method') === 'google'
-    
-    if (!isGoogleSignup) {
-      const { data: profile } = await supabase.from('profiles').select('telefone').eq('user_id', user.id).single()
-      if (profile && !profile.telefone) {
-        return NextResponse.redirect(new URL('/cadastro?method=google', request.url))
-      }
 
+    if (!isGoogleSignup) {
       const { data: mfaLevel } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
       const needsMfa = mfaLevel?.currentLevel !== 'aal2' && mfaLevel?.nextLevel === 'aal2'
-      
+
       if (!needsMfa) {
         return NextResponse.redirect(new URL('/dashboard', request.url))
       }
-      // Caso precise de MFA, permitimos que ele continue na rota de AUTH (login) para o desafio
     }
   }
 
@@ -72,37 +65,34 @@ export default async function proxy(request: NextRequest) {
       .eq('user_id', user.id)
       .single()
 
-    // Se o usuário tem conta mas o telefone é nulo, significa que ele logou via Google
-    // mas nunca completou o fluxo de cadastro. Forçamos ele a terminar o cadastro.
-    if (profile && !profile.telefone && !pathname.startsWith('/cadastro')) {
+    // Só redireciona para completar cadastro se:
+    // 1. Não tem telefone
+    // 2. O usuário fez login com Google (provider = google)
+    // 3. Não é uma conta existente com role já definida
+    const isGoogleUser = user.app_metadata?.provider === 'google'
+    const isNewGoogleUser = isGoogleUser && !profile?.telefone
+    if (isNewGoogleUser && !pathname.startsWith('/cadastro')) {
       return NextResponse.redirect(new URL('/cadastro?method=google', request.url))
     }
 
     const needsVerification = profile && profile.status !== 'ativo' && !profile.is_admin
-    
+
     // MFA ENFORCEMENT
-    // Verificamos o nível de segurança do usuário atual
     const { data: mfaLevel } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
-    
-    // Se o usuário tem fatores de MFA verificados mas a sessão está em AAL1,
-    // redirecionamos para o desafio.
     if (user.factors?.some((f: any) => f.status === 'verified')) {
-       if (mfaLevel?.currentLevel !== 'aal2' && mfaLevel?.nextLevel === 'aal2') {
-          return NextResponse.redirect(new URL('/login?mfa=true', request.url))
-       }
+      if (mfaLevel?.currentLevel !== 'aal2' && mfaLevel?.nextLevel === 'aal2') {
+        return NextResponse.redirect(new URL('/login?mfa=true', request.url))
+      }
     }
 
-    // Se precisa de verificação e NÃO está na página de espera -> Redireciona para espera
     if (needsVerification && !pathname.startsWith('/aguardando-verificacao')) {
       return NextResponse.redirect(new URL('/aguardando-verificacao', request.url))
     }
 
-    // Se NÃO precisa de verificação mas está na página de espera -> Redireciona para dashboard
     if (!needsVerification && pathname.startsWith('/aguardando-verificacao')) {
       return NextResponse.redirect(new URL('/dashboard', request.url))
     }
 
-    // Check Admin Route specifically
     if (isAdminRoute && !profile?.is_admin) {
       return NextResponse.redirect(new URL('/dashboard', request.url))
     }
@@ -116,13 +106,13 @@ export default async function proxy(request: NextRequest) {
   h.set('X-XSS-Protection', '1; mode=block')
   h.set('Referrer-Policy', 'strict-origin-when-cross-origin')
   h.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
-  
+
   const cspHeader = `
     default-src 'self';
     script-src 'self' 'unsafe-inline' 'unsafe-eval' https://sdk.mercadopago.com https://http2.mlstatic.com https://www.google-analytics.com;
     style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
     connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.mercadopago.com https://*.mercadopago.com.br https://*.mlstatic.com https://*.mercadolibre.com https://api.mercadolibre.com https://servicodados.ibge.gov.br;
-    img-src 'self' data: https://*.supabase.co https://*.mercadopago.com https://*.mercadopago.com.br https://*.mlstatic.com https://*.mercadolibre.com https://*.mercadolivre.com.br https://img.youtube.com https://i.ytimg.com https://*.imgur.com https://grainy-gradients.vercel.app;
+    img-src 'self' data: blob: https://*.supabase.co https://*.mercadopago.com https://*.mercadopago.com.br https://*.mlstatic.com https://*.mercadolibre.com https://*.mercadolivre.com.br https://img.youtube.com https://i.ytimg.com https://*.imgur.com https://grainy-gradients.vercel.app https://lh3.googleusercontent.com https://*.googleusercontent.com;
     font-src 'self' https://fonts.gstatic.com;
     frame-src 'self' https://*.mercadopago.com https://*.mercadopago.com.br https://*.mercadolibre.com https://*.mercadolivre.com.br https://www.youtube.com https://youtube.com;
     object-src 'none';
