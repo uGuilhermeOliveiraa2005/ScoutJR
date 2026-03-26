@@ -520,7 +520,7 @@ function CadastroForm() {
               <p className="text-xs sm:text-sm text-neutral-500 mb-5 sm:mb-6">Escolha o perfil que se aplica.</p>
               {isGoogle && googleUser && (
                 <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl flex items-center gap-4 animate-in fade-in duration-300">
-                  {googleUser.avatar_url && <img src={googleUser.avatar_url} alt="" className="w-10 h-10 rounded-full border-2 border-green-300" />}
+                  {googleUser.avatar_url && <img src={googleUser.avatar_url} alt="" referrerPolicy="no-referrer" className="w-10 h-10 rounded-full border-2 border-green-300" />}
                   <div>
                     <div className="text-sm font-bold text-green-800">Logado como {googleUser.name || googleUser.email}</div>
                     <div className="text-[11px] text-green-600">Agora escolha o tipo da sua conta.</div>
@@ -560,7 +560,7 @@ function CadastroForm() {
                 {/* Foto responsável */}
                 {isGoogle && googleUser?.avatar_url ? (
                   <div className="flex items-center gap-4 p-3 bg-green-50 border border-green-200 rounded-xl">
-                    <img src={googleUser.avatar_url} alt="" className="w-14 h-14 rounded-full border-2 border-green-300" />
+                    <img src={googleUser.avatar_url} alt="" referrerPolicy="no-referrer" className="w-14 h-14 rounded-full border-2 border-green-300" />
                     <div>
                       <div className="text-sm font-bold text-green-800">{googleUser.name}</div>
                       <div className="text-[11px] text-green-600">{googleUser.email}</div>
