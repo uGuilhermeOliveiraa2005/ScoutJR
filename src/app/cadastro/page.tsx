@@ -49,6 +49,7 @@ function CadastroForm() {
   const searchParams = useSearchParams()
   const [tipo, setTipo] = useState<Tipo>('responsavel')
   const [step, setStep] = useState(0)
+  const [avatarError, setAvatarError] = useState(false)
   const [done, setDone] = useState(false)
   const [serverError, setServerError] = useState('')
   const [isUploading, setIsUploading] = useState(false)
@@ -206,8 +207,14 @@ function CadastroForm() {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('id')
+        .update({
+          nome: data.nome,
+          telefone: data.telefone,
+          role: 'responsavel',
+          ...(foto_resp_url && { foto_url: foto_resp_url })
+        })
         .eq('user_id', userId!)
+        .select('id')
         .single()
 
       if (!profile) {
@@ -360,13 +367,16 @@ function CadastroForm() {
           })
           .eq('user_id', userId)
 
-        // Atualiza foto no profile também
-        if (foto_url_final) {
-          await supabase
-            .from('profiles')
-            .update({ foto_url: foto_url_final })
-            .eq('user_id', userId)
-        }
+        // Atualiza os dados de contato no profile (necessário para o proxy não bloquear o usuário)
+        await supabase
+          .from('profiles')
+          .update({ 
+            nome: data.nome,
+            telefone: data.telefone,
+            role: 'escolinha',
+            ...(foto_url_final && { foto_url: foto_url_final })
+          })
+          .eq('user_id', userId)
       }
 
       toast.success('Conta de escolinha criada com sucesso!')
@@ -522,7 +532,19 @@ function CadastroForm() {
               {isGoogle && googleUser && (
                 <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in duration-300">
                   <div className="flex items-center gap-4">
-                    {googleUser.avatar_url && <img src={googleUser.avatar_url} alt="" referrerPolicy="no-referrer" className="w-10 h-10 rounded-full border-2 border-green-300" />}
+                    {googleUser.avatar_url && !avatarError ? (
+                      <img 
+                        src={googleUser.avatar_url} 
+                        alt="" 
+                        referrerPolicy="no-referrer" 
+                        onError={() => setAvatarError(true)}
+                        className="w-10 h-10 rounded-full border-2 border-green-300 object-cover" 
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full border-2 border-green-300 bg-green-100 flex items-center justify-center text-green-700 font-bold text-lg shrink-0">
+                        {(googleUser?.name || googleUser?.email || 'U').charAt(0).toUpperCase()}
+                      </div>
+                    )}
                     <div>
                       <div className="text-sm font-bold text-green-800">Logado como {googleUser.name || googleUser.email}</div>
                       <div className="text-[11px] text-green-600">Agora escolha o tipo da sua conta.</div>
@@ -572,9 +594,9 @@ function CadastroForm() {
               <p className="text-xs sm:text-sm text-neutral-500 mb-4 sm:mb-6">Nunca aparecem no perfil público do atleta.</p>
               <div className="flex flex-col gap-3 sm:gap-4">
                 {/* Foto responsável */}
-                {isGoogle && googleUser?.avatar_url ? (
+                {isGoogle && googleUser?.avatar_url && !avatarError ? (
                   <div className="flex items-center gap-4 p-3 bg-green-50 border border-green-200 rounded-xl">
-                    <img src={googleUser.avatar_url} alt="" referrerPolicy="no-referrer" className="w-14 h-14 rounded-full border-2 border-green-300" />
+                    <img src={googleUser.avatar_url} alt="" referrerPolicy="no-referrer" onError={() => setAvatarError(true)} className="w-14 h-14 rounded-full border-2 border-green-300 object-cover" />
                     <div>
                       <div className="text-sm font-bold text-green-800">{googleUser.name}</div>
                       <div className="text-[11px] text-green-600">{googleUser.email}</div>
