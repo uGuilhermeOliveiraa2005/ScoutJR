@@ -50,8 +50,8 @@ export default async function proxy(request: NextRequest) {
     const isGoogleSignup = pathname === '/cadastro' && request.nextUrl.searchParams.get('method') === 'google'
     
     if (!isGoogleSignup) {
-      const { data: profile } = await supabase.from('profiles').select('role').eq('user_id', user.id).single()
-      if (profile && !profile.role) {
+      const { data: profile } = await supabase.from('profiles').select('telefone').eq('user_id', user.id).single()
+      if (profile && !profile.telefone) {
         return NextResponse.redirect(new URL('/cadastro?method=google', request.url))
       }
 
@@ -68,13 +68,13 @@ export default async function proxy(request: NextRequest) {
   if (isProtected && user) {
     const { data: profile } = await supabase
       .from('profiles')
-      .select('status, is_admin, role')
+      .select('status, is_admin, telefone')
       .eq('user_id', user.id)
       .single()
 
-    // Se o usuário já tem conta mas nunca definiu um 'role' (ex: logou pelo Google no Login mas nunca passou pelo Cadastro)
-    // Redireciona ele imediatamente para finalizar o cadastro
-    if (profile && !profile.role && !pathname.startsWith('/cadastro')) {
+    // Se o usuário tem conta mas o telefone é nulo, significa que ele logou via Google
+    // mas nunca completou o fluxo de cadastro. Forçamos ele a terminar o cadastro.
+    if (profile && !profile.telefone && !pathname.startsWith('/cadastro')) {
       return NextResponse.redirect(new URL('/cadastro?method=google', request.url))
     }
 
