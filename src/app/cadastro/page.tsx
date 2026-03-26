@@ -12,7 +12,7 @@ import {
   type CadastroResponsavelInput,
   type CadastroEscolinhaInput,
 } from '@/lib/validations'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { createSupabaseBrowser } from '@/lib/supabase'
 import { uploadImage, uploadImages } from '@/lib/storage'
 import { Button } from '@/components/ui/Button'
@@ -45,6 +45,7 @@ export default function CadastroPage() {
 }
 
 function CadastroForm() {
+  const router = useRouter()
   const searchParams = useSearchParams()
   const [tipo, setTipo] = useState<Tipo>('responsavel')
   const [step, setStep] = useState(0)
@@ -519,12 +520,25 @@ function CadastroForm() {
               <h2 className="text-lg sm:text-xl font-medium mb-1">Que tipo de conta?</h2>
               <p className="text-xs sm:text-sm text-neutral-500 mb-5 sm:mb-6">Escolha o perfil que se aplica.</p>
               {isGoogle && googleUser && (
-                <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl flex items-center gap-4 animate-in fade-in duration-300">
-                  {googleUser.avatar_url && <img src={googleUser.avatar_url} alt="" referrerPolicy="no-referrer" className="w-10 h-10 rounded-full border-2 border-green-300" />}
-                  <div>
-                    <div className="text-sm font-bold text-green-800">Logado como {googleUser.name || googleUser.email}</div>
-                    <div className="text-[11px] text-green-600">Agora escolha o tipo da sua conta.</div>
+                <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in duration-300">
+                  <div className="flex items-center gap-4">
+                    {googleUser.avatar_url && <img src={googleUser.avatar_url} alt="" referrerPolicy="no-referrer" className="w-10 h-10 rounded-full border-2 border-green-300" />}
+                    <div>
+                      <div className="text-sm font-bold text-green-800">Logado como {googleUser.name || googleUser.email}</div>
+                      <div className="text-[11px] text-green-600">Agora escolha o tipo da sua conta.</div>
+                    </div>
                   </div>
+                  <button 
+                    type="button" 
+                    onClick={async () => {
+                      await supabase.auth.signOut()
+                      router.push('/login')
+                      router.refresh()
+                    }}
+                    className="text-[11px] font-bold text-green-700 hover:text-red-600 transition-colors border border-green-600/20 hover:border-red-200 bg-white/50 hover:bg-red-50 rounded-lg px-3 py-1.5 shrink-0 self-start sm:self-auto"
+                  >
+                    Trocar conta
+                  </button>
                 </div>
               )}
               <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-6 sm:mb-8">
@@ -883,9 +897,22 @@ function CadastroForm() {
 
           <p className="text-center text-sm text-neutral-400 mt-12 mb-8">
             Já possui uma conta? {' '}
-            <Link href="/login" className="text-green-600 hover:text-green-700 font-bold hover:underline underline-offset-4 decoration-2">
-              Entrar agora
-            </Link>
+            {isGoogle ? (
+              <button 
+                type="button" 
+                onClick={async () => {
+                  await supabase.auth.signOut()
+                  router.push('/login')
+                  router.refresh()
+                }}
+                className="text-green-600 hover:text-green-700 font-bold hover:underline underline-offset-4 decoration-2">
+                Entrar agora
+              </button>
+            ) : (
+              <Link href="/login" className="text-green-600 hover:text-green-700 font-bold hover:underline underline-offset-4 decoration-2">
+                Entrar agora
+              </Link>
+            )}
           </p>
         </div>
       </div>
