@@ -50,6 +50,11 @@ export default async function proxy(request: NextRequest) {
     const isGoogleSignup = pathname === '/cadastro' && request.nextUrl.searchParams.get('method') === 'google'
     
     if (!isGoogleSignup) {
+      const { data: profile } = await supabase.from('profiles').select('role').eq('user_id', user.id).single()
+      if (profile && !profile.role) {
+        return NextResponse.redirect(new URL('/cadastro?method=google', request.url))
+      }
+
       const { data: mfaLevel } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
       const needsMfa = mfaLevel?.currentLevel !== 'aal2' && mfaLevel?.nextLevel === 'aal2'
       
@@ -63,9 +68,15 @@ export default async function proxy(request: NextRequest) {
   if (isProtected && user) {
     const { data: profile } = await supabase
       .from('profiles')
-      .select('status, is_admin')
+      .select('status, is_admin, role')
       .eq('user_id', user.id)
       .single()
+
+    // Se o usuário já tem conta mas nunca definiu um 'role' (ex: logou pelo Google no Login mas nunca passou pelo Cadastro)
+    // Redireciona ele imediatamente para finalizar o cadastro
+    if (profile && !profile.role && !pathname.startsWith('/cadastro')) {
+      return NextResponse.redirect(new URL('/cadastro?method=google', request.url))
+    }
 
     const needsVerification = profile && profile.status !== 'ativo' && !profile.is_admin
     
