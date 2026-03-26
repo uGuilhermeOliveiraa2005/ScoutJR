@@ -238,7 +238,8 @@ function CadastroForm() {
       const foto_url_final = data.foto_url instanceof File ? await uploadImage(data.foto_url, 'escolinha') : data.foto_url
       const fotos_adicionais_final = await uploadImages(escolinhaFotos, 'escolinha_galeria')
 
-      const { error } = await supabase.auth.signUp({
+      // 1. Signup com metadata mínimo (evita cookie JWT gigante → erro 400)
+      const { data: signUpData, error } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
         options: {
@@ -246,17 +247,50 @@ function CadastroForm() {
             nome: data.nome,
             role: 'escolinha',
             telefone: data.telefone,
-            estado: data.estado,
-            cidade: data.cidade,
-            cnpj: data.cnpj ?? null,
-            foto_url: foto_url_final,
-            descricao: data.descricao,
-            fotos_adicionais: fotos_adicionais_final,
-            status: 'pendente',
           },
         },
       })
       if (error) { setServerError(translateAuthError(error.message)); toast.error(translateAuthError(error.message)); return }
+
+      // 2. Login automático para obter sessão
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: data.email,
+        password: data.password,
+      })
+      if (signInError) {
+        toast.success('Conta criada! Faça login para continuar.')
+        setDone(true)
+        return
+      }
+
+      // 3. Aguarda o trigger criar os registros base
+      await new Promise(r => setTimeout(r, 1500))
+
+      // 4. Atualiza a escolinha com os dados completos (descricao, fotos, etc.)
+      const userId = signUpData.user?.id
+      if (userId) {
+        await supabase
+          .from('escolinhas')
+          .update({
+            estado: data.estado,
+            cidade: data.cidade,
+            cnpj: data.cnpj ?? null,
+            foto_url: foto_url_final,
+            logo_url: foto_url_final,
+            descricao: data.descricao,
+            fotos_adicionais: fotos_adicionais_final,
+          })
+          .eq('user_id', userId)
+
+        // Atualiza foto no profile também
+        if (foto_url_final) {
+          await supabase
+            .from('profiles')
+            .update({ foto_url: foto_url_final })
+            .eq('user_id', userId)
+        }
+      }
+
       toast.success('Conta de escolinha criada com sucesso!')
       setDone(true)
     } catch {
