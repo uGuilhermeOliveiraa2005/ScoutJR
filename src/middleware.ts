@@ -51,7 +51,7 @@ export default async function proxy(request: NextRequest) {
 
     if (!isGoogleSignup) {
       const { data: profile } = await supabase.from('profiles').select('telefone').eq('user_id', user.id).single()
-      if (profile && !profile.telefone) {
+      if (!profile || !profile.telefone) {
         return NextResponse.redirect(new URL('/cadastro?method=google', request.url))
       }
 
@@ -72,10 +72,13 @@ export default async function proxy(request: NextRequest) {
       .eq('user_id', user.id)
       .single()
 
-    // Se o usuário tem conta mas o telefone é nulo, significa que ele logou via Google
-    // mas nunca completou o fluxo de cadastro. Forçamos ele a terminar o cadastro.
-    if (profile && !profile.telefone && !pathname.startsWith('/cadastro')) {
-      return NextResponse.redirect(new URL('/cadastro?method=google', request.url))
+    // Se o usuário tem conta mas o perfil é nulo ou o telefone é nulo, 
+    // significa que ele logou via Google mas nunca completou o fluxo de cadastro.
+    // Forçamos ele a terminar o cadastro.
+    if (!profile || (!profile.telefone && !pathname.startsWith('/cadastro'))) {
+      if (!pathname.startsWith('/cadastro')) {
+        return NextResponse.redirect(new URL('/cadastro?method=google', request.url))
+      }
     }
 
     const needsVerification = profile && profile.status !== 'ativo' && !profile.is_admin

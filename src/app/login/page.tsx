@@ -23,7 +23,7 @@ function LoginContent() {
   const [serverError, setServerError] = useState('')
   const [rememberMe, setRememberMe] = useState(true)
   const [showLegal, setShowLegal] = useState<{ type: 'terms' | 'privacy', open: boolean }>({ type: 'terms', open: false })
-  
+
   // MFA Login State
   const [step, setStep] = useState<'password' | 'mfa'>('password')
   const [mfaCode, setMfaCode] = useState('')
@@ -48,7 +48,7 @@ function LoginContent() {
       email: data.email,
       password: data.password,
     })
-    
+
     if (error) {
       const msg = translateAuthError(error.message)
       setServerError(msg)
@@ -63,7 +63,7 @@ function LoginContent() {
     }
 
     const verifiedFactor = factors?.all?.find((f: any) => f.status === 'verified')
-    
+
     if (verifiedFactor) {
       // MFA sequence
       setPendingFactorId(verifiedFactor.id)
@@ -79,7 +79,7 @@ function LoginContent() {
   async function onVerifyMfa(e: React.FormEvent) {
     e.preventDefault()
     if (!pendingFactorId || mfaCode.length !== 6) return
-    
+
     setMfaLoading(true)
     setServerError('')
 
@@ -111,14 +111,14 @@ function LoginContent() {
 
   return (
     <div className="min-h-screen bg-white flex overflow-hidden font-sans">
-      
+
       {/* Left Side: Branding (Hidden on mobile) */}
       <div className="hidden lg:flex lg:w-1/2 bg-[#0A1A14] relative items-center justify-center p-12 overflow-hidden">
         {/* Background Effects */}
         <div className="absolute inset-0 bg-[url('/noise.svg')] opacity-20 mix-blend-overlay"></div>
         <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] rounded-full bg-green-500/10 blur-[120px]"></div>
         <div className="absolute bottom-[-10%] left-[-10%] w-[60%] h-[60%] rounded-full bg-amber-500/5 blur-[120px]"></div>
-        
+
         <div className="relative z-10 max-w-lg">
           <Link href="/" className="inline-flex items-center gap-2 text-white/60 hover:text-white transition-colors mb-20 group">
             <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
@@ -156,9 +156,9 @@ function LoginContent() {
       {/* Right Side: Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 bg-neutral-50 lg:bg-white relative">
         <div className="w-full max-w-md animate-fade-up">
-          
+
           <div className="lg:hidden mb-12 text-center">
-             <Link href="/" className="font-display text-3xl tracking-widest text-green-700">
+            <Link href="/" className="font-display text-3xl tracking-widest text-green-700">
               SCOUT<span className="text-amber-500">JR</span>
             </Link>
           </div>
@@ -169,148 +169,148 @@ function LoginContent() {
           </div>
 
           {step === 'password' ? (
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate>
-            <FieldGroup>
-              <Label htmlFor="email">E-mail</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="seu@email.com"
-                className="h-12 rounded-xl"
-                leftIcon={<Mail size={18} className="text-neutral-400" />}
-                error={errors.email?.message}
-                {...register('email')}
-              />
-            </FieldGroup>
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate>
+              <FieldGroup>
+                <Label htmlFor="email">E-mail</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="seu@email.com"
+                  className="h-12 rounded-xl"
+                  leftIcon={<Mail size={18} className="text-neutral-400" />}
+                  error={errors.email?.message}
+                  {...register('email')}
+                />
+              </FieldGroup>
 
-            <FieldGroup>
-              <div className="flex justify-between items-center mb-1.5">
-                <Label htmlFor="password" className="mb-0 text-xs text-neutral-500">Senha</Label>
-                <Link href="/recuperar-senha" className="text-xs text-green-600 hover:text-green-700 font-medium">
-                  Esqueceu a senha?
-                </Link>
-              </div>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                className="h-12 rounded-xl"
-                leftIcon={<Lock size={18} className="text-neutral-400" />}
-                error={errors.password?.message}
-                {...register('password')}
-              />
-            </FieldGroup>
-
-            <div className="flex items-center justify-between py-1">
-              <label className="flex items-center gap-2.5 cursor-pointer group">
-                <div className="relative flex items-center justify-center">
-                  <input 
-                    type="checkbox" 
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                    className="peer appearance-none w-5 h-5 border-2 border-neutral-300 rounded-md checked:bg-green-500 checked:border-green-500 transition-all cursor-pointer" 
-                  />
-                  <CheckIcon className="absolute w-3 h-3 text-white opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none" />
+              <FieldGroup>
+                <div className="flex justify-between items-center mb-1.5">
+                  <Label htmlFor="password" className="mb-0 text-xs text-neutral-500">Senha</Label>
+                  <Link href="/recuperar-senha" className="text-xs text-green-600 hover:text-green-700 font-medium">
+                    Esqueceu a senha?
+                  </Link>
                 </div>
-                <span className="text-sm text-neutral-600 font-medium group-hover:text-neutral-900 transition-colors">Manter conectado</span>
-              </label>
-            </div>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  className="h-12 rounded-xl"
+                  leftIcon={<Lock size={18} className="text-neutral-400" />}
+                  error={errors.password?.message}
+                  {...register('password')}
+                />
+              </FieldGroup>
 
-            {isProfileError && (
-              <div className="bg-amber-50 border border-amber-200 text-amber-700 text-xs sm:text-sm rounded-xl px-4 py-4 flex flex-col gap-3 shadow-sm">
-                <p className="font-medium leading-relaxed"><strong>Perfil não encontrado:</strong> Você está autenticado, mas não encontramos seus dados cadastrais.</p>
-                <Button type="button" variant="outline" size="sm" onClick={handleLogout} className="w-full justify-center bg-white border-amber-200 hover:bg-amber-100 h-10">
-                  Sair e tentar novamente
-                </Button>
+              <div className="flex items-center justify-between py-1">
+                <label className="flex items-center gap-2.5 cursor-pointer group">
+                  <div className="relative flex items-center justify-center">
+                    <input
+                      type="checkbox"
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                      className="peer appearance-none w-5 h-5 border-2 border-neutral-300 rounded-md checked:bg-green-500 checked:border-green-500 transition-all cursor-pointer"
+                    />
+                    <CheckIcon className="absolute w-3 h-3 text-white opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none" />
+                  </div>
+                  <span className="text-sm text-neutral-600 font-medium group-hover:text-neutral-900 transition-colors">Manter conectado</span>
+                </label>
               </div>
-            )}
 
-            {serverError && (
-              <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3 font-medium animate-in fade-in zoom-in-95 duration-200">
-                {serverError}
+              {isProfileError && (
+                <div className="bg-amber-50 border border-amber-200 text-amber-700 text-xs sm:text-sm rounded-xl px-4 py-4 flex flex-col gap-3 shadow-sm">
+                  <p className="font-medium leading-relaxed"><strong>Perfil não encontrado:</strong> Você está autenticado, mas não encontramos seus dados cadastrais.</p>
+                  <Button type="button" variant="outline" size="sm" onClick={handleLogout} className="w-full justify-center bg-white border-amber-200 hover:bg-amber-100 h-10">
+                    Sair e tentar novamente
+                  </Button>
+                </div>
+              )}
+
+              {serverError && (
+                <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3 font-medium animate-in fade-in zoom-in-95 duration-200">
+                  {serverError}
+                </div>
+              )}
+
+              <Button type="submit" variant="dark" size="lg" loading={isSubmitting} className="w-full h-12 rounded-xl text-base font-bold shadow-lg shadow-green-900/10 hover:shadow-green-900/20 active:scale-[0.98] transition-all">
+                <LogIn size={18} className="mr-2" /> Acessar conta
+              </Button>
+
+              <div className="relative my-8">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-neutral-200"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-4 bg-white text-neutral-500 font-medium">Ou continue com</span>
+                </div>
               </div>
-            )}
 
-            <Button type="submit" variant="dark" size="lg" loading={isSubmitting} className="w-full h-12 rounded-xl text-base font-bold shadow-lg shadow-green-900/10 hover:shadow-green-900/20 active:scale-[0.98] transition-all">
-              <LogIn size={18} className="mr-2" /> Acessar conta
-            </Button>
-
-            <div className="relative my-8">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-neutral-200"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-4 bg-white text-neutral-500 font-medium">Ou continue com</span>
-              </div>
-            </div>
-
-            <Button 
-              type="button" 
-              variant="outline" 
-              size="lg" 
-              onClick={async () => {
-                setServerError('')
-                const { error } = await supabase.auth.signInWithOAuth({
-                  provider: 'google',
-                  options: {
-                    redirectTo: `${window.location.origin}/api/auth/callback`
+              <Button
+                type="button"
+                variant="outline"
+                size="lg"
+                onClick={async () => {
+                  setServerError('')
+                  const { error } = await supabase.auth.signInWithOAuth({
+                    provider: 'google',
+                    options: {
+                      redirectTo: `${window.location.origin}/api/auth/callback`
+                    }
+                  })
+                  if (error) {
+                    const msg = translateAuthError(error.message)
+                    setServerError(msg)
+                    toast.error(msg)
                   }
-                })
-                if (error) {
-                  const msg = translateAuthError(error.message)
-                  setServerError(msg)
-                  toast.error(msg)
-                }
-              }} 
-              className="w-full h-12 rounded-xl text-base font-bold text-neutral-700 bg-white border-neutral-200 hover:bg-neutral-50 hover:text-neutral-900 transition-all shadow-sm"
-            >
-               <svg height="1em" style={{flex:"none", lineHeight:1}} viewBox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 mr-3"><title>Google</title><path d="M23 12.245c0-.905-.075-1.565-.236-2.25h-10.54v4.083h6.186c-.124 1.014-.797 2.542-2.294 3.569l-.021.136 3.332 2.53.23.022C21.779 18.417 23 15.593 23 12.245z" fill="#4285F4"></path><path d="M12.225 23c3.03 0 5.574-.978 7.433-2.665l-3.542-2.688c-.948.648-2.22 1.1-3.891 1.1a6.745 6.745 0 01-6.386-4.572l-.132.011-3.465 2.628-.045.124C4.043 20.531 7.835 23 12.225 23z" fill="#34A853"></path><path d="M5.84 14.175A6.65 6.65 0 015.463 12c0-.758.138-1.491.361-2.175l-.006-.147-3.508-2.67-.115.054A10.831 10.831 0 001 12c0 1.772.436 3.447 1.197 4.938l3.642-2.763z" fill="#FBBC05"></path><path d="M12.225 5.253c2.108 0 3.529.892 4.34 1.638l3.167-3.031C17.787 2.088 15.255 1 12.225 1 7.834 1 4.043 3.469 2.197 7.062l3.63 2.763a6.77 6.77 0 016.398-4.572z" fill="#EB4335"></path></svg>
-               Google
-            </Button>
-          </form>
+                }}
+                className="w-full h-12 rounded-xl text-base font-bold text-neutral-700 bg-white border-neutral-200 hover:bg-neutral-50 hover:text-neutral-900 transition-all shadow-sm"
+              >
+                <svg height="1em" style={{ flex: "none", lineHeight: 1 }} viewBox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 mr-3"><title>Google</title><path d="M23 12.245c0-.905-.075-1.565-.236-2.25h-10.54v4.083h6.186c-.124 1.014-.797 2.542-2.294 3.569l-.021.136 3.332 2.53.23.022C21.779 18.417 23 15.593 23 12.245z" fill="#4285F4"></path><path d="M12.225 23c3.03 0 5.574-.978 7.433-2.665l-3.542-2.688c-.948.648-2.22 1.1-3.891 1.1a6.745 6.745 0 01-6.386-4.572l-.132.011-3.465 2.628-.045.124C4.043 20.531 7.835 23 12.225 23z" fill="#34A853"></path><path d="M5.84 14.175A6.65 6.65 0 015.463 12c0-.758.138-1.491.361-2.175l-.006-.147-3.508-2.67-.115.054A10.831 10.831 0 001 12c0 1.772.436 3.447 1.197 4.938l3.642-2.763z" fill="#FBBC05"></path><path d="M12.225 5.253c2.108 0 3.529.892 4.34 1.638l3.167-3.031C17.787 2.088 15.255 1 12.225 1 7.834 1 4.043 3.469 2.197 7.062l3.63 2.763a6.77 6.77 0 016.398-4.572z" fill="#EB4335"></path></svg>
+                Google
+              </Button>
+            </form>
           ) : (
             /* MFA CHALLENGE UI */
             <div className="animate-in fade-in slide-in-from-right-4 duration-500">
-               <div className="mb-8 p-4 bg-blue-50 border border-blue-100 rounded-2xl flex items-center gap-4">
-                  <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-blue-600 shrink-0">
-                     <Smartphone size={24} />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-blue-900 leading-tight">Autenticação de 2 Fatores</h3>
-                    <p className="text-[11px] text-blue-700 mt-1">Sua conta exige uma camada extra de segurança.</p>
-                  </div>
-               </div>
+              <div className="mb-8 p-4 bg-blue-50 border border-blue-100 rounded-2xl flex items-center gap-4">
+                <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-blue-600 shrink-0">
+                  <Smartphone size={24} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-blue-900 leading-tight">Autenticação de 2 Fatores</h3>
+                  <p className="text-[11px] text-blue-700 mt-1">Sua conta exige uma camada extra de segurança.</p>
+                </div>
+              </div>
 
-               <p className="text-sm text-neutral-600 mb-6 font-medium">Digite o código de 6 dígitos gerado no seu aplicativo autenticador.</p>
+              <p className="text-sm text-neutral-600 mb-6 font-medium">Digite o código de 6 dígitos gerado no seu aplicativo autenticador.</p>
 
-               <form onSubmit={onVerifyMfa} className="space-y-6">
-                  <div className="flex justify-center">
-                    <input 
-                      type="text" 
-                      maxLength={6} 
-                      autoFocus
-                      value={mfaCode}
-                      onChange={e => setMfaCode(e.target.value.replace(/\D/g, ''))}
-                      className="w-full h-16 text-center text-4xl font-black tracking-[0.5em] sm:tracking-[1em] pl-4 border-2 border-neutral-200 rounded-2xl outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all bg-white shadow-inner"
-                      placeholder="000000"
-                    />
+              <form onSubmit={onVerifyMfa} className="space-y-6">
+                <div className="flex justify-center">
+                  <input
+                    type="text"
+                    maxLength={6}
+                    autoFocus
+                    value={mfaCode}
+                    onChange={e => setMfaCode(e.target.value.replace(/\D/g, ''))}
+                    className="w-full h-16 text-center text-4xl font-black tracking-[0.5em] sm:tracking-[1em] pl-4 border-2 border-neutral-200 rounded-2xl outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all bg-white shadow-inner"
+                    placeholder="000000"
+                  />
+                </div>
+
+                {serverError && (
+                  <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3 font-medium animate-in shake">
+                    {serverError}
                   </div>
+                )}
 
-                  {serverError && (
-                    <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3 font-medium animate-in shake">
-                      {serverError}
-                    </div>
-                  )}
-
-                  <div className="flex flex-col gap-3">
-                    <Button type="submit" variant="dark" size="lg" loading={mfaLoading} disabled={mfaCode.length !== 6} className="w-full h-12 rounded-xl text-base font-bold shadow-green-900/10">
-                      <ShieldIcon size={18} className="mr-2" /> Confirmar Código
-                    </Button>
-                    <button type="button" onClick={() => { setStep('password'); handleLogout() }} className="text-sm font-bold text-neutral-400 hover:text-neutral-600 py-2 transition-colors">
-                      Voltar para login
-                    </button>
-                  </div>
-               </form>
+                <div className="flex flex-col gap-3">
+                  <Button type="submit" variant="dark" size="lg" loading={mfaLoading} disabled={mfaCode.length !== 6} className="w-full h-12 rounded-xl text-base font-bold shadow-green-900/10">
+                    <ShieldIcon size={18} className="mr-2" /> Confirmar Código
+                  </Button>
+                  <button type="button" onClick={() => { setStep('password'); handleLogout() }} className="text-sm font-bold text-neutral-400 hover:text-neutral-600 py-2 transition-colors">
+                    Voltar para login
+                  </button>
+                </div>
+              </form>
             </div>
           )}
 
@@ -346,7 +346,7 @@ function LoginContent() {
             {/* Modal Header */}
             <div className="p-6 sm:p-8 border-b border-neutral-100 flex items-center justify-between shrink-0 bg-white">
               <div className="flex items-center gap-4">
-                <button 
+                <button
                   onClick={() => setShowLegal({ ...showLegal, open: false })}
                   className="w-10 h-10 rounded-full border border-neutral-200 flex items-center justify-center hover:bg-neutral-50 transition-colors"
                 >
@@ -362,7 +362,7 @@ function LoginContent() {
                   </h2>
                 </div>
               </div>
-              <button 
+              <button
                 onClick={() => setShowLegal({ ...showLegal, open: false })}
                 className="text-neutral-400 hover:text-neutral-900 transition-colors hidden sm:block"
               >
@@ -374,7 +374,7 @@ function LoginContent() {
             <div className="flex-1 overflow-y-auto p-6 sm:p-12 custom-scrollbar bg-neutral-50/30">
               <div className="max-w-3xl mx-auto">
                 <p className="text-sm text-neutral-400 mb-10 border-l-2 border-green-500 pl-4 py-1 italic bg-green-50/50 rounded-r-md">
-                  {showLegal.type === 'terms' 
+                  {showLegal.type === 'terms'
                     ? 'Revisado e em vigor a partir de Março de 2026. Documento em compliance com o Marco Civil da Internet.'
                     : 'A proteção dos dados das crianças, jovens e responsáveis é a raiz e fundação do ScoutJR.'}
                 </p>
@@ -384,7 +384,7 @@ function LoginContent() {
 
             {/* Modal Footer */}
             <div className="p-6 border-t border-neutral-100 flex justify-end shrink-0 bg-white gap-3">
-               <Button variant="outline" onClick={() => setShowLegal({ ...showLegal, open: false })}>
+              <Button variant="outline" onClick={() => setShowLegal({ ...showLegal, open: false })}>
                 Fechar
               </Button>
             </div>
@@ -398,11 +398,11 @@ function LoginContent() {
 
 function CheckIcon(props: any) {
   return (
-    <svg 
-      fill="none" 
-      viewBox="0 0 24 24" 
-      stroke="currentColor" 
-      strokeWidth={4} 
+    <svg
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={4}
       {...props}
     >
       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -416,4 +416,4 @@ export default function LoginPage() {
       <LoginContent />
     </Suspense>
   )
-}
+}

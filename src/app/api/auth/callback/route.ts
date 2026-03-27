@@ -9,7 +9,26 @@ export async function GET(request: NextRequest) {
   if (code) {
     const supabase = await createSupabaseServer()
     const { error } = await supabase.auth.exchangeCodeForSession(code)
+    
     if (!error) {
+      // Pequeno delay para garantir que o trigger handle_new_user teve tempo de rodar
+      await new Promise(resolve => setTimeout(resolve, 800))
+      
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        // Verifica se o perfil foi criado pelo trigger
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('id, telefone')
+          .eq('user_id', user.id)
+          .single()
+
+        // Se o perfil existe mas não tem telefone, é um convite para completar o cadastro
+        if (!profile || !profile.telefone) {
+          return NextResponse.redirect(`${origin}/cadastro?method=google`)
+        }
+      }
+      
       return NextResponse.redirect(`${origin}${next}`)
     }
   }
