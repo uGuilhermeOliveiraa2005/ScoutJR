@@ -64,9 +64,10 @@ function CadastroForm() {
     if (method === 'google') {
       setAuthMethod('google')
       setStep(1) // Jump to role selection
-      // Get user data from Supabase session
-      supabase.auth.getUser().then((result: { data: { user: any } }) => {
-        const user = result.data?.user
+      
+      // Get user data from Supabase session more robustly
+      const checkUser = async () => {
+        const { data: { user } } = await supabase.auth.getUser()
         if (user) {
           const meta = user.user_metadata
           setGoogleUser({
@@ -77,10 +78,10 @@ function CadastroForm() {
             email: user.email || '',
           })
         }
-      })
+      }
+      checkUser()
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [searchParams, supabase.auth])
 
   const [atletaData, setAtletaData] = useState({
     nomeAtleta: '', descricao: '', dataNascimento: '',
