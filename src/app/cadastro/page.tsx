@@ -71,13 +71,15 @@ function CadastroForm() {
           const meta = user.user_metadata
           setGoogleUser({
             name: meta?.full_name || meta?.name || '',
+            // ✅ FIX: Google OAuth pode retornar a foto em 'picture' (OpenID Connect)
+            // ou em 'avatar_url' (mapeamento do Supabase). Verifica os dois.
             avatar_url: meta?.avatar_url || meta?.picture || '',
             email: user.email || '',
           })
         }
       })
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const [atletaData, setAtletaData] = useState({
@@ -107,14 +109,15 @@ function CadastroForm() {
 
   const isGoogle = authMethod === 'google'
 
-  const formResp = useForm<CadastroResponsavelInput>({ 
+  const formResp = useForm<CadastroResponsavelInput>({
     resolver: zodResolver(isGoogle ? cadastroResponsavelGoogleSchema : cadastroResponsavelSchema) as any,
     defaultValues: { nome: googleUser?.name || '', email: googleUser?.email || '', telefone: '', password: '', confirmPassword: '', aceito_termos: false }
   })
-  const formEscolinha = useForm<CadastroEscolinhaInput>({ 
+  const formEscolinha = useForm<CadastroEscolinhaInput>({
     resolver: zodResolver(isGoogle ? cadastroEscolinhaGoogleSchema : cadastroEscolinhaSchema) as any,
     defaultValues: { nome: '', cnpj: '', email: '', telefone: '', estado: '', cidade: '', password: '', confirmPassword: '', aceito_termos: false }
   })
+
   // Prefill form values when Google user data loads
   useEffect(() => {
     if (googleUser) {
@@ -126,7 +129,7 @@ function CadastroForm() {
         setResponsavelPreview(googleUser.avatar_url)
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [googleUser])
 
   // ── Submit responsável ──────────────────────────────────────
@@ -370,7 +373,7 @@ function CadastroForm() {
         // Atualiza os dados de contato no profile (necessário para o proxy não bloquear o usuário)
         await supabase
           .from('profiles')
-          .update({ 
+          .update({
             nome: data.nome,
             telefone: data.telefone,
             role: 'escolinha',
@@ -393,14 +396,14 @@ function CadastroForm() {
 
   return (
     <div className="min-h-screen bg-white flex overflow-hidden font-sans">
-      
+
       {/* Left Side: Branding (Hidden on mobile) */}
       <div className="hidden lg:flex lg:w-1/2 bg-[#0A1A14] relative items-center justify-center p-12 overflow-hidden sticky top-0 h-screen">
         {/* Background Effects */}
         <div className="absolute inset-0 bg-[url('/noise.svg')] opacity-20 mix-blend-overlay"></div>
         <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] rounded-full bg-green-500/10 blur-[120px]"></div>
         <div className="absolute bottom-[-10%] left-[-10%] w-[60%] h-[60%] rounded-full bg-amber-500/5 blur-[120px]"></div>
-        
+
         <div className="relative z-10 max-w-lg">
           <Link href="/" className="inline-flex items-center gap-2 text-white/60 hover:text-white transition-colors mb-20 group">
             <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
@@ -414,8 +417,8 @@ function CadastroForm() {
           </div>
 
           <p className="text-neutral-400 text-lg leading-relaxed mb-12">
-            {tipo === 'responsavel' 
-              ? 'Dê o primeiro passo para o futuro do seu pequeno atleta. Cadastre-se e ganhe visibilidade nacional.' 
+            {tipo === 'responsavel'
+              ? 'Dê o primeiro passo para o futuro do seu pequeno atleta. Cadastre-se e ganhe visibilidade nacional.'
               : 'Encontre e monitore a evolução das maiores promessas da base em um só lugar.'}
           </p>
 
@@ -441,7 +444,7 @@ function CadastroForm() {
         <div className="w-full max-w-lg py-8 animate-fade-up">
 
           <div className="lg:hidden mb-12 text-center">
-             <Link href="/" className="font-display text-3xl tracking-widest text-green-700">
+            <Link href="/" className="font-display text-3xl tracking-widest text-green-700">
               SCOUT<span className="text-amber-500">JR</span>
             </Link>
           </div>
@@ -486,442 +489,442 @@ function CadastroForm() {
 
           <div className="bg-white lg:bg-transparent border border-neutral-200 lg:border-none rounded-2xl p-6 sm:p-0 shadow-sm lg:shadow-none">
 
-          {/* STEP 0 — Método de autenticação */}
-          {step === 0 && (
-            <div>
-              <div className="font-display text-3xl sm:text-4xl text-neutral-400 mb-1.5 leading-none">01</div>
-              <h2 className="text-lg sm:text-xl font-medium mb-1">Como deseja criar sua conta?</h2>
-              <p className="text-xs sm:text-sm text-neutral-500 mb-5 sm:mb-6">Escolha uma forma de se cadastrar.</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-6 sm:mb-8">
-                <button type="button" onClick={async () => {
-                  setAuthMethod('google')
-                  await supabase.auth.signInWithOAuth({
-                    provider: 'google',
-                    options: {
-                      redirectTo: `${window.location.origin}/api/auth/callback?next=${encodeURIComponent('/cadastro?method=google')}`
-                    }
-                  })
-                }}
-                  className="p-5 sm:p-6 border-2 rounded-xl text-left transition-all border-neutral-200 hover:border-green-400 hover:bg-green-50/50 group"
-                >
-                  <div className="mb-3 flex items-center gap-3">
-                    <svg height="1em" style={{flex:'none', lineHeight:1}} viewBox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg" className="w-6 h-6"><title>Google</title><path d="M23 12.245c0-.905-.075-1.565-.236-2.25h-10.54v4.083h6.186c-.124 1.014-.797 2.542-2.294 3.569l-.021.136 3.332 2.53.23.022C21.779 18.417 23 15.593 23 12.245z" fill="#4285F4"></path><path d="M12.225 23c3.03 0 5.574-.978 7.433-2.665l-3.542-2.688c-.948.648-2.22 1.1-3.891 1.1a6.745 6.745 0 01-6.386-4.572l-.132.011-3.465 2.628-.045.124C4.043 20.531 7.835 23 12.225 23z" fill="#34A853"></path><path d="M5.84 14.175A6.65 6.65 0 015.463 12c0-.758.138-1.491.361-2.175l-.006-.147-3.508-2.67-.115.054A10.831 10.831 0 001 12c0 1.772.436 3.447 1.197 4.938l3.642-2.763z" fill="#FBBC05"></path><path d="M12.225 5.253c2.108 0 3.529.892 4.34 1.638l3.167-3.031C17.787 2.088 15.255 1 12.225 1 7.834 1 4.043 3.469 2.197 7.062l3.63 2.763a6.77 6.77 0 016.398-4.572z" fill="#EB4335"></path></svg>
-                    <span className="text-sm sm:text-base font-bold text-neutral-700">Criar com Google</span>
-                  </div>
-                  <div className="text-[10px] sm:text-xs text-neutral-400 leading-snug">Rápido e seguro. Use sua conta Google para se cadastrar com um clique.</div>
-                </button>
-                <button type="button" onClick={() => { setAuthMethod('email'); setStep(1) }}
-                  className="p-5 sm:p-6 border-2 rounded-xl text-left transition-all border-neutral-200 hover:border-green-400 hover:bg-green-50/50 group"
-                >
-                  <div className="mb-3 flex items-center gap-3">
-                    <Mail size={24} className="text-green-600" />
-                    <span className="text-sm sm:text-base font-bold text-neutral-700">Criar com E-mail</span>
-                  </div>
-                  <div className="text-[10px] sm:text-xs text-neutral-400 leading-snug">Crie uma conta com seu e-mail e senha. Controle total dos seus dados.</div>
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* STEP 1 — Tipo de conta */}
-          {step === 1 && (
-            <div>
-              <div className="font-display text-3xl sm:text-4xl text-neutral-400 mb-1.5 leading-none">02</div>
-              <h2 className="text-lg sm:text-xl font-medium mb-1">Que tipo de conta?</h2>
-              <p className="text-xs sm:text-sm text-neutral-500 mb-5 sm:mb-6">Escolha o perfil que se aplica.</p>
-              {isGoogle && googleUser && (
-                <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in duration-300">
-                  <div className="flex items-center gap-4">
-                    {googleUser.avatar_url && !avatarError ? (
-                      <img 
-                        src={googleUser.avatar_url} 
-                        alt="" 
-                        referrerPolicy="no-referrer" 
-                        onError={() => setAvatarError(true)}
-                        className="w-10 h-10 rounded-full border-2 border-green-300 object-cover" 
-                      />
-                    ) : (
-                      <div className="w-10 h-10 rounded-full border-2 border-green-300 bg-green-100 flex items-center justify-center text-green-700 font-bold text-lg shrink-0">
-                        {(googleUser?.name || googleUser?.email || 'U').charAt(0).toUpperCase()}
-                      </div>
-                    )}
-                    <div>
-                      <div className="text-sm font-bold text-green-800">Logado como {googleUser.name || googleUser.email}</div>
-                      <div className="text-[11px] text-green-600">Agora escolha o tipo da sua conta.</div>
-                    </div>
-                  </div>
-                  <button 
-                    type="button" 
-                    onClick={async () => {
-                      await supabase.auth.signOut()
-                      router.push('/login')
-                      router.refresh()
-                    }}
-                    className="text-[11px] font-bold text-green-700 hover:text-red-600 transition-colors border border-green-600/20 hover:border-red-200 bg-white/50 hover:bg-red-50 rounded-lg px-3 py-1.5 shrink-0 self-start sm:self-auto"
+            {/* STEP 0 — Método de autenticação */}
+            {step === 0 && (
+              <div>
+                <div className="font-display text-3xl sm:text-4xl text-neutral-400 mb-1.5 leading-none">01</div>
+                <h2 className="text-lg sm:text-xl font-medium mb-1">Como deseja criar sua conta?</h2>
+                <p className="text-xs sm:text-sm text-neutral-500 mb-5 sm:mb-6">Escolha uma forma de se cadastrar.</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-6 sm:mb-8">
+                  <button type="button" onClick={async () => {
+                    setAuthMethod('google')
+                    await supabase.auth.signInWithOAuth({
+                      provider: 'google',
+                      options: {
+                        redirectTo: `${window.location.origin}/api/auth/callback?next=${encodeURIComponent('/cadastro?method=google')}`
+                      }
+                    })
+                  }}
+                    className="p-5 sm:p-6 border-2 rounded-xl text-left transition-all border-neutral-200 hover:border-green-400 hover:bg-green-50/50 group"
                   >
-                    Trocar conta
+                    <div className="mb-3 flex items-center gap-3">
+                      <svg height="1em" style={{ flex: 'none', lineHeight: 1 }} viewBox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg" className="w-6 h-6"><title>Google</title><path d="M23 12.245c0-.905-.075-1.565-.236-2.25h-10.54v4.083h6.186c-.124 1.014-.797 2.542-2.294 3.569l-.021.136 3.332 2.53.23.022C21.779 18.417 23 15.593 23 12.245z" fill="#4285F4"></path><path d="M12.225 23c3.03 0 5.574-.978 7.433-2.665l-3.542-2.688c-.948.648-2.22 1.1-3.891 1.1a6.745 6.745 0 01-6.386-4.572l-.132.011-3.465 2.628-.045.124C4.043 20.531 7.835 23 12.225 23z" fill="#34A853"></path><path d="M5.84 14.175A6.65 6.65 0 015.463 12c0-.758.138-1.491.361-2.175l-.006-.147-3.508-2.67-.115.054A10.831 10.831 0 001 12c0 1.772.436 3.447 1.197 4.938l3.642-2.763z" fill="#FBBC05"></path><path d="M12.225 5.253c2.108 0 3.529.892 4.34 1.638l3.167-3.031C17.787 2.088 15.255 1 12.225 1 7.834 1 4.043 3.469 2.197 7.062l3.63 2.763a6.77 6.77 0 016.398-4.572z" fill="#EB4335"></path></svg>
+                      <span className="text-sm sm:text-base font-bold text-neutral-700">Criar com Google</span>
+                    </div>
+                    <div className="text-[10px] sm:text-xs text-neutral-400 leading-snug">Rápido e seguro. Use sua conta Google para se cadastrar com um clique.</div>
+                  </button>
+                  <button type="button" onClick={() => { setAuthMethod('email'); setStep(1) }}
+                    className="p-5 sm:p-6 border-2 rounded-xl text-left transition-all border-neutral-200 hover:border-green-400 hover:bg-green-50/50 group"
+                  >
+                    <div className="mb-3 flex items-center gap-3">
+                      <Mail size={24} className="text-green-600" />
+                      <span className="text-sm sm:text-base font-bold text-neutral-700">Criar com E-mail</span>
+                    </div>
+                    <div className="text-[10px] sm:text-xs text-neutral-400 leading-snug">Crie uma conta com seu e-mail e senha. Controle total dos seus dados.</div>
                   </button>
                 </div>
-              )}
-              <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-6 sm:mb-8">
-                {([
-                  { val: 'responsavel', icon: <Users size={22} />, title: 'Sou responsável', sub: 'Quero cadastrar meu filho(a) como atleta' },
-                  { val: 'escolinha', icon: <Landmark size={22} />, title: 'Sou uma escolinha', sub: 'Quero buscar e recrutar jovens talentos' },
-                ] as const).map(opt => (
-                  <button key={opt.val} type="button" onClick={() => setTipo(opt.val)}
-                    className={cn('p-4 sm:p-5 border-2 rounded-xl text-left transition-all',
-                      tipo === opt.val ? 'border-green-400 bg-green-50' : 'border-neutral-200 hover:border-neutral-300'
-                    )}>
-                    <div className={cn('mb-2 sm:mb-3', tipo === opt.val ? 'text-green-600' : 'text-neutral-400')}>{opt.icon}</div>
-                    <div className="text-xs sm:text-sm font-medium mb-0.5 sm:mb-1">{opt.title}</div>
-                    <div className="text-[10px] sm:text-xs text-neutral-400 leading-snug">{opt.sub}</div>
-                  </button>
-                ))}
               </div>
-              <div className="flex justify-between">
-                {!isGoogle && <Button variant="outline" type="button" onClick={() => setStep(0)}><ArrowLeft size={14} /> Voltar</Button>}
-                <Button variant="dark" className="h-12 px-8 rounded-xl ml-auto" onClick={() => setStep(2)}>Continuar <ArrowRight size={14} className="ml-2" /></Button>
-              </div>
-            </div>
-          )}
+            )}
 
-          {/* ── RESPONSÁVEL ── */}
-
-          {step === 2 && tipo === 'responsavel' && (
-            <form onSubmit={formResp.handleSubmit(() => setStep(3))}>
-              <div className="font-display text-3xl sm:text-4xl text-neutral-400 mb-1.5 leading-none">03</div>
-              <h2 className="text-lg sm:text-xl font-medium mb-1">Seus dados de contato</h2>
-              <p className="text-xs sm:text-sm text-neutral-500 mb-4 sm:mb-6">Nunca aparecem no perfil público do atleta.</p>
-              <div className="flex flex-col gap-3 sm:gap-4">
-                {/* Foto responsável */}
-                {isGoogle && googleUser?.avatar_url && !avatarError ? (
-                  <div className="flex items-center gap-4 p-3 bg-green-50 border border-green-200 rounded-xl">
-                    <img src={googleUser.avatar_url} alt="" referrerPolicy="no-referrer" onError={() => setAvatarError(true)} className="w-14 h-14 rounded-full border-2 border-green-300 object-cover" />
-                    <div>
-                      <div className="text-sm font-bold text-green-800">{googleUser.name}</div>
-                      <div className="text-[11px] text-green-600">{googleUser.email}</div>
+            {/* STEP 1 — Tipo de conta */}
+            {step === 1 && (
+              <div>
+                <div className="font-display text-3xl sm:text-4xl text-neutral-400 mb-1.5 leading-none">02</div>
+                <h2 className="text-lg sm:text-xl font-medium mb-1">Que tipo de conta?</h2>
+                <p className="text-xs sm:text-sm text-neutral-500 mb-5 sm:mb-6">Escolha o perfil que se aplica.</p>
+                {isGoogle && googleUser && (
+                  <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in duration-300">
+                    <div className="flex items-center gap-4">
+                      {googleUser.avatar_url && !avatarError ? (
+                        <img
+                          src={googleUser.avatar_url}
+                          alt=""
+                          referrerPolicy="no-referrer"
+                          onError={() => setAvatarError(true)}
+                          className="w-10 h-10 rounded-full border-2 border-green-300 object-cover"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full border-2 border-green-300 bg-green-100 flex items-center justify-center text-green-700 font-bold text-lg shrink-0">
+                          {(googleUser?.name || googleUser?.email || 'U').charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <div>
+                        <div className="text-sm font-bold text-green-800">Logado como {googleUser.name || googleUser.email}</div>
+                        <div className="text-[11px] text-green-600">Agora escolha o tipo da sua conta.</div>
+                      </div>
                     </div>
-                  </div>
-                ) : (
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <div className="w-16 h-16 rounded-full bg-neutral-100 border border-neutral-200 flex items-center justify-center flex-shrink-0 overflow-hidden text-neutral-400">
-                      {responsavelPreview
-                        ? <img src={responsavelPreview} alt="Avatar" className="w-full h-full object-cover" />
-                        : <ImageIcon size={20} />}
-                    </div>
-                    <FieldGroup className="flex-1">
-                      <Label>Sua foto de perfil (Opcional)</Label>
-                      <Input type="file" accept="image/*" className="pt-2"
-                        error={formResp.formState.errors.foto_url?.message as string}
-                        onChange={e => {
-                          const file = e.target.files?.[0]
-                          if (file) {
-                            formResp.setValue('foto_url', file, { shouldValidate: true })
-                            const reader = new FileReader()
-                            reader.onload = ev => setResponsavelPreview(ev.target?.result as string)
-                            reader.readAsDataURL(file)
-                          } else {
-                            formResp.setValue('foto_url', null)
-                            setResponsavelPreview('')
-                          }
-                        }} />
-                    </FieldGroup>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        await supabase.auth.signOut()
+                        router.push('/login')
+                        router.refresh()
+                      }}
+                      className="text-[11px] font-bold text-green-700 hover:text-red-600 transition-colors border border-green-600/20 hover:border-red-200 bg-white/50 hover:bg-red-50 rounded-lg px-3 py-1.5 shrink-0 self-start sm:self-auto"
+                    >
+                      Trocar conta
+                    </button>
                   </div>
                 )}
-                {!isGoogle && (
-                  <FieldGroup>
-                    <Label>Nome completo</Label>
-                    <Input placeholder="João da Silva" error={formResp.formState.errors.nome?.message} {...formResp.register('nome')} />
-                  </FieldGroup>
-                )}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-6 sm:mb-8">
+                  {([
+                    { val: 'responsavel', icon: <Users size={22} />, title: 'Sou responsável', sub: 'Quero cadastrar meu filho(a) como atleta' },
+                    { val: 'escolinha', icon: <Landmark size={22} />, title: 'Sou uma escolinha', sub: 'Quero buscar e recrutar jovens talentos' },
+                  ] as const).map(opt => (
+                    <button key={opt.val} type="button" onClick={() => setTipo(opt.val)}
+                      className={cn('p-4 sm:p-5 border-2 rounded-xl text-left transition-all',
+                        tipo === opt.val ? 'border-green-400 bg-green-50' : 'border-neutral-200 hover:border-neutral-300'
+                      )}>
+                      <div className={cn('mb-2 sm:mb-3', tipo === opt.val ? 'text-green-600' : 'text-neutral-400')}>{opt.icon}</div>
+                      <div className="text-xs sm:text-sm font-medium mb-0.5 sm:mb-1">{opt.title}</div>
+                      <div className="text-[10px] sm:text-xs text-neutral-400 leading-snug">{opt.sub}</div>
+                    </button>
+                  ))}
+                </div>
+                <div className="flex justify-between">
+                  {!isGoogle && <Button variant="outline" type="button" onClick={() => setStep(0)}><ArrowLeft size={14} /> Voltar</Button>}
+                  <Button variant="dark" className="h-12 px-8 rounded-xl ml-auto" onClick={() => setStep(2)}>Continuar <ArrowRight size={14} className="ml-2" /></Button>
+                </div>
+              </div>
+            )}
+
+            {/* ── RESPONSÁVEL ── */}
+
+            {step === 2 && tipo === 'responsavel' && (
+              <form onSubmit={formResp.handleSubmit(() => setStep(3))}>
+                <div className="font-display text-3xl sm:text-4xl text-neutral-400 mb-1.5 leading-none">03</div>
+                <h2 className="text-lg sm:text-xl font-medium mb-1">Seus dados de contato</h2>
+                <p className="text-xs sm:text-sm text-neutral-500 mb-4 sm:mb-6">Nunca aparecem no perfil público do atleta.</p>
+                <div className="flex flex-col gap-3 sm:gap-4">
+                  {/* Foto responsável */}
+                  {isGoogle && googleUser?.avatar_url && !avatarError ? (
+                    <div className="flex items-center gap-4 p-3 bg-green-50 border border-green-200 rounded-xl">
+                      <img src={googleUser.avatar_url} alt="" referrerPolicy="no-referrer" onError={() => setAvatarError(true)} className="w-14 h-14 rounded-full border-2 border-green-300 object-cover" />
+                      <div>
+                        <div className="text-sm font-bold text-green-800">{googleUser.name}</div>
+                        <div className="text-[11px] text-green-600">{googleUser.email}</div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <div className="w-16 h-16 rounded-full bg-neutral-100 border border-neutral-200 flex items-center justify-center flex-shrink-0 overflow-hidden text-neutral-400">
+                        {responsavelPreview
+                          ? <img src={responsavelPreview} alt="Avatar" className="w-full h-full object-cover" />
+                          : <ImageIcon size={20} />}
+                      </div>
+                      <FieldGroup className="flex-1">
+                        <Label>Sua foto de perfil (Opcional)</Label>
+                        <Input type="file" accept="image/*" className="pt-2"
+                          error={formResp.formState.errors.foto_url?.message as string}
+                          onChange={e => {
+                            const file = e.target.files?.[0]
+                            if (file) {
+                              formResp.setValue('foto_url', file, { shouldValidate: true })
+                              const reader = new FileReader()
+                              reader.onload = ev => setResponsavelPreview(ev.target?.result as string)
+                              reader.readAsDataURL(file)
+                            } else {
+                              formResp.setValue('foto_url', null)
+                              setResponsavelPreview('')
+                            }
+                          }} />
+                      </FieldGroup>
+                    </div>
+                  )}
                   {!isGoogle && (
                     <FieldGroup>
+                      <Label>Nome completo</Label>
+                      <Input placeholder="João da Silva" error={formResp.formState.errors.nome?.message} {...formResp.register('nome')} />
+                    </FieldGroup>
+                  )}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {!isGoogle && (
+                      <FieldGroup>
+                        <Label>E-mail</Label>
+                        <Input type="email" placeholder="joao@email.com" error={formResp.formState.errors.email?.message} {...formResp.register('email')} />
+                      </FieldGroup>
+                    )}
+                    <FieldGroup>
+                      <Label>Telefone / WhatsApp</Label>
+                      <Input type="tel" placeholder="(51) 9 9999-9999"
+                        error={formResp.formState.errors.telefone?.message}
+                        {...formResp.register('telefone', {
+                          onChange: e => {
+                            const val = formatPhone(e.target.value);
+                            e.target.value = val;
+                            formResp.setValue('telefone', val);
+                          }
+                        })} />
+                    </FieldGroup>
+                  </div>
+                  {!isGoogle && (
+                    <div className="grid grid-cols-2 gap-3">
+                      <FieldGroup>
+                        <Label>Senha</Label>
+                        <Input type="password" placeholder="Mín. 8 caracteres" error={formResp.formState.errors.password?.message} {...formResp.register('password')} />
+                      </FieldGroup>
+                      <FieldGroup>
+                        <Label>Confirmar senha</Label>
+                        <Input type="password" placeholder="Repita a senha" error={formResp.formState.errors.confirmPassword?.message} {...formResp.register('confirmPassword')} />
+                      </FieldGroup>
+                    </div>
+                  )}
+                  <div className="bg-amber-50 border border-amber-100 rounded-lg p-3 text-xs text-amber-700 leading-relaxed">
+                    Ao criar uma conta você confirma ser o responsável legal e concorda com os{' '}
+                    <button type="button" onClick={() => setShowLegal({ type: 'terms', open: true })} className="underline font-bold hover:text-amber-800 transition-colors">Termos de Uso</button>.
+                  </div>
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input type="checkbox" className="mt-0.5 accent-green-500" {...formResp.register('aceito_termos')} />
+                    <span className="text-xs text-neutral-500">Li e aceito os <button type="button" onClick={() => setShowLegal({ type: 'terms', open: true })} className="underline">termos de uso</button> e <button type="button" onClick={() => setShowLegal({ type: 'privacy', open: true })} className="underline">política de privacidade</button></span>
+                  </label>
+                  {formResp.formState.errors.aceito_termos && (
+                    <p className="text-xs text-red-500">{formResp.formState.errors.aceito_termos.message}</p>
+                  )}
+                </div>
+                <div className="flex justify-between mt-5 sm:mt-6">
+                  <Button variant="outline" type="button" onClick={() => setStep(1)}><ArrowLeft size={14} /> Voltar</Button>
+                  <Button variant="dark" type="submit">Continuar <ArrowRight size={14} /></Button>
+                </div>
+              </form>
+            )}
+
+            {step >= 3 && step <= 8 && tipo === 'responsavel' && (
+              <AtletaSteps
+                step={step} setStep={setStep}
+                data={atletaData} setData={setAtletaData}
+                loading={isUploading || formResp.formState.isSubmitting}
+                serverError={serverError}
+                onSubmit={formResp.handleSubmit(submitResponsavel)}
+                isUploading={isUploading}
+              />
+            )}
+
+            {/* ── ESCOLINHA ── */}
+
+            {step === 2 && tipo === 'escolinha' && (
+              <form onSubmit={formEscolinha.handleSubmit(() => setStep(3))}>
+                <div className="font-display text-3xl sm:text-4xl text-neutral-400 mb-1.5 leading-none">03</div>
+                <h2 className="text-lg sm:text-xl font-medium mb-1">Dados da escolinha</h2>
+                <p className="text-xs sm:text-sm text-neutral-500 mb-4 sm:mb-6">Informações da instituição.</p>
+                <div className="flex flex-col gap-3 sm:gap-4">
+                  <FieldGroup>
+                    <Label>Nome da escolinha</Label>
+                    <Input placeholder="Ex: Escolinha Grêmio FBPA" error={formEscolinha.formState.errors.nome?.message} {...formEscolinha.register('nome')} />
+                  </FieldGroup>
+                  <FieldGroup>
+                    <Label>CNPJ</Label>
+                    <Input placeholder="00.000.000/0000-00" error={formEscolinha.formState.errors.cnpj?.message}
+                      {...formEscolinha.register('cnpj', { onChange: e => { e.target.value = formatCNPJ(e.target.value) } })} />
+                  </FieldGroup>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <FieldGroup>
                       <Label>E-mail</Label>
-                      <Input type="email" placeholder="joao@email.com" error={formResp.formState.errors.email?.message} {...formResp.register('email')} />
+                      <Input type="email" placeholder="contato@escolinha.com.br"
+                        readOnly={isGoogle}
+                        className={isGoogle ? 'bg-neutral-50 cursor-not-allowed' : ''}
+                        error={formEscolinha.formState.errors.email?.message} {...formEscolinha.register('email')} />
                     </FieldGroup>
+                    <FieldGroup>
+                      <Label>Telefone</Label>
+                      <Input type="tel" placeholder="(51) 3333-3333" error={formEscolinha.formState.errors.telefone?.message}
+                        {...formEscolinha.register('telefone', {
+                          onChange: e => {
+                            const val = formatPhone(e.target.value);
+                            e.target.value = val;
+                            formEscolinha.setValue('telefone', val);
+                          }
+                        })} />
+                    </FieldGroup>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <FieldGroup>
+                      <Label>Estado</Label>
+                      <Select options={ESTADOS} placeholder="Selecione" error={formEscolinha.formState.errors.estado?.message}
+                        {...formEscolinha.register('estado', { onChange: () => formEscolinha.setValue('cidade', '') })} />
+                    </FieldGroup>
+                    <FieldGroup>
+                      <Label>Cidade</Label>
+                      <CitySelect
+                        estado={formEscolinha.watch('estado')}
+                        {...formEscolinha.register('cidade')}
+                        value={formEscolinha.watch('cidade')}
+                        onChange={e => formEscolinha.setValue('cidade', e.target.value, { shouldValidate: true })}
+                        error={formEscolinha.formState.errors.cidade?.message}
+                      />
+                    </FieldGroup>
+                  </div>
+                  {!isGoogle && (
+                    <div className="grid grid-cols-2 gap-3">
+                      <FieldGroup>
+                        <Label>Senha</Label>
+                        <Input type="password" placeholder="Mín. 8 caracteres" error={formEscolinha.formState.errors.password?.message} {...formEscolinha.register('password')} />
+                      </FieldGroup>
+                      <FieldGroup>
+                        <Label>Confirmar</Label>
+                        <Input type="password" error={formEscolinha.formState.errors.confirmPassword?.message} {...formEscolinha.register('confirmPassword')} />
+                      </FieldGroup>
+                    </div>
                   )}
-                  <FieldGroup>
-                    <Label>Telefone / WhatsApp</Label>
-                    <Input type="tel" placeholder="(51) 9 9999-9999"
-                      error={formResp.formState.errors.telefone?.message}
-                      {...formResp.register('telefone', { 
-                        onChange: e => { 
-                          const val = formatPhone(e.target.value);
-                          e.target.value = val;
-                          formResp.setValue('telefone', val);
-                        } 
-                      })} />
-                  </FieldGroup>
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input type="checkbox" className="mt-0.5 accent-green-500" {...formEscolinha.register('aceito_termos')} />
+                    <span className="text-xs text-neutral-500">Li e aceito os <button type="button" onClick={() => setShowLegal({ type: 'terms', open: true })} className="underline">termos de uso</button> e <button type="button" onClick={() => setShowLegal({ type: 'privacy', open: true })} className="underline">política de privacidade</button></span>
+                  </label>
+                  {formEscolinha.formState.errors.aceito_termos && (
+                    <p className="text-xs text-red-500">{formEscolinha.formState.errors.aceito_termos.message}</p>
+                  )}
                 </div>
-                {!isGoogle && (
-                  <div className="grid grid-cols-2 gap-3">
-                    <FieldGroup>
-                      <Label>Senha</Label>
-                      <Input type="password" placeholder="Mín. 8 caracteres" error={formResp.formState.errors.password?.message} {...formResp.register('password')} />
-                    </FieldGroup>
-                    <FieldGroup>
-                      <Label>Confirmar senha</Label>
-                      <Input type="password" placeholder="Repita a senha" error={formResp.formState.errors.confirmPassword?.message} {...formResp.register('confirmPassword')} />
-                    </FieldGroup>
+                <div className="flex justify-between mt-5 sm:mt-6">
+                  <Button variant="outline" type="button" onClick={() => setStep(1)}><ArrowLeft size={14} /> Voltar</Button>
+                  <Button variant="dark" type="submit">Continuar <ArrowRight size={14} /></Button>
+                </div>
+              </form>
+            )}
+
+            {step === 3 && tipo === 'escolinha' && (
+              <div className="flex flex-col gap-5">
+                <div className="font-display text-3xl sm:text-4xl text-neutral-400 mb-1.5 leading-none">04</div>
+                <h2 className="text-lg sm:text-xl font-medium mb-1">Sobre a Escolinha</h2>
+                <p className="text-xs sm:text-sm text-neutral-500 mb-4 sm:mb-6">Crie um perfil atrativo para as famílias.</p>
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <div className="w-20 h-20 rounded-xl bg-neutral-100 border border-neutral-200 flex items-center justify-center flex-shrink-0 overflow-hidden text-neutral-400">
+                    {escolinhaPreview ? <img src={escolinhaPreview} alt="Logo" className="w-full h-full object-cover" /> : <ImageIcon size={24} />}
                   </div>
-                )}
-                <div className="bg-amber-50 border border-amber-100 rounded-lg p-3 text-xs text-amber-700 leading-relaxed">
-                  Ao criar uma conta você confirma ser o responsável legal e concorda com os{' '}
-                  <button type="button" onClick={() => setShowLegal({ type: 'terms', open: true })} className="underline font-bold hover:text-amber-800 transition-colors">Termos de Uso</button>.
+                  <FieldGroup className="flex-1">
+                    <Label>Logo / Emblema</Label>
+                    <Input type="file" accept="image/*" className="pt-2" onChange={e => {
+                      const file = e.target.files?.[0]
+                      if (file) {
+                        formEscolinha.setValue('foto_url', file, { shouldValidate: true })
+                        const reader = new FileReader()
+                        reader.onload = ev => setEscolinhaPreview(ev.target?.result as string)
+                        reader.readAsDataURL(file)
+                      } else { formEscolinha.setValue('foto_url', null); setEscolinhaPreview('') }
+                    }} />
+                  </FieldGroup>
                 </div>
-                <label className="flex items-start gap-3 cursor-pointer">
-                  <input type="checkbox" className="mt-0.5 accent-green-500" {...formResp.register('aceito_termos')} />
-                  <span className="text-xs text-neutral-500">Li e aceito os <button type="button" onClick={() => setShowLegal({ type: 'terms', open: true })} className="underline">termos de uso</button> e <button type="button" onClick={() => setShowLegal({ type: 'privacy', open: true })} className="underline">política de privacidade</button></span>
-                </label>
-                {formResp.formState.errors.aceito_termos && (
-                  <p className="text-xs text-red-500">{formResp.formState.errors.aceito_termos.message}</p>
-                )}
-              </div>
-              <div className="flex justify-between mt-5 sm:mt-6">
-                <Button variant="outline" type="button" onClick={() => setStep(1)}><ArrowLeft size={14} /> Voltar</Button>
-                <Button variant="dark" type="submit">Continuar <ArrowRight size={14} /></Button>
-              </div>
-            </form>
-          )}
-
-          {step >= 3 && step <= 8 && tipo === 'responsavel' && (
-            <AtletaSteps
-              step={step} setStep={setStep}
-              data={atletaData} setData={setAtletaData}
-              loading={isUploading || formResp.formState.isSubmitting}
-              serverError={serverError}
-              onSubmit={formResp.handleSubmit(submitResponsavel)}
-              isUploading={isUploading}
-            />
-          )}
-
-          {/* ── ESCOLINHA ── */}
-
-          {step === 2 && tipo === 'escolinha' && (
-            <form onSubmit={formEscolinha.handleSubmit(() => setStep(3))}>
-              <div className="font-display text-3xl sm:text-4xl text-neutral-400 mb-1.5 leading-none">03</div>
-              <h2 className="text-lg sm:text-xl font-medium mb-1">Dados da escolinha</h2>
-              <p className="text-xs sm:text-sm text-neutral-500 mb-4 sm:mb-6">Informações da instituição.</p>
-              <div className="flex flex-col gap-3 sm:gap-4">
                 <FieldGroup>
-                  <Label>Nome da escolinha</Label>
-                  <Input placeholder="Ex: Escolinha Grêmio FBPA" error={formEscolinha.formState.errors.nome?.message} {...formEscolinha.register('nome')} />
+                  <Label>Descrição</Label>
+                  <Textarea placeholder="Conte a história do clube, filosofia de jogo..." className="min-h-[100px]" {...formEscolinha.register('descricao')} />
                 </FieldGroup>
-                <FieldGroup>
-                  <Label>CNPJ</Label>
-                  <Input placeholder="00.000.000/0000-00" error={formEscolinha.formState.errors.cnpj?.message}
-                    {...formEscolinha.register('cnpj', { onChange: e => { e.target.value = formatCNPJ(e.target.value) } })} />
-                </FieldGroup>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <FieldGroup>
-                    <Label>E-mail</Label>
-                    <Input type="email" placeholder="contato@escolinha.com.br" 
-                      readOnly={isGoogle}
-                      className={isGoogle ? 'bg-neutral-50 cursor-not-allowed' : ''}
-                      error={formEscolinha.formState.errors.email?.message} {...formEscolinha.register('email')} />
-                  </FieldGroup>
-                  <FieldGroup>
-                    <Label>Telefone</Label>
-                    <Input type="tel" placeholder="(51) 3333-3333" error={formEscolinha.formState.errors.telefone?.message}
-                      {...formEscolinha.register('telefone', { 
-                        onChange: e => { 
-                          const val = formatPhone(e.target.value);
-                          e.target.value = val;
-                          formEscolinha.setValue('telefone', val);
-                        } 
-                      })} />
-                  </FieldGroup>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <FieldGroup>
-                    <Label>Estado</Label>
-                    <Select options={ESTADOS} placeholder="Selecione" error={formEscolinha.formState.errors.estado?.message} 
-                      {...formEscolinha.register('estado', { onChange: () => formEscolinha.setValue('cidade', '') })} />
-                  </FieldGroup>
-                  <FieldGroup>
-                    <Label>Cidade</Label>
-                    <CitySelect
-                      estado={formEscolinha.watch('estado')}
-                      {...formEscolinha.register('cidade')}
-                      value={formEscolinha.watch('cidade')}
-                      onChange={e => formEscolinha.setValue('cidade', e.target.value, { shouldValidate: true })}
-                      error={formEscolinha.formState.errors.cidade?.message}
-                    />
-                  </FieldGroup>
-                </div>
-                {!isGoogle && (
-                  <div className="grid grid-cols-2 gap-3">
-                    <FieldGroup>
-                      <Label>Senha</Label>
-                      <Input type="password" placeholder="Mín. 8 caracteres" error={formEscolinha.formState.errors.password?.message} {...formEscolinha.register('password')} />
-                    </FieldGroup>
-                    <FieldGroup>
-                      <Label>Confirmar</Label>
-                      <Input type="password" error={formEscolinha.formState.errors.confirmPassword?.message} {...formEscolinha.register('confirmPassword')} />
-                    </FieldGroup>
-                  </div>
-                )}
-                <label className="flex items-start gap-3 cursor-pointer">
-                  <input type="checkbox" className="mt-0.5 accent-green-500" {...formEscolinha.register('aceito_termos')} />
-                  <span className="text-xs text-neutral-500">Li e aceito os <button type="button" onClick={() => setShowLegal({ type: 'terms', open: true })} className="underline">termos de uso</button> e <button type="button" onClick={() => setShowLegal({ type: 'privacy', open: true })} className="underline">política de privacidade</button></span>
-                </label>
-                {formEscolinha.formState.errors.aceito_termos && (
-                  <p className="text-xs text-red-500">{formEscolinha.formState.errors.aceito_termos.message}</p>
-                )}
-              </div>
-              <div className="flex justify-between mt-5 sm:mt-6">
-                <Button variant="outline" type="button" onClick={() => setStep(1)}><ArrowLeft size={14} /> Voltar</Button>
-                <Button variant="dark" type="submit">Continuar <ArrowRight size={14} /></Button>
-              </div>
-            </form>
-          )}
-
-          {step === 3 && tipo === 'escolinha' && (
-            <div className="flex flex-col gap-5">
-              <div className="font-display text-3xl sm:text-4xl text-neutral-400 mb-1.5 leading-none">04</div>
-              <h2 className="text-lg sm:text-xl font-medium mb-1">Sobre a Escolinha</h2>
-              <p className="text-xs sm:text-sm text-neutral-500 mb-4 sm:mb-6">Crie um perfil atrativo para as famílias.</p>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <div className="w-20 h-20 rounded-xl bg-neutral-100 border border-neutral-200 flex items-center justify-center flex-shrink-0 overflow-hidden text-neutral-400">
-                  {escolinhaPreview ? <img src={escolinhaPreview} alt="Logo" className="w-full h-full object-cover" /> : <ImageIcon size={24} />}
-                </div>
-                <FieldGroup className="flex-1">
-                  <Label>Logo / Emblema</Label>
-                  <Input type="file" accept="image/*" className="pt-2" onChange={e => {
-                    const file = e.target.files?.[0]
-                    if (file) {
-                      formEscolinha.setValue('foto_url', file, { shouldValidate: true })
-                      const reader = new FileReader()
-                      reader.onload = ev => setEscolinhaPreview(ev.target?.result as string)
-                      reader.readAsDataURL(file)
-                    } else { formEscolinha.setValue('foto_url', null); setEscolinhaPreview('') }
-                  }} />
-                </FieldGroup>
-              </div>
-              <FieldGroup>
-                <Label>Descrição</Label>
-                <Textarea placeholder="Conte a história do clube, filosofia de jogo..." className="min-h-[100px]" {...formEscolinha.register('descricao')} />
-              </FieldGroup>
-              <div className="space-y-3">
-                <Label>Fotos da Estrutura (Máx. 3)</Label>
-                <Input type="file" accept="image/*" multiple className="pt-2" onChange={async e => {
-                  if (e.target.files && e.target.files.length > 0) {
-                    const newFiles = Array.from(e.target.files)
-                    const remainingSlots = 3 - escolinhaFotos.length
-                    if (remainingSlots <= 0) {
-                      toast.error('Máximo de 3 fotos atingido')
-                      return
+                <div className="space-y-3">
+                  <Label>Fotos da Estrutura (Máx. 3)</Label>
+                  <Input type="file" accept="image/*" multiple className="pt-2" onChange={async e => {
+                    if (e.target.files && e.target.files.length > 0) {
+                      const newFiles = Array.from(e.target.files)
+                      const remainingSlots = 3 - escolinhaFotos.length
+                      if (remainingSlots <= 0) {
+                        toast.error('Máximo de 3 fotos atingido')
+                        return
+                      }
+                      const selected = newFiles.slice(0, remainingSlots)
+                      const withPreview = await Promise.all(selected.map(f => new Promise(resolve => {
+                        const reader = new FileReader()
+                        reader.onload = ev => resolve(Object.assign(f, { preview: ev.target?.result as string }))
+                        reader.readAsDataURL(f)
+                      })))
+                      setEscolinhaFotos(prev => [...prev, ...withPreview] as any[])
                     }
-                    const selected = newFiles.slice(0, remainingSlots)
-                    const withPreview = await Promise.all(selected.map(f => new Promise(resolve => {
-                      const reader = new FileReader()
-                      reader.onload = ev => resolve(Object.assign(f, { preview: ev.target?.result as string }))
-                      reader.readAsDataURL(f)
-                    })))
-                    setEscolinhaFotos(prev => [...prev, ...withPreview] as any[])
-                  }
-                }} />
-                {escolinhaFotos.length > 0 && (
-                  <div className="flex gap-3 mt-2 flex-wrap">
-                    {escolinhaFotos.map((file: any, i: number) => (
-                      <div key={i} className="relative group">
-                        <img src={file.preview || file} className="w-20 h-20 rounded-xl object-cover border border-neutral-200" alt="Preview" />
-                        <button type="button" onClick={() => setEscolinhaFotos(escolinhaFotos.filter((_, idx) => idx !== i))}
-                          className="absolute top-1 right-1 bg-white/90 text-red-500 rounded-md p-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Trash2 size={12} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <div className="flex justify-between mt-4">
-                <Button variant="outline" type="button" onClick={() => setStep(2)}><ArrowLeft size={14} /> Voltar</Button>
-                <Button variant="dark" type="button" onClick={() => setStep(4)}>Continuar <ArrowRight size={14} /></Button>
-              </div>
-            </div>
-          )}
-
-          {step === 4 && tipo === 'escolinha' && (
-            <div>
-              <div className="font-display text-3xl sm:text-4xl text-neutral-400 mb-1.5 leading-none">05</div>
-              <h2 className="text-lg sm:text-xl font-medium mb-1">Tudo certo!</h2>
-              <p className="text-xs sm:text-sm text-neutral-500 mb-4 sm:mb-6">Revise suas informações e finalize o cadastro.</p>
-              <div className="bg-neutral-50 border border-neutral-200 rounded-2xl p-5 mb-6">
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="w-16 h-16 rounded-xl bg-white border border-neutral-200 overflow-hidden flex-shrink-0">
-                    {escolinhaPreview ? <img src={escolinhaPreview} alt="Logo" className="w-full h-full object-cover" /> : <Building2 className="w-full h-full p-4 text-neutral-300" />}
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-neutral-900 leading-tight">{formEscolinha.watch('nome') || 'Nome não informado'}</h3>
-                    <p className="text-xs text-neutral-500 uppercase font-bold tracking-wider mt-1">{formEscolinha.watch('cnpj') || 'CNPJ não informado'}</p>
-                  </div>
+                  }} />
+                  {escolinhaFotos.length > 0 && (
+                    <div className="flex gap-3 mt-2 flex-wrap">
+                      {escolinhaFotos.map((file: any, i: number) => (
+                        <div key={i} className="relative group">
+                          <img src={file.preview || file} className="w-20 h-20 rounded-xl object-cover border border-neutral-200" alt="Preview" />
+                          <button type="button" onClick={() => setEscolinhaFotos(escolinhaFotos.filter((_, idx) => idx !== i))}
+                            className="absolute top-1 right-1 bg-white/90 text-red-500 rounded-md p-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
+                <div className="flex justify-between mt-4">
+                  <Button variant="outline" type="button" onClick={() => setStep(2)}><ArrowLeft size={14} /> Voltar</Button>
+                  <Button variant="dark" type="button" onClick={() => setStep(4)}>Continuar <ArrowRight size={14} /></Button>
+                </div>
+              </div>
+            )}
 
-                <div className="grid grid-cols-1 gap-4">
-                  <div className="flex items-start gap-3">
-                    <MapPin size={16} className="text-green-600 mt-0.5" />
+            {step === 4 && tipo === 'escolinha' && (
+              <div>
+                <div className="font-display text-3xl sm:text-4xl text-neutral-400 mb-1.5 leading-none">05</div>
+                <h2 className="text-lg sm:text-xl font-medium mb-1">Tudo certo!</h2>
+                <p className="text-xs sm:text-sm text-neutral-500 mb-4 sm:mb-6">Revise suas informações e finalize o cadastro.</p>
+                <div className="bg-neutral-50 border border-neutral-200 rounded-2xl p-5 mb-6">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="w-16 h-16 rounded-xl bg-white border border-neutral-200 overflow-hidden flex-shrink-0">
+                      {escolinhaPreview ? <img src={escolinhaPreview} alt="Logo" className="w-full h-full object-cover" /> : <Building2 className="w-full h-full p-4 text-neutral-300" />}
+                    </div>
                     <div>
-                      <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Localização</div>
-                      <div className="text-sm text-neutral-700">{formEscolinha.watch('cidade')}, {formEscolinha.watch('estado')}</div>
+                      <h3 className="font-bold text-neutral-900 leading-tight">{formEscolinha.watch('nome') || 'Nome não informado'}</h3>
+                      <p className="text-xs text-neutral-500 uppercase font-bold tracking-wider mt-1">{formEscolinha.watch('cnpj') || 'CNPJ não informado'}</p>
                     </div>
                   </div>
-                  <div className="flex items-start gap-3">
-                    <Mail size={16} className="text-green-600 mt-0.5" />
-                    <div>
-                      <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">E-mail de contato</div>
-                      <div className="text-sm text-neutral-700">{formEscolinha.watch('email')}</div>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <Phone size={16} className="text-green-600 mt-0.5" />
-                    <div>
-                      <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">WhatsApp / Telefone</div>
-                      <div className="text-sm text-neutral-700">{formEscolinha.watch('telefone')}</div>
-                    </div>
-                  </div>
-                  {formEscolinha.watch('descricao') && (
+
+                  <div className="grid grid-cols-1 gap-4">
                     <div className="flex items-start gap-3">
-                      <FileText size={16} className="text-green-600 mt-0.5" />
+                      <MapPin size={16} className="text-green-600 mt-0.5" />
                       <div>
-                        <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Sobre</div>
-                        <div className="text-sm text-neutral-700 line-clamp-2 leading-relaxed">{formEscolinha.watch('descricao')}</div>
+                        <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Localização</div>
+                        <div className="text-sm text-neutral-700">{formEscolinha.watch('cidade')}, {formEscolinha.watch('estado')}</div>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <Mail size={16} className="text-green-600 mt-0.5" />
+                      <div>
+                        <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">E-mail de contato</div>
+                        <div className="text-sm text-neutral-700">{formEscolinha.watch('email')}</div>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <Phone size={16} className="text-green-600 mt-0.5" />
+                      <div>
+                        <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">WhatsApp / Telefone</div>
+                        <div className="text-sm text-neutral-700">{formEscolinha.watch('telefone')}</div>
+                      </div>
+                    </div>
+                    {formEscolinha.watch('descricao') && (
+                      <div className="flex items-start gap-3">
+                        <FileText size={16} className="text-green-600 mt-0.5" />
+                        <div>
+                          <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Sobre</div>
+                          <div className="text-sm text-neutral-700 line-clamp-2 leading-relaxed">{formEscolinha.watch('descricao')}</div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {escolinhaFotos.length > 0 && (
+                    <div className="mt-6 pt-6 border-t border-neutral-200/50">
+                      <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-3">Estrutura ({escolinhaFotos.length}/3)</div>
+                      <div className="flex gap-2">
+                        {escolinhaFotos.map((file, i) => (
+                          <img key={i} src={file.preview} className="w-12 h-12 rounded-lg object-cover border border-neutral-200" alt="Estrutura" />
+                        ))}
                       </div>
                     </div>
                   )}
                 </div>
-
-                {escolinhaFotos.length > 0 && (
-                  <div className="mt-6 pt-6 border-t border-neutral-200/50">
-                    <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-3">Estrutura ({escolinhaFotos.length}/3)</div>
-                    <div className="flex gap-2">
-                       {escolinhaFotos.map((file, i) => (
-                         <img key={i} src={file.preview} className="w-12 h-12 rounded-lg object-cover border border-neutral-200" alt="Estrutura" />
-                       ))}
-                    </div>
-                  </div>
+                {serverError && (
+                  <div className="bg-red-50 border border-red-200 text-red-600 text-xs sm:text-sm rounded-lg px-3 sm:px-4 py-2.5 mb-4">{serverError}</div>
                 )}
+                <div className="flex justify-between">
+                  <Button variant="outline" type="button" onClick={() => setStep(3)}><ArrowLeft size={14} /> Voltar</Button>
+                  <Button variant="dark" loading={isUploading || formEscolinha.formState.isSubmitting} type="button"
+                    onClick={formEscolinha.handleSubmit(submitEscolinha)}>
+                    {isUploading ? 'Criando...' : 'Criar conta'} <ArrowRight size={14} />
+                  </Button>
+                </div>
               </div>
-              {serverError && (
-                <div className="bg-red-50 border border-red-200 text-red-600 text-xs sm:text-sm rounded-lg px-3 sm:px-4 py-2.5 mb-4">{serverError}</div>
-              )}
-              <div className="flex justify-between">
-                <Button variant="outline" type="button" onClick={() => setStep(3)}><ArrowLeft size={14} /> Voltar</Button>
-                <Button variant="dark" loading={isUploading || formEscolinha.formState.isSubmitting} type="button"
-                  onClick={formEscolinha.handleSubmit(submitEscolinha)}>
-                  {isUploading ? 'Criando...' : 'Criar conta'} <ArrowRight size={14} />
-                </Button>
-              </div>
-            </div>
-          )}
+            )}
           </div>
 
           <p className="text-center text-sm text-neutral-400 mt-12 mb-8">
             Já possui uma conta? {' '}
             {isGoogle ? (
-              <button 
-                type="button" 
+              <button
+                type="button"
                 onClick={async () => {
                   await supabase.auth.signOut()
                   router.push('/login')
@@ -946,7 +949,7 @@ function CadastroForm() {
             {/* Modal Header */}
             <div className="p-6 sm:p-8 border-b border-neutral-100 flex items-center justify-between shrink-0 bg-white">
               <div className="flex items-center gap-4">
-                <button 
+                <button
                   onClick={() => setShowLegal({ ...showLegal, open: false })}
                   className="w-10 h-10 rounded-full border border-neutral-200 flex items-center justify-center hover:bg-neutral-50 transition-colors"
                 >
@@ -962,7 +965,7 @@ function CadastroForm() {
                   </h2>
                 </div>
               </div>
-              <button 
+              <button
                 onClick={() => setShowLegal({ ...showLegal, open: false })}
                 className="text-neutral-400 hover:text-neutral-900 transition-colors hidden sm:block"
               >
@@ -974,7 +977,7 @@ function CadastroForm() {
             <div className="flex-1 overflow-y-auto p-6 sm:p-12 custom-scrollbar bg-neutral-50/30">
               <div className="max-w-3xl mx-auto">
                 <p className="text-sm text-neutral-400 mb-10 border-l-2 border-green-500 pl-4 py-1 italic bg-green-50/50 rounded-r-md">
-                  {showLegal.type === 'terms' 
+                  {showLegal.type === 'terms'
                     ? 'Revisado e em vigor a partir de Março de 2026. Documento em compliance com o Marco Civil da Internet.'
                     : 'A proteção dos dados das crianças, jovens e responsáveis é a raiz e fundação do ScoutJR.'}
                 </p>
@@ -984,7 +987,7 @@ function CadastroForm() {
 
             {/* Modal Footer */}
             <div className="p-6 border-t border-neutral-100 flex justify-end shrink-0 bg-white gap-3">
-               <Button variant="outline" onClick={() => setShowLegal({ ...showLegal, open: false })}>
+              <Button variant="outline" onClick={() => setShowLegal({ ...showLegal, open: false })}>
                 Fechar
               </Button>
             </div>
@@ -1033,7 +1036,7 @@ function AtletaSteps({ step, setStep, data, setData, loading, serverError, onSub
         <div className="grid grid-cols-2 gap-3">
           <FieldGroup>
             <Label>Estado</Label>
-            <Select options={ESTADOS} placeholder="Selecione" value={data.estado} 
+            <Select options={ESTADOS} placeholder="Selecione" value={data.estado}
               onChange={(e: any) => setData({ ...data, estado: e.target.value, cidade: '' })} />
           </FieldGroup>
           <FieldGroup>
@@ -1107,7 +1110,7 @@ function AtletaSteps({ step, setStep, data, setData, loading, serverError, onSub
     </div>
   )
 
-  // Step 5 — Mídia (com preview correto)
+  // Step 5 — Mídia
   if (step === 5) {
     const addVideo = () => setData({ ...data, videos: [...data.videos, { url: '', titulo: '' }] })
     const updateVideo = (i: number, field: string, val: string) => {
@@ -1371,7 +1374,7 @@ function SuccessScreen({ tipo }: { tipo: Tipo }) {
       <div className="hidden lg:flex lg:w-1/2 bg-[#0A1A14] relative items-center justify-center p-12 overflow-hidden">
         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
         <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] rounded-full bg-green-500/10 blur-[120px]"></div>
-        
+
         <div className="relative z-10 max-w-lg text-center">
           <div className="w-24 h-24 bg-green-500/20 border border-green-500/30 rounded-full flex items-center justify-center mx-auto mb-10 backdrop-blur-xl animate-pulse">
             <CircleCheckBig size={48} className="text-green-400" />
@@ -1391,7 +1394,7 @@ function SuccessScreen({ tipo }: { tipo: Tipo }) {
           <div className="lg:hidden text-green-500 flex justify-center mb-8 bg-green-50 w-20 h-20 rounded-full items-center mx-auto shadow-sm">
             <CircleCheckBig size={40} />
           </div>
-          
+
           <h2 className="text-3xl font-bold text-neutral-900 mb-4 leading-tight">
             Cadastro Recebido!
           </h2>
@@ -1400,7 +1403,7 @@ function SuccessScreen({ tipo }: { tipo: Tipo }) {
               ? 'O perfil do atleta foi enviado e agora passará por uma análise técnica e de segurança de nossa equipe.'
               : 'Os dados da sua escolinha foram enviados e estão em fase de aprovação.'}
           </p>
-          
+
           <div className="bg-amber-50 border border-amber-100/50 rounded-2xl p-6 mb-10 text-left shadow-sm">
             <div className="flex gap-3 items-start">
               <div className="bg-amber-100 p-2 rounded-lg shrink-0 mt-0.5">
@@ -1409,7 +1412,7 @@ function SuccessScreen({ tipo }: { tipo: Tipo }) {
               <div>
                 <p className="text-sm font-bold text-amber-800 mb-1">O que acontece agora?</p>
                 <p className="text-xs text-amber-700/80 leading-relaxed">
-                  Nossa equipe revisará as informações em até <strong>24 horas úteis</strong>. 
+                  Nossa equipe revisará as informações em até <strong>24 horas úteis</strong>.
                   Você receberá um e-mail de confirmação assim que o acesso total for liberado.
                 </p>
               </div>
