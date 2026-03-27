@@ -70,11 +70,11 @@ function CadastroForm() {
         const { data: { user } } = await supabase.auth.getUser()
         if (user) {
           const meta = user.user_metadata
+          const avatarUrl = meta?.avatar_url || meta?.picture || ''
+          setAvatarError(false) // Reset avatar error for fresh load
           setGoogleUser({
             name: meta?.full_name || meta?.name || '',
-            // ✅ FIX: Google OAuth pode retornar a foto em 'picture' (OpenID Connect)
-            // ou em 'avatar_url' (mapeamento do Supabase). Verifica os dois.
-            avatar_url: meta?.avatar_url || meta?.picture || '',
+            avatar_url: avatarUrl,
             email: user.email || '',
           })
         }
