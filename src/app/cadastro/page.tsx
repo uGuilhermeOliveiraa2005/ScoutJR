@@ -602,7 +602,7 @@ function CadastroForm() {
                     <div className="flex items-center gap-4 p-3 bg-green-50 border border-green-200 rounded-xl">
                       <img src={googleUser.avatar_url} alt="" referrerPolicy="no-referrer" onError={() => setAvatarError(true)} className="w-14 h-14 rounded-full border-2 border-green-300 object-cover" />
                       <div>
-                        <div className="text-sm font-bold text-green-800">{googleUser.name}</div>
+                        <div className="text-sm font-bold text-green-800">Logado via Google</div>
                         <div className="text-[11px] text-green-600">{googleUser.email}</div>
                       </div>
                     </div>
@@ -632,19 +632,15 @@ function CadastroForm() {
                       </FieldGroup>
                     </div>
                   )}
-                  {!isGoogle && (
-                    <FieldGroup>
-                      <Label>Nome completo</Label>
-                      <Input placeholder="João da Silva" error={formResp.formState.errors.nome?.message} {...formResp.register('nome')} />
-                    </FieldGroup>
-                  )}
+                  <FieldGroup>
+                    <Label>Nome completo</Label>
+                    <Input placeholder="João da Silva" error={formResp.formState.errors.nome?.message} {...formResp.register('nome')} />
+                  </FieldGroup>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {!isGoogle && (
-                      <FieldGroup>
-                        <Label>E-mail</Label>
-                        <Input type="email" placeholder="joao@email.com" error={formResp.formState.errors.email?.message} {...formResp.register('email')} />
-                      </FieldGroup>
-                    )}
+                    <FieldGroup>
+                      <Label>E-mail</Label>
+                      <Input type="email" placeholder="joao@email.com" readOnly={isGoogle} className={isGoogle ? 'bg-neutral-100 cursor-not-allowed' : ''} error={formResp.formState.errors.email?.message} {...formResp.register('email')} />
+                    </FieldGroup>
                     <FieldGroup>
                       <Label>Telefone / WhatsApp</Label>
                       <Input type="tel" placeholder="(51) 9 9999-9999"
