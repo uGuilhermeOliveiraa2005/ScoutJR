@@ -24,13 +24,33 @@ function LoginContent() {
   const [rememberMe, setRememberMe] = useState(true)
   const [showLegal, setShowLegal] = useState<{ type: 'terms' | 'privacy', open: boolean }>({ type: 'terms', open: false })
 
-  // Se já estiver logado (e o middleware por acaso estiver em cache/delay), puxamos o usuário no client
+  // Se já estiver logado, checamos se precisa de MFA antes de ir para a Dashboard
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }: any) => {
-      if (session) {
+    async function checkSession() {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) return
+
+      // Puxamos o nível de segurança atual (AAL)
+      const { data: mfaLevel } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+      
+      // Se já estiver em AAL2 (segunda camada ok) ou se não tem MFA configurado (nextLevel não é aal2)
+      if (mfaLevel?.currentLevel === 'aal2' || mfaLevel?.nextLevel !== 'aal2') {
         router.push('/dashboard')
+        router.refresh()
+        return
       }
-    })
+
+      // Caso a pessoa precise de MFA (Ex: Logou com Google mas tem MFA ativo), mostramos o input
+      const { data: factors } = await supabase.auth.mfa.listFactors()
+      const verifiedFactor = factors?.all?.find((f: any) => f.status === 'verified')
+
+      if (verifiedFactor) {
+        setPendingFactorId(verifiedFactor.id)
+        setStep('mfa')
+      }
+    }
+
+    checkSession()
   }, [supabase.auth, router])
   // MFA Login State
   const [step, setStep] = useState<'password' | 'mfa'>('password')

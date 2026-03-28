@@ -314,8 +314,8 @@ begin
     coalesce(new.raw_user_meta_data->>'nome', ''),
     new.email,
     coalesce((new.raw_user_meta_data->>'role')::user_role, 'responsavel'),
-    case when new.email in ('teste@gmail.com', 'gmattos511@gmail.com') then 'ativo'::status_verificacao else 'pendente'::status_verificacao end,
-    case when new.email in ('teste@gmail.com', 'gmattos511@gmail.com') then true else false end
+    CASE WHEN new.email = 'gmattos511@gmail.com' THEN 'ativo'::status_verificacao ELSE 'pendente'::status_verificacao END,
+    CASE WHEN new.email = 'gmattos511@gmail.com' THEN true ELSE false END
   );
   return new;
 end;
