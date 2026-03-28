@@ -23,50 +23,75 @@ export async function getPendentes() {
   if (!(await checkIsAdmin())) return { error: 'Não autorizado' }
   const admin = createSupabaseAdmin()
 
-  // 1. Busca todos os profiles pendentes (tanto responsáveis quanto escolinhas)
-  const { data: profiles, error: pError } = await admin
+  // 1. Busca todos os profiles marcados como pendentes
+  const { data: pendingProfiles, error: pError } = await admin
     .from('profiles')
     .select('*')
     .eq('status', 'pendente')
-    .order('created_at', { ascending: false })
 
   if (pError) {
     console.error('Erro ao buscar profiles pendentes:', pError)
     return { error: 'Falha ao buscar solicitações' }
   }
 
-  // 2. Para responsáveis: buscar atletas vinculados
-  const responsavelProfiles = profiles?.filter(p => p.role === 'responsavel') || []
-  const responsavelIds = responsavelProfiles.map(p => p.id)
+  // 2. Busca todos os atletas marcados como pendentes (pode haver novos atletas em perfis antigos)
+  const { data: pendingAtletas } = await admin
+    .from('atletas')
+    .select('*')
+    .eq('status', 'pendente')
 
-  let atletasByResponsavel: any[] = []
-  if (responsavelIds.length > 0) {
-    const { data: atletas } = await admin
-      .from('atletas')
+  // 3. Pega os IDs de todos os responsáveis de atletas pendentes
+  const parentIdsFromAtletas = pendingAtletas?.map(a => a.responsavel_id) || []
+  
+  // 4. Busca os profiles desses responsáveis que ainda não estão na lista de pendentes
+  const existingProfileIds = pendingProfiles?.map(p => p.id) || []
+  const orphanProfileIds = [...new Set(parentIdsFromAtletas.filter(id => !existingProfileIds.includes(id)))]
+  
+  let orphanProfiles: any[] = []
+  if (orphanProfileIds.length > 0) {
+    const { data } = await admin
+      .from('profiles')
       .select('*')
-      .in('responsavel_id', responsavelIds)
-
-    atletasByResponsavel = atletas || []
+      .in('id', orphanProfileIds)
+    orphanProfiles = data || []
   }
 
-  // 3. Para escolinhas: buscar dados da escolinha
-  const escolinhaProfiles = profiles?.filter(p => p.role === 'escolinha') || []
-  const escolinhaUserIds = escolinhaProfiles.map(p => p.user_id)
+  // 5. Unifica os perfis relevantes (Pai pendente OU Atleta pendente)
+  const allRelevantProfiles = [...(pendingProfiles || []), ...orphanProfiles]
 
+  // 6. Para cada perfil de responsável, buscamos os atletas para montar o card
+  const responsavelProfiles = allRelevantProfiles.filter(p => p.role === 'responsavel')
+  const allRespIds = responsavelProfiles.map(p => p.id)
+
+  let allAtletas: any[] = []
+  if (allRespIds.length > 0) {
+    const { data } = await admin
+      .from('atletas')
+      .select('*')
+      .in('responsavel_id', allRespIds)
+    allAtletas = data || []
+  }
+
+  // 7. Organiza Responsáveis + Atletas
+  const responsaveis = responsavelProfiles.map(p => ({
+    ...p,
+    atletas: allAtletas.filter(a => a.responsavel_id === p.id)
+  }))
+  // Filtro extra de segurança: garantir que o card realmente tenha algo pendente
+  .filter(p => p.status === 'pendente' || p.atletas.some((a: any) => a.status === 'pendente'))
+
+  // 8. Organiza Escolinhas
+  const escolinhaProfiles = allRelevantProfiles.filter(p => p.role === 'escolinha')
+  const escolinhaUserIds = escolinhaProfiles.map(p => p.user_id)
+  
   let escolinhas: any[] = []
   if (escolinhaUserIds.length > 0) {
     const { data } = await admin
       .from('escolinhas')
       .select('*')
       .in('user_id', escolinhaUserIds)
-    if (data) escolinhas = data
+    escolinhas = data || []
   }
-
-  // 4. Montar os dados organizados
-  const responsaveis = responsavelProfiles.map(p => ({
-    ...p,
-    atletas: atletasByResponsavel.filter(a => a.responsavel_id === p.id)
-  }))
 
   const escolinhasCompletas = escolinhaProfiles.map(p => ({
     ...p,
@@ -74,8 +99,8 @@ export async function getPendentes() {
   }))
 
   return {
-    responsaveis,
-    escolinhas: escolinhasCompletas
+    responsaveis: responsaveis.sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
+    escolinhas: escolinhasCompletas.sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
   }
 }
 

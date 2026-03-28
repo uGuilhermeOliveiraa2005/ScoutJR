@@ -38,6 +38,7 @@ export default async function AdminVerificacoesPage() {
         userRole="admin"
         userId={user.id}
         userFotoUrl={profile.foto_url}
+        isAdmin={true}
       />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         <div className="mb-8">

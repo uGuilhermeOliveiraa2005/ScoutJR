@@ -115,11 +115,13 @@ export function NavbarDashboard({
     router.refresh()
   }
 
+  const isActuallyAdmin = isAdmin || userRole === 'admin'
+
   const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={14} /> },
     { href: '/busca', label: 'Explorar', icon: <Search size={14} /> },
     { href: '/ranking', label: 'Ranking', icon: <Trophy size={14} /> },
-    ...(isAdmin ? [{ href: '/admin/verificacoes', label: 'Admin', icon: <ShieldCheck size={14} /> }] : []),
+    ...(isActuallyAdmin ? [{ href: '/admin/verificacoes', label: 'Admin', icon: <ShieldCheck size={14} /> }] : []),
     { href: '/configuracoes', label: 'Config.', icon: <Settings size={14} /> },
   ]
 
@@ -210,7 +212,8 @@ export function NavbarDashboard({
                 {item.href === '/dashboard' && <LayoutDashboard size={20} />}
                 {item.href === '/busca' && <Search size={20} />}
                 {item.href === '/ranking' && <Trophy size={20} />}
-                {item.href === '/admin/verificacoes' && <ShieldCheck size={20} />}
+                {isActuallyAdmin && item.href === '/admin/verificacoes' && <ShieldCheck size={20} />}
+                {!isActuallyAdmin && item.href === '/admin/verificacoes' && null}
                 {item.href === '/configuracoes' && <Settings size={20} />}
               </span>
               <span className="text-[9px] font-medium leading-none">{item.label}</span>
