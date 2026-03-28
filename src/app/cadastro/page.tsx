@@ -205,24 +205,28 @@ function CadastroForm() {
         }
       }
 
-      // 4. Buscar o profile criado pelo trigger
-      // Aguarda um momento para o trigger rodar
+      // 4. Usar a RPC complete_registration para definir o role corretamente
+      // Essa RPC é SECURITY DEFINER e bypassa o trigger de bloqueio de role.
+      // Aguarda um momento para o trigger handle_new_user criar o profile base.
       await new Promise(r => setTimeout(r, 1200))
 
-      const { data: profile } = await supabase
-        .from('profiles')
-        .update({
-          nome: data.nome,
-          telefone: data.telefone,
-          role: 'responsavel',
-          ...(foto_resp_url && { foto_url: foto_resp_url })
+      const { data: rpcResult, error: rpcError } = await supabase
+        .rpc('complete_registration', {
+          p_role: 'responsavel',
+          p_nome: data.nome,
+          p_telefone: data.telefone,
+          p_foto_url: foto_resp_url,
         })
-        .eq('user_id', userId!)
-        .select('id')
-        .single()
 
-      if (!profile) {
-        // Profile ainda não criado — continua mesmo assim
+      if (rpcError) {
+        console.error('Erro na RPC complete_registration:', rpcError)
+        setServerError('Erro ao finalizar cadastro. Tente novamente.')
+        toast.error('Erro ao finalizar cadastro. Tente novamente.')
+        return
+      }
+
+      const profileId = rpcResult?.profile_id
+      if (!profileId) {
         setDone(true)
         return
       }
@@ -231,7 +235,7 @@ function CadastroForm() {
       const { data: atletaCriado, error: atletaError } = await supabase
         .from('atletas')
         .insert({
-          responsavel_id: profile.id,
+          responsavel_id: profileId,
           nome: atletaData.nomeAtleta,
           descricao: atletaData.descricao,
           data_nascimento: atletaData.dataNascimento,
@@ -353,36 +357,34 @@ function CadastroForm() {
         }
       }
 
-      // 3. Aguarda o trigger criar os registros base
+      // 3. Aguarda o trigger handle_new_user criar o profile base
       await new Promise(r => setTimeout(r, 1500))
 
-      // 4. Atualiza a escolinha com os dados completos (descricao, fotos, etc.)
-      if (userId) {
-        await supabase
-          .from('escolinhas')
-          .update({
-            estado: data.estado,
-            cidade: data.cidade,
-            cnpj: data.cnpj ?? null,
-            foto_url: foto_url_final,
-            logo_url: foto_url_final,
-            descricao: data.descricao,
-            fotos_adicionais: fotos_adicionais_final,
-          })
-          .eq('user_id', userId)
+      // 4. Usar a RPC complete_registration para definir o role E criar a escolinha
+      // Essa RPC é SECURITY DEFINER e resolve o bug onde o trigger bloqueava
+      // a alteração de role de 'responsavel' para 'escolinha'.
+      const { data: rpcResult, error: rpcError } = await supabase
+        .rpc('complete_registration', {
+          p_role: 'escolinha',
+          p_nome: data.nome,
+          p_telefone: data.telefone,
+          p_foto_url: foto_url_final || null,
+          p_estado: data.estado,
+          p_cidade: data.cidade,
+          p_cnpj: data.cnpj || null,
+          p_descricao: data.descricao || null,
+          p_logo_url: foto_url_final || null,
+          p_fotos_adicionais: fotos_adicionais_final,
+        })
 
-        // Atualiza os dados de contato no profile (necessário para o proxy não bloquear o usuário)
-        await supabase
-          .from('profiles')
-          .update({
-            nome: data.nome,
-            telefone: data.telefone,
-            role: 'escolinha',
-            ...(foto_url_final && { foto_url: foto_url_final })
-          })
-          .eq('user_id', userId)
+      if (rpcError) {
+        console.error('Erro na RPC complete_registration:', rpcError)
+        setServerError('Erro ao finalizar cadastro. Tente novamente.')
+        toast.error('Erro ao finalizar cadastro. Tente novamente.')
+        return
       }
 
+      console.log('Cadastro escolinha completo:', rpcResult)
       toast.success('Conta de escolinha criada com sucesso!')
       setDone(true)
     } catch {

@@ -136,24 +136,24 @@ export async function aprovarPerfil(profileId: string) {
       console.error('Erro ao aprovar atletas do responsável:', atletaError)
     }
 
-    // Notificação
+    // Notificação de aprovação para responsável
     try {
       await admin.from('notificacoes').insert({
         user_id: profile.user_id,
-        titulo: 'Conta Aprovada! 🎉',
-        mensagem: 'Sua conta e o perfil do(s) atleta(s) foram aprovados. Bem-vindo ao ScoutJR!',
+        titulo: '✅ Conta aprovada — Bem-vindo ao ScoutJR!',
+        mensagem: 'Ótima notícia! Sua conta e o perfil do(s) atleta(s) foram verificados e aprovados pela nossa equipe. O perfil já está visível para as escolinhas na plataforma.',
         tipo: 'sistema',
         metadata: { type: 'profile_approved' }
       })
     } catch {}
 
   } else if (profile.role === 'escolinha') {
-    // Notificação para escolinha
+    // Notificação de aprovação para escolinha
     try {
       await admin.from('notificacoes').insert({
         user_id: profile.user_id,
-        titulo: 'Escolinha Aprovada! 🏟️',
-        mensagem: 'Sua escolinha foi aprovada! Comece agora a buscar talentos no ScoutJR.',
+        titulo: '✅ Escolinha verificada — Acesso liberado!',
+        mensagem: 'Sua escolinha foi verificada e aprovada pela nossa equipe! Agora você pode buscar atletas, salvar favoritos e demonstrar interesse nos perfis. Boas descobertas!',
         tipo: 'sistema',
         metadata: { type: 'profile_approved' }
       })
