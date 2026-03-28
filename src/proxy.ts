@@ -6,7 +6,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-const PROTECTED_ROUTES = ['/dashboard', '/perfil', '/busca', '/configuracoes', '/admin', '/checkout']
+const PROTECTED_ROUTES = ['/dashboard', '/perfil', '/busca', '/configuracoes', '/admin', '/checkout', '/aguardando-verificacao']
 const AUTH_ROUTES = ['/login', '/cadastro', '/recuperar-senha']
 const ADMIN_ROUTES = ['/admin']
 
@@ -49,8 +49,15 @@ export default async function proxy(request: NextRequest) {
     // Permite que usuários recém-autenticados via Google finalizem seu cadastro
     const isGoogleSignup = pathname === '/cadastro' && request.nextUrl.searchParams.get('method') === 'google'
 
-    if (!isGoogleSignup) {
-      const { data: profile } = await supabase.from('profiles').select('telefone').eq('user_id', user.id).single()
+    const { data: profile } = await supabase.from('profiles').select('telefone').eq('user_id', user.id).single()
+
+    if (isGoogleSignup) {
+      if (profile && profile.telefone) {
+        // Se já tem conta completa, não pode burlar lendo o form de cadastro de novo:
+        return NextResponse.redirect(new URL('/dashboard', request.url))
+      }
+      // Se n tem telefone, deixa o request seguir (entra pra renderizar o React do cadastro)
+    } else {
       if (!profile || !profile.telefone) {
         return NextResponse.redirect(new URL('/cadastro?method=google', request.url))
       }
