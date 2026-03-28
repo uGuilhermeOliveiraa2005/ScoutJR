@@ -136,28 +136,25 @@ export async function aprovarPerfil(profileId: string) {
       console.error('Erro ao aprovar atletas do responsável:', atletaError)
     }
 
-    // Notificação de aprovação para responsável
-    try {
-      await admin.from('notificacoes').insert({
-        user_id: profile.user_id,
-        titulo: '✅ Conta aprovada — Bem-vindo ao ScoutJR!',
-        mensagem: 'Ótima notícia! Sua conta e o perfil do(s) atleta(s) foram verificados e aprovados pela nossa equipe. O perfil já está visível para as escolinhas na plataforma.',
-        tipo: 'sistema',
-        metadata: { type: 'profile_approved' }
-      })
-    } catch {}
+  // 3. Notificação universal de aprovação
+  // Enviamos para todos, garantindo que o usuário sinta que o processo terminou.
+  const isEscolinha = profile.role === 'escolinha'
+  const notifTitulo = isEscolinha ? '✅ Escolinha verificada — Acesso liberado!' : '✅ Conta aprovada — Bem-vindo ao ScoutJR!'
+  const notifMensagem = isEscolinha 
+    ? 'Sua escolinha foi verificada e aprovada pela nossa equipe! Agora você pode buscar atletas, salvar favoritos e demonstrar interesse nos perfis. Boas descobertas!'
+    : 'Ótima notícia! Sua conta e o perfil do(s) atleta(s) foram verificados e aprovados pela nossa equipe. O perfil já está visível para as escolinhas na plataforma.'
 
-  } else if (profile.role === 'escolinha') {
-    // Notificação de aprovação para escolinha
-    try {
-      await admin.from('notificacoes').insert({
-        user_id: profile.user_id,
-        titulo: '✅ Escolinha verificada — Acesso liberado!',
-        mensagem: 'Sua escolinha foi verificada e aprovada pela nossa equipe! Agora você pode buscar atletas, salvar favoritos e demonstrar interesse nos perfis. Boas descobertas!',
-        tipo: 'sistema',
-        metadata: { type: 'profile_approved' }
-      })
-    } catch {}
+  const { error: notifError } = await admin.from('notificacoes').insert({
+    user_id: profile.user_id,
+    titulo: notifTitulo,
+    mensagem: notifMensagem,
+    tipo: 'sistema',
+    metadata: { type: 'profile_approved' }
+  })
+
+  if (notifError) {
+    console.error('Erro ao inserir notificação de aprovação:', notifError)
+  }
   }
 
   revalidatePath('/admin/verificacoes')
