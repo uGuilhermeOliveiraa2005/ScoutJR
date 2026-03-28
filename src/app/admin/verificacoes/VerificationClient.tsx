@@ -50,25 +50,25 @@ export function VerificationClient({ initialData }: any) {
   const totalEsc = data.escolinhas?.length || 0
 
   return (
-    <div className="flex flex-col gap-6 animate-in fade-in duration-500 relative">
-      <div className="flex items-center gap-2 p-1.5 bg-white border border-neutral-200 rounded-xl w-fit shadow-sm">
+    <div className="flex flex-col gap-4 sm:gap-6 animate-in fade-in duration-500 relative">
+      <div className="flex items-center gap-1.5 p-1 bg-white border border-neutral-200 rounded-xl w-full sm:w-fit shadow-sm overflow-x-auto no-scrollbar">
         <button
           onClick={() => setTab('responsaveis')}
           className={cn(
-            "px-6 py-2.5 rounded-lg text-sm font-medium transition-all flex items-center gap-2",
-            tab === 'responsaveis' ? "bg-green-50 text-green-800 shadow-sm border border-green-200" : "text-neutral-500 hover:text-neutral-700 hover:bg-neutral-50"
+            "flex-1 sm:flex-initial px-4 sm:px-6 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 whitespace-nowrap",
+            tab === 'responsaveis' ? "bg-green-600 text-white shadow-sm" : "text-neutral-500 hover:text-neutral-700 hover:bg-neutral-50"
           )}
         >
-          <Users size={16} /> Responsáveis + Atletas ({totalResp})
+          <Users size={16} /> <span className="hidden xs:inline">Responsáveis</span> ({totalResp})
         </button>
         <button
           onClick={() => setTab('escolinhas')}
           className={cn(
-            "px-6 py-2.5 rounded-lg text-sm font-medium transition-all flex items-center gap-2",
-            tab === 'escolinhas' ? "bg-green-50 text-green-800 shadow-sm border border-green-200" : "text-neutral-500 hover:text-neutral-700 hover:bg-neutral-50"
+            "flex-1 sm:flex-initial px-4 sm:px-6 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 whitespace-nowrap",
+            tab === 'escolinhas' ? "bg-green-600 text-white shadow-sm" : "text-neutral-500 hover:text-neutral-700 hover:bg-neutral-50"
           )}
         >
-          <Landmark size={16} /> Escolinhas ({totalEsc})
+          <Landmark size={16} /> <span className="hidden xs:inline">Escolinhas</span> ({totalEsc})
         </button>
       </div>
 
@@ -156,10 +156,10 @@ function ResponsavelCard({ responsavel, onApprove, onReject, loading }: any) {
               <span className="text-[9px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full uppercase tracking-widest">Pendente</span>
             </div>
             <h3 className="text-xl font-display text-neutral-900 uppercase leading-none mb-1 truncate">{responsavel.nome}</h3>
-            <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-neutral-500">
-              <span className="flex items-center gap-1"><Mail size={12} /> {responsavel.email}</span>
-              <span className="flex items-center gap-1"><Smartphone size={12} /> {responsavel.telefone || 'N/A'}</span>
-              <span className="flex items-center gap-1"><Clock size={12} /> {new Date(responsavel.created_at).toLocaleDateString('pt-BR')}</span>
+            <div className="flex flex-col sm:flex-row flex-wrap gap-x-4 gap-y-2 text-[11px] sm:text-xs text-neutral-500">
+              <span className="flex items-center gap-1.5"><Mail size={12} className="shrink-0" /> <span className="truncate">{responsavel.email}</span></span>
+              <span className="flex items-center gap-1.5"><Smartphone size={12} className="shrink-0" /> {responsavel.telefone || 'N/A'}</span>
+              <span className="flex items-center gap-1.5"><Clock size={12} className="shrink-0" /> {new Date(responsavel.created_at).toLocaleDateString('pt-BR')}</span>
             </div>
           </div>
         </div>
@@ -228,7 +228,7 @@ function AtletaSection({ atleta }: { atleta: any }) {
         {/* Grid de dados */}
         <div>
           <SectionLabel label="Dados Físicos & Posição" num={1} />
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 bg-white p-4 rounded-lg border border-neutral-100">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 bg-white p-3 sm:p-4 rounded-lg border border-neutral-100">
             <InfoBadge label="Posição" value={POSICAO_LABEL?.[atleta.posicao] || atleta.posicao} />
             <InfoBadge label="Pé" value={atleta.pe_dominante} />
             <InfoBadge label="Altura" value={atleta.altura_cm ? `${atleta.altura_cm}cm` : 'N/A'} />
@@ -247,7 +247,7 @@ function AtletaSection({ atleta }: { atleta: any }) {
         {/* Habilidades */}
         <div>
           <SectionLabel label="Habilidades" num={3} />
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-4 bg-white p-4 rounded-lg border border-neutral-100">
+          <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-4 bg-white p-4 rounded-lg border border-neutral-100">
             <SkillBar label="Técnica" value={atleta.habilidade_tecnica} />
             <SkillBar label="Físico" value={atleta.habilidade_fisico} />
             <SkillBar label="Velocidade" value={atleta.habilidade_velocidade} />
@@ -284,7 +284,7 @@ function AtletaSection({ atleta }: { atleta: any }) {
         {/* Config de Privacidade */}
         <div>
           <SectionLabel label="Configurações" num={5} />
-          <div className="grid grid-cols-3 gap-3 bg-white p-4 rounded-lg border border-neutral-100">
+          <div className="grid grid-cols-1 xs:grid-cols-3 gap-2 sm:gap-3 bg-white p-3 sm:p-4 rounded-lg border border-neutral-100">
             <ConfigBadge label="Visível" active={atleta.visivel} />
             <ConfigBadge label="Exibe Cidade" active={atleta.exibir_cidade} />
             <ConfigBadge label="Mensagens" active={atleta.aceitar_mensagens} />
@@ -322,7 +322,7 @@ function EscolinhaCard({ profile, onApprove, onReject, loading }: any) {
         {/* Dados corporativos */}
         <div>
           <SectionLabel label="Dados Corporativos" num={1} />
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 bg-neutral-50 p-4 rounded-lg border border-neutral-100">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 bg-neutral-50 p-4 rounded-lg border border-neutral-100">
             <InfoItem icon={<Activity size={14} />} label="CNPJ" value={esc?.cnpj || 'Não informado'} />
             <InfoItem icon={<Clock size={14} />} label="Registro" value={new Date(profile.created_at).toLocaleDateString('pt-BR')} />
             <InfoItem icon={<Smartphone size={14} />} label="Telefone" value={profile.telefone || 'N/A'} />
