@@ -147,6 +147,43 @@ export async function getAdminAtletasList(search?: string) {
   return { atletas: data || [], error }
 }
 
+export async function getAdminDetail(tipo: string, id: string) {
+  if (!(await checkIsAdmin())) return { error: 'Não autorizado' }
+  const admin = createSupabaseAdmin()
+
+  if (tipo === 'atleta') {
+    const { data: atleta } = await admin
+      .from('atletas')
+      .select('*, responsavel:profiles(*)')
+      .eq('id', id)
+      .single()
+    
+    if (atleta) {
+      const { data: stats } = await admin.from('atleta_stats').select('*').eq('atleta_id', id)
+      const { data: videos } = await admin.from('atleta_videos').select('*').eq('atleta_id', id)
+      const { data: conquistas } = await admin.from('atleta_conquistas').select('*').eq('atleta_id', id)
+      return { tipo: 'atleta', data: { ...atleta, stats, videos, conquistas } }
+    }
+  }
+
+  if (tipo === 'responsavel' || tipo === 'clube' || tipo === 'escolinha') {
+    const { data: profile } = await admin.from('profiles').select('*').eq('id', id).single()
+    if (!profile) return { error: 'Perfil não encontrado' }
+
+    if (profile.role === 'responsavel') {
+      const { data: atletas } = await admin.from('atletas').select('*').eq('responsavel_id', id)
+      return { tipo: 'responsavel', data: { ...profile, atletas: atletas || [] } }
+    }
+
+    if (profile.role === 'clube' || profile.role === 'escolinha') {
+      const { data: escolinha } = await admin.from('escolinhas').select('*').eq('user_id', profile.user_id).single()
+      return { tipo: 'escolinha', data: { ...profile, escolinha } }
+    }
+  }
+
+  return { error: 'Entidade não encontrada' }
+}
+
 // ═══════════════════════════════════════════════════════════════
 // AÇÕES DE APROVAÇÃO/REJEIÇÃO
 // ═══════════════════════════════════════════════════════════════

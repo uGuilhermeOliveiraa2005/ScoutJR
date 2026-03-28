@@ -5,11 +5,12 @@ import {
   Users, Landmark, ShieldCheck, TrendingUp, Search, 
   ArrowRight, Mail, Clock, Check, X, 
   AlertTriangle, Filter, LayoutDashboard, UserPlus, 
-  ChevronRight, Activity, Smartphone, Eye, Trophy
+  ChevronRight, Activity, Smartphone, Eye, Trophy, ExternalLink
 } from 'lucide-react'
+import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
 import { Avatar } from '@/components/ui/Avatar'
-import { cn } from '@/lib/utils'
+import { cn, POSICAO_LABEL } from '@/lib/utils'
 import { toast } from 'sonner'
 import { 
   getAdminDashboardData, 
@@ -323,9 +324,9 @@ function UsersTab({ users, search, setSearch, loading }: any) {
                   {new Date(u.created_at).toLocaleDateString('pt-BR')}
                 </td>
                 <td className="px-6 py-4 text-right">
-                  <button className="p-2 text-neutral-300 hover:text-green-600 transition-colors">
+                  <Link href={`/admin/detalhes/${u.role}/${u.id}`} className="p-2 text-neutral-300 hover:text-green-600 transition-all">
                     <Eye size={16} />
-                  </button>
+                  </Link>
                 </td>
               </tr>
             ))}
@@ -361,10 +362,14 @@ function StatCard({ label, value, icon, color }: any) {
 // Card unificado para as Verificações (simplificado do original)
 function AdminCard({ item, type, onApprove, onReject, loading }: any) {
   const isEscolinha = type === 'escolinha'
+  const detailUrl = `/admin/detalhes/${type}/${item.id}`
+
   return (
-    <div className={cn("bg-white border border-neutral-200 rounded-2xl overflow-hidden shadow-sm transition-all", loading && "opacity-60 scale-[0.98]")}>
+    <div className={cn("bg-white border border-neutral-200 rounded-2xl overflow-hidden shadow-sm transition-all hover:border-green-300", loading && "opacity-60 scale-[0.98]")}>
        <div className={cn("px-6 py-4 flex flex-col sm:flex-row sm:items-center gap-4", isEscolinha ? "bg-amber-50/50" : "bg-green-50/50")}>
-          <Avatar src={item.foto_url} nome={item.nome} size="xl" />
+          <Link href={detailUrl} className="flex-shrink-0">
+            <Avatar src={item.foto_url} nome={item.nome} size="xl" />
+          </Link>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
                <span className={cn("text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest", isEscolinha ? "bg-amber-100 text-amber-700" : "bg-green-100 text-green-700")}>
@@ -372,7 +377,11 @@ function AdminCard({ item, type, onApprove, onReject, loading }: any) {
                </span>
                {item.status === 'pendente' && <span className="text-[9px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full uppercase tracking-widest">Aprovação Necessária</span>}
             </div>
-            <h3 className="text-xl font-display text-neutral-900 uppercase truncate">{item.nome}</h3>
+            <Link href={detailUrl} className="group">
+              <h3 className="text-xl font-display text-neutral-900 uppercase truncate group-hover:text-green-700 flex items-center gap-2 transition-colors">
+                {item.nome} <ExternalLink size={14} className="opacity-0 group-hover:opacity-100" />
+              </h3>
+            </Link>
             <p className="text-xs text-neutral-500">{item.email} • {new Date(item.created_at).toLocaleDateString()}</p>
           </div>
           <div className="flex items-center gap-2">
@@ -385,20 +394,25 @@ function AdminCard({ item, type, onApprove, onReject, loading }: any) {
           </div>
        </div>
        
-       {!isEscolinha && item.atletas?.length > 0 && (
-         <div className="px-6 py-4 border-t border-neutral-100 bg-white flex flex-col gap-3">
-            <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Atletas Vinculados</p>
-            {item.atletas.map((atleta: any) => (
-              <div key={atleta.id} className="flex items-center gap-3 p-2 bg-neutral-50 rounded-lg border border-neutral-100">
-                <Avatar src={atleta.foto_url} nome={atleta.nome} size="sm" />
-                <div className="flex-1">
-                  <p className="text-xs font-bold text-neutral-700">{atleta.nome.toUpperCase()}</p>
-                  <p className="text-[10px] text-neutral-500">{atleta.posicao} • {atleta.status}</p>
-                </div>
-              </div>
-            ))}
-         </div>
-       )}
+        {!isEscolinha && item.atletas?.length > 0 && (
+          <div className="px-6 py-4 border-t border-neutral-100 bg-white flex flex-col gap-3">
+             <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Atletas Vinculados</p>
+             {item.atletas.map((atleta: any) => (
+               <Link 
+                 key={atleta.id} 
+                 href={`/admin/detalhes/atleta/${atleta.id}`}
+                 className="flex items-center gap-3 p-2 bg-neutral-50 rounded-lg border border-neutral-100 hover:bg-green-50 hover:border-green-200 transition-all group"
+               >
+                 <Avatar src={atleta.foto_url} nome={atleta.nome} size="sm" />
+                 <div className="flex-1">
+                   <p className="text-xs font-bold text-neutral-700 group-hover:text-green-800 transition-colors uppercase">{atleta.nome}</p>
+                   <p className="text-[10px] text-neutral-500">{POSICAO_LABEL[atleta.posicao] || atleta.posicao} • {atleta.status}</p>
+                 </div>
+                 <ExternalLink size={12} className="text-neutral-300 group-hover:text-green-500" />
+               </Link>
+             ))}
+          </div>
+        )}
     </div>
   )
 }
