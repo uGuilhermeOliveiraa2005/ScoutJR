@@ -23,9 +23,11 @@ export async function GET(request: NextRequest) {
           .eq('user_id', user.id)
           .single()
 
-        // Se o perfil existe mas não tem telefone, é um convite para completar o cadastro
         if (!profile || !profile.telefone) {
           return NextResponse.redirect(`${origin}/cadastro?method=google`)
+        } else if (next.includes('/cadastro')) {
+          // Se o perfil já está completo, ignora a intenção de cadastro e manda pro dashboard
+          return NextResponse.redirect(`${origin}/dashboard`)
         }
       }
       

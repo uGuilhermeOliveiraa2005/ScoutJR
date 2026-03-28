@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { loginSchema, type LoginInput } from '@/lib/validations'
 import { createSupabaseBrowser } from '@/lib/supabase'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useState, Suspense } from 'react'
+import { useState, Suspense, useEffect } from 'react'
 import { Mail, Lock, LogIn, ArrowLeft, ShieldCheck, Zap, Star } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input, Label, FieldGroup } from '@/components/ui/Form'
@@ -24,6 +24,14 @@ function LoginContent() {
   const [rememberMe, setRememberMe] = useState(true)
   const [showLegal, setShowLegal] = useState<{ type: 'terms' | 'privacy', open: boolean }>({ type: 'terms', open: false })
 
+  // Se já estiver logado (e o middleware por acaso estiver em cache/delay), puxamos o usuário no client
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }: any) => {
+      if (session) {
+        router.push('/dashboard')
+      }
+    })
+  }, [supabase.auth, router])
   // MFA Login State
   const [step, setStep] = useState<'password' | 'mfa'>('password')
   const [mfaCode, setMfaCode] = useState('')
