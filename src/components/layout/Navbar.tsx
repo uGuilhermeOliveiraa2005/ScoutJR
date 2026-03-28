@@ -121,7 +121,7 @@ export function NavbarDashboard({
     { href: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={14} /> },
     { href: '/busca', label: 'Explorar', icon: <Search size={14} /> },
     { href: '/ranking', label: 'Ranking', icon: <Trophy size={14} /> },
-    ...(isActuallyAdmin ? [{ href: '/admin/verificacoes', label: 'Admin', icon: <ShieldCheck size={14} /> }] : []),
+    ...(isActuallyAdmin ? [{ href: '/admin', label: 'Admin', icon: <ShieldCheck size={14} /> }] : []),
     { href: '/configuracoes', label: 'Config.', icon: <Settings size={14} /> },
   ]
 
