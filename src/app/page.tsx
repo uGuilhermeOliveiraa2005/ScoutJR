@@ -98,7 +98,11 @@ function HeroSection() {
               </Link>
             </div>
 
-            <div className="flex flex-wrap justify-center lg:justify-start gap-6 sm:gap-8 mt-12">
+            <div className="mt-6 flex flex-wrap items-center justify-center lg:justify-start gap-2 text-sm text-neutral-400">
+              Já tem uma conta? <Link href="/login" className="text-green-400 font-medium hover:text-green-300 transition-colors">Entrar no painel</Link>
+            </div>
+
+            <div className="flex flex-wrap justify-center lg:justify-start gap-6 sm:gap-8 mt-10">
               {[
                 { icon: <Check size={16} className="text-green-400" />, label: '100% Gratuito' },
                 { icon: <Shield size={16} className="text-green-400" />, label: 'Privacidade Total' },
@@ -115,8 +119,8 @@ function HeroSection() {
           </div>
 
           {/* Premium Glassmorphism Player Card */}
-          <div className="lg:col-span-5 relative mt-10 lg:mt-0 flex justify-center lg:justify-end perspective-1000">
-            <div className="relative w-full max-w-[340px] transform-gpu lg:rotate-[-2deg] hover:rotate-0 transition-all duration-500 hover:scale-105 z-20">
+          <div className="lg:col-span-5 relative mt-10 lg:mt-0 flex justify-center lg:justify-end perspective-1000 pointer-events-none">
+            <div className="relative w-full max-w-[340px] transform-gpu lg:rotate-[-2deg] z-20">
               <HeroPremiumCard />
             </div>
             
@@ -232,7 +236,7 @@ function HeroPremiumCard() {
           </div>
           <span className="text-[10px] font-medium text-neutral-300">+3 interessados</span>
         </div>
-        <button className="bg-white text-[#0A1A14] text-xs font-bold px-4 py-2 rounded-lg hover:bg-neutral-200 transition-colors">
+        <button className="bg-white text-[#0A1A14] text-xs font-bold px-4 py-2 rounded-lg transition-colors cursor-default">
           Ver perfil completo
         </button>
       </div>
@@ -260,12 +264,14 @@ async function StatsSection() {
     { 
       num: `${(totalAtletas || 0).toLocaleString()}`, 
       label: 'Atletas Cadastrados',
-      icon: <Users size={24} className="text-green-500" />
+      icon: <Users size={24} className="text-green-500" />,
+      href: '/busca?tab=atletas'
     },
     { 
       num: `${(totalEscolinhas || 0).toLocaleString()}`, 
       label: 'Escolinhas Parceiras',
-      icon: <Target size={24} className="text-amber-500" />
+      icon: <Target size={24} className="text-amber-500" />,
+      href: '/busca?tab=escolinhas'
     },
     { 
       num: `${((totalVisitas || 0) + 1240).toLocaleString()}`, 
@@ -283,15 +289,27 @@ async function StatsSection() {
     <div className="bg-neutral-50 pt-10 pb-16 sm:py-24 relative z-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-          {stats.map((stat, i) => (
-            <div key={i} className="bg-white rounded-[2rem] sm:rounded-3xl p-5 sm:p-8 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-neutral-100 flex flex-col items-center justify-center text-center group hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-300">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-neutral-50 mb-3 sm:mb-4 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                {stat.icon}
+          {stats.map((stat, i) => {
+            const content = (
+              <>
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-neutral-50 mb-3 sm:mb-4 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                  {stat.icon}
+                </div>
+                <div className="font-display text-3xl sm:text-4xl lg:text-5xl text-neutral-900 mb-1 sm:mb-2">{stat.num}</div>
+                <div className="text-[10px] sm:text-xs md:text-sm font-medium text-neutral-500 uppercase tracking-widest leading-tight">{stat.label}</div>
+              </>
+            )
+            const className = "bg-white rounded-[2rem] sm:rounded-3xl p-5 sm:p-8 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-neutral-100 flex flex-col items-center justify-center text-center group hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-300"
+            return stat.href ? (
+              <Link key={i} href={stat.href} className={className}>
+                {content}
+              </Link>
+            ) : (
+              <div key={i} className={className}>
+                {content}
               </div>
-              <div className="font-display text-3xl sm:text-4xl lg:text-5xl text-neutral-900 mb-1 sm:mb-2">{stat.num}</div>
-              <div className="text-[10px] sm:text-xs md:text-sm font-medium text-neutral-500 uppercase tracking-widest leading-tight">{stat.label}</div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       </div>
     </div>
