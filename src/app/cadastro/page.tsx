@@ -1202,13 +1202,19 @@ function AtletaSteps({ step, setStep, data, setData, loading, serverError, onSub
           <Label>Fotos Adicionais (Galeria)</Label>
           <Input type="file" accept="image/*" multiple className="pt-2" onChange={async e => {
             if (e.target.files && e.target.files.length > 0) {
-              const selected = Array.from(e.target.files).slice(0, 3)
+              const newFiles = Array.from(e.target.files)
+              const remainingSlots = 3 - data.fotosAdicionais.length
+              if (remainingSlots <= 0) {
+                toast.error('Máximo de 3 fotos atingido')
+                return
+              }
+              const selected = newFiles.slice(0, remainingSlots)
               const withPreview = await Promise.all(selected.map(f => new Promise(resolve => {
                 const reader = new FileReader()
                 reader.onload = ev => resolve(Object.assign(f, { preview: ev.target?.result as string }))
                 reader.readAsDataURL(f)
               })))
-              setData({ ...data, fotosAdicionais: withPreview as any[] })
+              setData({ ...data, fotosAdicionais: [...data.fotosAdicionais, ...withPreview] as any[] })
             }
           }} />
           {data.fotosAdicionais.length > 0 && (
