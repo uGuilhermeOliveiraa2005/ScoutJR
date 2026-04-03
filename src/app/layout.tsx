@@ -52,23 +52,23 @@ export default async function RootLayout({
           {children}
 
           {/*
-            Toaster Premium: Modais animados dinâmicos que sumirão em 4s
+            Toaster Premium Elite
           */}
           <Toaster
             position="top-center"
             duration={4000}
             expand={false}
             toastOptions={{
-              className: "font-display border-0 p-1.5 flex gap-3 items-center rounded-full animate-slide-up shadow-[0_20px_50px_-12px_rgba(0,0,0,0.15)] w-auto max-w-[90vw] lg:max-w-md backdrop-blur-2xl transition-all",
+              className: "font-display border-0 p-2 flex gap-4 items-center rounded-[2rem] animate-slide-up shadow-[0_40px_80px_-20px_rgba(0,0,0,0.6)] w-auto min-w-[320px] max-w-[90vw] lg:max-w-md backdrop-blur-3xl transition-all relative overflow-hidden group",
               classNames: {
-                toast: "bg-white/95 ring-1 ring-neutral-200 data-[type=success]:bg-green-50/95 data-[type=error]:bg-red-50/95 data-[type=success]:ring-green-400/40 data-[type=error]:ring-red-400/40",
-                content: "flex-1 flex flex-col py-2 pr-5 pl-1",
-                title: "text-[15px] sm:text-base font-black text-neutral-900 tracking-tight leading-tight",
-                description: "text-xs text-neutral-500 font-medium leading-relaxed mt-0.5",
-                actionButton: "bg-neutral-900 text-white rounded-xl px-4 py-2 text-[10px] sm:text-xs font-bold shadow-sm hover:bg-black transition-colors uppercase tracking-widest",
-                cancelButton: "bg-neutral-100 text-neutral-600 rounded-xl px-4 py-2 text-[10px] sm:text-xs font-bold hover:bg-neutral-200 transition-colors uppercase tracking-widest",
-                icon: "mt-0.5 w-10 h-10 rounded-full flex items-center justify-center shrink-0 ml-1 shadow-inner bg-white bg-opacity-50",
-                closeButton: "bg-white border text-sm border-neutral-200 text-neutral-400 hover:text-neutral-900 hover:bg-neutral-50 rounded-full transition-all shadow-sm flex items-center justify-center p-1"
+                toast: "bg-neutral-900/95 ring-1 ring-white/15 data-[type=success]:bg-gradient-to-r data-[type=success]:from-green-950/90 data-[type=success]:to-neutral-900/95 data-[type=error]:bg-gradient-to-r data-[type=error]:from-red-950/90 data-[type=error]:to-neutral-900/95 data-[type=success]:ring-green-500/40 data-[type=error]:ring-red-500/40 text-white",
+                content: "flex-1 flex flex-col py-2 pr-6 pl-1 z-10",
+                title: "text-[15px] sm:text-[17px] font-black text-white tracking-tight leading-tight",
+                description: "text-xs text-neutral-300 font-medium leading-relaxed mt-0.5",
+                actionButton: "bg-white text-neutral-900 rounded-xl px-4 py-2 text-[10px] sm:text-xs font-black shadow-sm hover:bg-neutral-200 transition-colors uppercase tracking-widest z-10",
+                cancelButton: "bg-neutral-800 text-neutral-300 rounded-xl px-4 py-2 text-[10px] sm:text-xs font-bold hover:bg-neutral-700 transition-colors uppercase tracking-widest z-10",
+                icon: "mt-0.5 w-12 h-12 rounded-full flex items-center justify-center shrink-0 ml-1 bg-gradient-to-br from-white/10 to-transparent border border-white/5 z-10 shadow-[0_0_20px_rgba(255,255,255,0.1)] text-white data-[type=success]:text-green-400 data-[type=success]:shadow-[0_0_30px_rgba(34,197,94,0.3)] data-[type=error]:text-red-400 data-[type=error]:shadow-[0_0_30px_rgba(239,68,68,0.3)]",
+                closeButton: "bg-neutral-800/50 border text-sm border-neutral-700 text-neutral-400 hover:text-white hover:bg-neutral-700 rounded-full transition-all shadow-sm flex items-center justify-center p-1 z-20 absolute top-3 right-3"
               }
             }}
           />
