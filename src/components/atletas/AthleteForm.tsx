@@ -138,7 +138,7 @@ export function AthleteForm({ initialData, athleteId, mode, onSubmit }: AthleteF
       </div>
 
       {/* Progress */}
-      <div className="mb-6">
+      <div className="mb-8">
         <div className="relative h-1.5 bg-neutral-200 rounded-full mb-3 overflow-hidden">
           <div
             className="h-full bg-green-400 rounded-full transition-all duration-500"
@@ -160,7 +160,7 @@ export function AthleteForm({ initialData, athleteId, mode, onSubmit }: AthleteF
         </div>
       </div>
 
-      <div className="bg-white border border-neutral-200 rounded-2xl p-6 sm:p-8 shadow-sm">
+      <div className="bg-white border-2 border-neutral-100 rounded-3xl p-6 sm:p-10 shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition-all">
         {step === 1 && <Step1 data={data} setData={setData} setStep={setStep} />}
         {step === 2 && <Step2 data={data} setData={setData} setStep={setStep} />}
         {step === 3 && <Step3 data={data} setData={setData} setStep={setStep} />}
@@ -215,11 +215,14 @@ function SuccessScreen({ mode, athleteId }: { mode: 'create' | 'edit'; athleteId
 
 function Step1({ data, setData, setStep, handleSubmit, loading, serverError }: any) {
 return (
-    <div className="flex flex-col gap-4">
-      <div className="font-display text-3xl sm:text-4xl text-neutral-400 mb-1.5 leading-none">03</div>
-      <h2 className="text-lg sm:text-xl font-medium mb-1">Dados do atleta</h2>
-      <p className="text-xs sm:text-sm text-neutral-500 mb-4 sm:mb-6">Apenas cidade e estado são exibidos publicamente.</p>
-      <div className="flex flex-col gap-3 sm:gap-4">
+    <div className="flex flex-col gap-5 sm:gap-6">
+      <div>
+        <div className="font-display text-5xl sm:text-6xl text-neutral-200/60 mb-2 leading-none select-none">03</div>
+        <h2 className="font-display text-2xl sm:text-3xl text-neutral-900 mb-1 tracking-tight">Dados do atleta</h2>
+        <p className="text-xs sm:text-sm text-neutral-500 font-medium font-sans">Apenas cidade e estado são exibidos publicamente.</p>
+      </div>
+      <div className="h-px w-full bg-gradient-to-r from-neutral-200 to-transparent" />
+      <div className="flex flex-col gap-4 sm:gap-5">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <FieldGroup>
             <Label>Nome do atleta</Label>
@@ -263,19 +266,27 @@ return (
         </div>
         <FieldGroup>
           <Label>Posição Principal</Label>
-          <div className="grid grid-cols-3 gap-1.5 sm:gap-2 mt-1">
-            {posicoes.map(p => (
-              <button key={p.value} type="button" onClick={() => setData({ ...data, posicao: p.value })}
-                className={cn('p-2 border rounded-lg text-center transition-all',
-                  data.posicao === p.value ? 'border-green-400 bg-green-50 text-green-700' : 'border-neutral-200 hover:border-neutral-300')}>
-                <div className="text-xs sm:text-sm font-medium">{p.label}</div>
-                <div className="text-[9px] sm:text-[10px] text-neutral-400">{p.sub}</div>
-              </button>
-            ))}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 mt-2">
+            {posicoes.map(p => {
+              const active = data.posicao === p.value
+              return (
+                <button key={p.value} type="button" onClick={() => setData({ ...data, posicao: p.value })}
+                  className={cn(
+                    'p-3 sm:p-4 border-2 rounded-2xl text-center transition-all duration-300 relative overflow-hidden group outline-none focus-visible:ring-4 focus-visible:ring-green-500/20',
+                    active 
+                      ? 'border-green-500 bg-green-50 shadow-[0_4px_15px_-3px_rgba(34,197,94,0.2)]' 
+                      : 'border-neutral-200 bg-white hover:border-neutral-300 hover:bg-neutral-50 shadow-sm'
+                  )}>
+                  {active && <div className="absolute inset-0 bg-gradient-to-br from-green-400/10 to-transparent pointer-events-none" />}
+                  <div className={cn("text-xs sm:text-sm font-bold transition-colors relative z-10", active ? "text-green-800" : "text-neutral-700 group-hover:text-neutral-900")}>{p.label}</div>
+                  <div className={cn("text-[10px] font-black uppercase tracking-widest transition-colors mt-0.5 relative z-10", active ? "text-green-600" : "text-neutral-400")}>{p.sub}</div>
+                </button>
+              )
+            })}
           </div>
         </FieldGroup>
       </div>
-      <div className="flex justify-between mt-5 sm:mt-6">
+      <div className="flex justify-between mt-6 sm:mt-8 pt-6 border-t border-neutral-100">
         <Button variant="outline" type="button" onClick={() => setStep(0)}><ArrowLeft size={14} /> Voltar</Button>
         <Button variant="dark" type="button"
           disabled={!data.nomeAtleta || !data.dataNascimento || !data.estado || !data.cidade || !data.descricao}
@@ -289,11 +300,14 @@ return (
 
 function Step2({ data, setData, setStep, handleSubmit, loading, serverError }: any) {
 return (
-    <div>
-      <div className="font-display text-3xl sm:text-4xl text-neutral-400 mb-1.5 leading-none">04</div>
-      <h2 className="text-lg sm:text-xl font-medium mb-1">Habilidades</h2>
-      <p className="text-xs sm:text-sm text-neutral-500 mb-4 sm:mb-6">Seja honesto. Escolinhas valorizam evolução.</p>
-      <div className="flex flex-col gap-4 sm:gap-5">
+    <div className="flex flex-col gap-5 sm:gap-6">
+      <div>
+        <div className="font-display text-5xl sm:text-6xl text-neutral-200/60 mb-2 leading-none select-none">04</div>
+        <h2 className="font-display text-2xl sm:text-3xl text-neutral-900 mb-1 tracking-tight">Habilidades</h2>
+        <p className="text-xs sm:text-sm text-neutral-500 font-medium font-sans">Seja honesto. Escolinhas valorizam evolução e sinceridade.</p>
+      </div>
+      <div className="h-px w-full bg-gradient-to-r from-neutral-200 to-transparent" />
+      <div className="flex flex-col gap-6 sm:gap-8 mt-2">
         {habilidades.map((h, i) => (
           <div key={h} className="flex items-center gap-3 sm:gap-4">
             <div className="w-24 sm:w-28 flex-shrink-0 text-xs sm:text-sm font-medium">{h}</div>
@@ -306,7 +320,7 @@ return (
           </div>
         ))}
       </div>
-      <div className="flex justify-between mt-5 sm:mt-6">
+      <div className="flex justify-between mt-6 sm:mt-8 pt-6 border-t border-neutral-100">
         <Button variant="outline" type="button" onClick={() => setStep(1)}><ArrowLeft size={14} /> Voltar</Button>
         <Button variant="dark" type="button" onClick={() => setStep(3)}>Continuar <ArrowRight size={14} /></Button>
       </div>
@@ -323,12 +337,13 @@ function Step3({ data, setData, setStep, handleSubmit, loading, serverError }: a
     const removeVideo = (i: number) => setData({ ...data, videos: data.videos.filter((_: any, idx: number) => idx !== i) })
 
     return (
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-5 sm:gap-6">
         <div>
-          <div className="font-display text-3xl sm:text-4xl text-neutral-400 mb-1.5 leading-none">05</div>
-          <h2 className="text-lg sm:text-xl font-medium mb-1">Fotos e vídeos</h2>
-          <p className="text-xs sm:text-sm text-neutral-500 mb-4 sm:mb-6">Perfis com vídeos recebem até 8× mais interesse.</p>
+          <div className="font-display text-5xl sm:text-6xl text-neutral-200/60 mb-2 leading-none select-none">05</div>
+          <h2 className="font-display text-2xl sm:text-3xl text-neutral-900 mb-1 tracking-tight">Fotos e vídeos</h2>
+          <p className="text-xs sm:text-sm text-neutral-500 font-medium font-sans">Perfis com vídeos e fotos chamam muito mais atenção dos olheiros.</p>
         </div>
+        <div className="h-px w-full bg-gradient-to-r from-neutral-200 to-transparent" />
 
         {/* Foto de Perfil */}
         <FieldGroup>
@@ -474,12 +489,13 @@ function Step4({ data, setData, setStep, handleSubmit, loading, serverError }: a
     const removeConquista = (i: number) => setData({ ...data, conquistas: data.conquistas.filter((_: any, idx: number) => idx !== i) })
 
     return (
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-5 sm:gap-6">
         <div>
-          <div className="font-display text-3xl sm:text-4xl text-neutral-400 mb-1.5 leading-none">06</div>
-          <h2 className="text-lg sm:text-xl font-medium mb-1">Conquistas</h2>
-          <p className="text-xs sm:text-sm text-neutral-500 mb-4 sm:mb-6">Torneios e prêmios que o atleta ganhou. (Opcional)</p>
+          <div className="font-display text-5xl sm:text-6xl text-neutral-200/60 mb-2 leading-none select-none">06</div>
+          <h2 className="font-display text-2xl sm:text-3xl text-neutral-900 mb-1 tracking-tight">Conquistas & História</h2>
+          <p className="text-xs sm:text-sm text-neutral-500 font-medium font-sans">Torneios e prêmios de destaque da carreira do atleta. (Opcional)</p>
         </div>
+        <div className="h-px w-full bg-gradient-to-r from-neutral-200 to-transparent" />
         <div className="space-y-4">
           {data.conquistas.map((c: any, i: number) => (
             <div key={i} className="bg-amber-50/50 p-4 rounded-xl border border-amber-100 shadow-sm">
@@ -533,11 +549,14 @@ function Step6({ data, setData, setStep, handleSubmit, loading, serverError }: a
       { key: 'mensagens', icon: <MessageCircle size={14} />, title: 'Receber mensagens', sub: 'Contato direto das escolinhas' },
     ]
     return (
+    <div className="flex flex-col gap-5 sm:gap-6">
       <div>
-        <div className="font-display text-3xl sm:text-4xl text-neutral-400 mb-1.5 leading-none">08</div>
-        <h2 className="text-lg sm:text-xl font-medium mb-1">Privacidade</h2>
-        <p className="text-xs sm:text-sm text-neutral-500 mb-4 sm:mb-6">Você controla tudo. Pode alterar a qualquer momento.</p>
-        <div className="border border-neutral-200 rounded-xl overflow-hidden mb-5 sm:mb-6">
+        <div className="font-display text-5xl sm:text-6xl text-neutral-200/60 mb-2 leading-none select-none">08</div>
+        <h2 className="font-display text-2xl sm:text-3xl text-neutral-900 mb-1 tracking-tight">Privacidade</h2>
+        <p className="text-xs sm:text-sm text-neutral-500 font-medium font-sans">Você tem o controle total. Altere sempre que quiser.</p>
+      </div>
+      <div className="h-px w-full bg-gradient-to-r from-neutral-200 to-transparent" />
+      <div className="border border-neutral-200 rounded-2xl overflow-hidden shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] mb-2 mt-2">
           {items.map((item, i) => (
             <div key={item.key} className={cn('flex items-center gap-3 sm:gap-4 p-3.5 sm:p-4', i < items.length - 1 && 'border-b border-neutral-100')}>
               <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-neutral-100 text-neutral-500 flex items-center justify-center flex-shrink-0">{item.icon}</div>

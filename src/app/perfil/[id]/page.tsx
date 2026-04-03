@@ -6,8 +6,8 @@ import { NavbarDashboard } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Navbar'
 import { Badge, SkillBar } from '@/components/ui/index'
 import { Avatar } from '@/components/ui/Avatar'
-import { POSICAO_LABEL, ESTADO_LABEL, calcularIdade } from '@/lib/utils'
-import { MapPin, Landmark, Star, Send, Trophy, Target, Award, Play, BarChart2, ArrowLeft, Edit2 } from 'lucide-react'
+import { POSICAO_LABEL, ESTADO_LABEL, calcularIdade, cn } from '@/lib/utils'
+import { MapPin, Landmark, Star, Send, Trophy, Target, Award, Play, BarChart2, ArrowLeft, Edit2, Scale, Ruler, Activity, Zap } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
 import { AthleteActions } from '@/components/atletas/AthleteActions'
@@ -116,20 +116,23 @@ export default async function PerfilAtletaPage({ params }: { params: Promise<{ i
 
             {/* Card Principal de Perfil */}
             <div className="bg-white border border-neutral-200 rounded-3xl overflow-hidden shadow-sm">
-              <div className="bg-green-100 px-5 py-6 flex items-center gap-4 relative overflow-hidden">
+              <div className="bg-gradient-to-br from-green-50 to-white px-6 py-8 flex items-center gap-6 relative overflow-hidden border-b border-green-100/50">
                 <Avatar
                   src={atleta.foto_url}
                   nome={atleta.nome}
                   size="xl"
-                  colorClass="bg-green-400 text-white"
-                  className="z-10 border-2 border-white shadow-sm flex-shrink-0"
+                  colorClass="bg-green-500 text-white"
+                  className="z-10 border-4 border-white shadow-xl flex-shrink-0 scale-110"
                 />
-                <div className="font-display text-7xl text-green-400/20 absolute right-4 -bottom-4 leading-none select-none pointer-events-none">
+                <div className="font-display text-8xl text-green-500/10 absolute right-4 -bottom-6 leading-none select-none pointer-events-none italic font-black">
                   {atleta.posicao}
                 </div>
                 <div className="flex-1 z-10 min-w-0">
-                  <h1 className="font-display text-2xl text-neutral-900 leading-tight mb-0.5 truncate">{atleta.nome}</h1>
-                  <p className="text-[10px] sm:text-xs text-neutral-500 font-bold uppercase tracking-widest truncate">{POSICAO_LABEL[atleta.posicao]}</p>
+                  <h1 className="font-display text-3xl text-neutral-900 leading-tight mb-1 truncate tracking-tight">{atleta.nome}</h1>
+                  <div className="flex items-center gap-2">
+                    <span className="inline-block w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                    <p className="text-[11px] text-neutral-500 font-black uppercase tracking-[0.2em] truncate">{POSICAO_LABEL[atleta.posicao]}</p>
+                  </div>
                 </div>
               </div>
               <div className="p-6">
@@ -255,12 +258,58 @@ export default async function PerfilAtletaPage({ params }: { params: Promise<{ i
             </Section>
 
             {(atleta.altura_cm || atleta.peso_kg) && (
-              <Section title="Dados físicos">
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  {atleta.altura_cm && <DataItem label="Altura" value={`${atleta.altura_cm}cm`} />}
-                  {atleta.peso_kg && <DataItem label="Peso" value={`${atleta.peso_kg}kg`} />}
-                  <DataItem label="Pé" value={atleta.pe_dominante === 'destro' ? 'Destro' : atleta.pe_dominante === 'canhoto' ? 'Canhoto' : 'Ambidestro'} />
-                  {atleta.posicao_secundaria && <DataItem label="Posição sec." value={POSICAO_LABEL[atleta.posicao_secundaria]} />}
+              <Section title="Avaliação Biométrica & Física" icon={<Activity size={16} className="text-green-600" />}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {atleta.altura_cm && (
+                    <BiometricCard 
+                      icon={<Ruler size={20} />} 
+                      label="Altura" 
+                      value={`${atleta.altura_cm}`} 
+                      unit="cm"
+                      color="green" 
+                    />
+                  )}
+                  {atleta.peso_kg && (
+                    <BiometricCard 
+                      icon={<Scale size={20} />} 
+                      label="Peso" 
+                      value={`${atleta.peso_kg}`} 
+                      unit="kg"
+                      color="amber" 
+                    />
+                  )}
+                  {atleta.altura_cm && atleta.peso_kg && (
+                    <BiometricCard 
+                      icon={<Zap size={20} />} 
+                      label="IMC (Corporal)" 
+                      value={(atleta.peso_kg / ((atleta.altura_cm / 100) ** 2)).toFixed(1)} 
+                      unit="Index"
+                      color="blue" 
+                    />
+                  )}
+                  <BiometricCard 
+                    icon={<Target size={20} />} 
+                    label="Pé Dominante" 
+                    value={atleta.pe_dominante === 'destro' ? 'Destro' : atleta.pe_dominante === 'canhoto' ? 'Canhoto' : 'Ambi'} 
+                    unit=""
+                    color="neutral" 
+                  />
+                </div>
+                
+                <div className="mt-6 p-4 rounded-2xl bg-neutral-900 text-white flex items-center justify-between shadow-xl">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
+                      <Star size={20} className="text-amber-400" fill="currentColor" />
+                    </div>
+                    <div>
+                      <div className="text-[10px] font-black uppercase tracking-widest text-neutral-400">Status Técnico</div>
+                      <div className="text-sm font-bold">Atleta em Alta Performance</div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-[10px] font-black uppercase tracking-widest text-neutral-400 font-sans">Nível Local</div>
+                    <div className="text-sm font-bold text-green-400">NÍVEL A</div>
+                  </div>
                 </div>
               </Section>
             )}
@@ -302,13 +351,38 @@ export default async function PerfilAtletaPage({ params }: { params: Promise<{ i
   )
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, icon, children }: { title: string; icon?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
-      <div className="px-4 sm:px-5 py-3 sm:py-3.5 border-b border-neutral-100">
-        <h2 className="text-xs sm:text-sm font-medium text-neutral-700">{title}</h2>
+    <div className="bg-white border-2 border-neutral-100 rounded-3xl overflow-hidden shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] transition-all hover:shadow-[0_8px_30px_rgba(0,0,0,0.05)]">
+      <div className="px-6 py-5 border-b border-neutral-100 flex items-center gap-3 bg-neutral-50/30">
+        {icon}
+        <h2 className="text-[11px] font-black text-neutral-500 uppercase tracking-[0.2em]">{title}</h2>
       </div>
-      <div className="p-4 sm:p-5">{children}</div>
+      <div className="p-6">{children}</div>
+    </div>
+  )
+}
+
+function BiometricCard({ icon, label, value, unit, color }: { icon: React.ReactNode; label: string; value: string; unit: string; color: 'green' | 'amber' | 'blue' | 'neutral' }) {
+  const colors = {
+    green: 'bg-green-50 text-green-600 border-green-100',
+    amber: 'bg-amber-50 text-amber-600 border-amber-100',
+    blue: 'bg-blue-50 text-blue-600 border-blue-100',
+    neutral: 'bg-neutral-50 text-neutral-600 border-neutral-200'
+  }
+
+  return (
+    <div className={cn("p-5 rounded-2xl border-2 flex flex-col gap-3 transition-all hover:scale-[1.02]", colors[color])}>
+      <div className="flex items-center justify-between">
+        <div className="p-2 rounded-xl bg-white shadow-sm">
+          {icon}
+        </div>
+        <div className="text-[10px] font-black uppercase tracking-widest opacity-60 font-sans">{label}</div>
+      </div>
+      <div className="flex items-baseline gap-1">
+        <span className="text-3xl font-black font-display tracking-tight leading-none">{value}</span>
+        <span className="text-xs font-bold font-sans opacity-70 uppercase tracking-tighter">{unit}</span>
+      </div>
     </div>
   )
 }

@@ -21,7 +21,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
       <div className="w-full">
         <div className="relative group">
           {leftIcon && (
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none z-10">
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none z-10 transition-colors group-focus-within:text-green-500">
               {leftIcon}
             </div>
           )}
@@ -29,11 +29,13 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             type={resolvedType}
             className={cn(
-              'w-full px-3 py-2.5 text-sm border rounded-lg bg-white text-neutral-900 outline-none transition-all placeholder:text-neutral-400 font-sans',
-              'focus:border-green-400 focus:ring-2 focus:ring-green-100',
-              error ? 'border-red-400 ring-2 ring-red-100 bg-red-50/10' : 'border-neutral-200 hover:border-neutral-300',
-              leftIcon && 'pl-9',
-              isPassword && 'pr-10',
+              'w-full px-4 py-3.5 text-[15px] border-2 rounded-xl bg-neutral-50/50 text-neutral-900 font-medium outline-none transition-all placeholder:text-neutral-400 placeholder:font-normal shadow-[0_2px_10px_-4px_rgba(0,0,0,0.02)]',
+              'focus:bg-white focus:border-green-500 focus:ring-[4px] focus:ring-green-500/15',
+              error 
+                ? 'border-red-400 focus:border-red-500 focus:ring-red-500/15 bg-red-50/30' 
+                : 'border-neutral-200/80 hover:border-neutral-300',
+              leftIcon && 'pl-11',
+              isPassword && 'pr-12',
               className
             )}
             {...props}
@@ -42,20 +44,19 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             <button
               type="button"
               onMouseDown={e => {
-                // Impede que o input perca foco ao clicar no botão
                 e.preventDefault()
               }}
               onClick={() => setShowPassword(v => !v)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 transition-colors z-20"
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 transition-colors z-20"
               tabIndex={-1}
               aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
             >
-              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              {showPassword ? <EyeOff size={18} strokeWidth={2.5} /> : <Eye size={18} strokeWidth={2.5} />}
             </button>
           )}
         </div>
         {error && (
-          <p className="mt-1 text-[10px] sm:text-xs text-red-500 font-medium animate-fade-in pl-1">
+          <p className="mt-1.5 text-xs text-red-500 font-bold animate-fade-in pl-1">
             {error}
           </p>
         )}
@@ -78,14 +79,16 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
       <textarea
         ref={ref}
         className={cn(
-          'w-full px-3 py-2.5 text-sm border rounded-lg bg-white text-neutral-900 outline-none transition-colors placeholder:text-neutral-400 resize-y min-h-[100px]',
-          'focus:border-green-400 focus:ring-2 focus:ring-green-100',
-          error ? 'border-red-400 ring-2 ring-red-100' : 'border-neutral-200',
+          'w-full px-4 py-3.5 text-[15px] border-2 rounded-xl bg-neutral-50/50 text-neutral-900 font-medium outline-none transition-all placeholder:text-neutral-400 placeholder:font-normal resize-y min-h-[120px] shadow-[0_2px_10px_-4px_rgba(0,0,0,0.02)]',
+          'focus:bg-white focus:border-green-500 focus:ring-[4px] focus:ring-green-500/15',
+          error 
+            ? 'border-red-400 focus:border-red-500 focus:ring-red-500/15 bg-red-50/30' 
+            : 'border-neutral-200/80 hover:border-neutral-300',
           className
         )}
         {...props}
       />
-      {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
+      {error && <p className="mt-1.5 text-xs text-red-500 font-bold pl-1">{error}</p>}
     </div>
   )
 )
@@ -107,24 +110,26 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
         <select
           ref={ref}
           className={cn(
-            'w-full px-3 py-2.5 text-sm border rounded-lg bg-white text-neutral-900 outline-none transition-all appearance-none cursor-pointer pr-10 font-sans',
-            'focus:border-green-400 focus:ring-2 focus:ring-green-100',
-            error ? 'border-red-400 ring-2 ring-red-100 bg-red-50/10' : 'border-neutral-200 hover:border-neutral-300',
+            'w-full px-4 py-3.5 text-[15px] border-2 rounded-xl bg-neutral-50/50 text-neutral-900 font-medium outline-none transition-all appearance-none cursor-pointer pr-12 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.02)]',
+            'focus:bg-white focus:border-green-500 focus:ring-[4px] focus:ring-green-500/15',
+            error 
+              ? 'border-red-400 focus:border-red-500 focus:ring-red-500/15 bg-red-50/30' 
+              : 'border-neutral-200/80 hover:border-neutral-300',
             className
           )}
           {...props}
         >
-          {placeholder && <option value="">{placeholder}</option>}
+          {placeholder && <option value="" className="text-neutral-400">{placeholder}</option>}
           {options.map(o => (
-            <option key={o.value} value={o.value}>{o.label}</option>
+            <option key={o.value} value={o.value} className="text-neutral-900 font-medium">{o.label}</option>
           ))}
         </select>
-        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none group-hover:text-neutral-600 transition-colors">
-          <ChevronDown size={16} />
+        <div className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none group-focus-within:text-green-500 transition-colors">
+          <ChevronDown size={18} strokeWidth={2.5} />
         </div>
       </div>
       {error && (
-        <p className="mt-1 text-[10px] sm:text-xs text-red-500 font-medium animate-fade-in pl-1">
+        <p className="mt-1.5 text-xs text-red-500 font-bold animate-fade-in pl-1">
           {error}
         </p>
       )}
@@ -140,7 +145,7 @@ const Label = forwardRef<HTMLLabelElement, LabelHTMLAttributes<HTMLLabelElement>
   ({ className, ...props }, ref) => (
     <label
       ref={ref}
-      className={cn('block text-xs font-medium text-neutral-500 uppercase tracking-wide mb-1.5', className)}
+      className={cn('block text-[11px] font-black text-neutral-500 uppercase tracking-widest mb-2 px-1', className)}
       {...props}
     />
   )
@@ -151,7 +156,7 @@ Label.displayName = 'Label'
 // FieldGroup
 // -----------------------------------------------
 function FieldGroup({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <div className={cn('flex flex-col gap-1', className)}>{children}</div>
+  return <div className={cn('flex flex-col gap-1.5', className)}>{children}</div>
 }
 
 export { Input, Textarea, Select, Label, FieldGroup }

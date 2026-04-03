@@ -7,6 +7,8 @@ import { updateProfile, updateEscolinhaLocalizacao, updateEscolinhaFotos } from 
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { CitySelect } from '@/components/ui/CitySelect'
+import { Input, Select, Label, Textarea, FieldGroup } from '@/components/ui/Form'
+import { Button } from '@/components/ui/Button'
 
 export function ProfileForm({ profile, escolinha, isEscolinha }: any) {
   const router = useRouter()
@@ -140,69 +142,72 @@ export function ProfileForm({ profile, escolinha, isEscolinha }: any) {
         </h3>
 
         {/* Foto */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-6 p-4 bg-neutral-50/50 rounded-2xl border border-neutral-100 shadow-sm">
           <div
-            className="relative w-16 h-16 rounded-full bg-neutral-100 border-2 border-dashed border-neutral-300 overflow-hidden cursor-pointer group flex-shrink-0"
+            className="relative w-20 h-20 rounded-2xl bg-white border-2 border-dashed border-neutral-200 overflow-hidden cursor-pointer group flex-shrink-0 shadow-sm transition-all hover:border-green-400"
             onClick={() => fileInputRef.current?.click()}
           >
             {displayFoto
               ? <img src={displayFoto} className="w-full h-full object-cover" alt="Foto" />
-              : <User size={24} className="absolute inset-0 m-auto text-neutral-400" />}
+              : <User size={28} className="absolute inset-0 m-auto text-neutral-300" />}
             <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-              <Camera size={16} className="text-white" />
+              <Camera size={20} className="text-white" />
             </div>
           </div>
           <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
           <div className="flex-1">
-            <div className="text-xs font-medium text-neutral-700 mb-0.5">
+            <h4 className="text-sm font-bold text-neutral-800 mb-1">
               {isEscolinha ? 'Logo da escolinha' : 'Foto de perfil'}
-            </div>
-            <div className="text-[10px] text-neutral-400">
-              {selectedFile ? `📎 ${selectedFile.name}` : 'Clique para alterar'}
-            </div>
+            </h4>
+            <p className="text-xs text-neutral-500 font-medium font-sans">
+              {selectedFile ? `Selecionado: ${selectedFile.name}` : 'A imagem deve ser quadrada (1:1) para melhor exibição.'}
+            </p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Field label="Nome">
-            <input
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <FieldGroup>
+            <Label>Nome</Label>
+            <Input
               value={nome}
               onChange={e => setNome(e.target.value)}
-              className={inputClass}
+              placeholder="Seu nome completo"
             />
-          </Field>
-          <Field label="E-mail">
-            <input
+          </FieldGroup>
+          <FieldGroup>
+            <Label>E-mail</Label>
+            <Input
               defaultValue={profile?.email ?? ''}
               disabled
-              className={`${inputClass} bg-neutral-50 text-neutral-400 cursor-not-allowed`}
+              className="bg-neutral-100/50 text-neutral-400 font-sans"
             />
-          </Field>
-          <Field label="Telefone / WhatsApp" className="sm:col-span-2">
-            <input
+          </FieldGroup>
+          <FieldGroup className="sm:col-span-2">
+            <Label>Telefone / WhatsApp</Label>
+            <Input
               value={telefone}
               onChange={e => setTelefone(formatPhone(e.target.value))}
-              className={inputClass}
               placeholder="(51) 9 9999-9999"
             />
-          </Field>
+          </FieldGroup>
 
           {/* Descrição só para escolinha */}
           {isEscolinha && (
-            <Field label="Descrição / Bio" className="sm:col-span-2">
-              <textarea
+            <FieldGroup className="sm:col-span-2">
+              <Label>Descrição / Bio</Label>
+              <Textarea
                 value={descricao}
                 onChange={e => setDescricao(e.target.value)}
-                rows={3}
-                className={`${inputClass} resize-none`}
                 placeholder="Conte sobre a escolinha, estrutura, campeonatos..."
               />
-            </Field>
+            </FieldGroup>
           )}
         </div>
 
-        <div className="flex justify-end">
-          <SubmitButton loading={loading} label="Salvar dados" />
+        <div className="flex justify-end pt-2">
+          <Button variant="dark" loading={loading} type="submit" className="px-8 font-black tracking-widest uppercase text-xs h-12 shadow-lg shadow-black/10">
+            SALVAR ALTERAÇÕES
+          </Button>
         </div>
       </form>
 
@@ -210,40 +215,45 @@ export function ProfileForm({ profile, escolinha, isEscolinha }: any) {
       {isEscolinha && (
         <>
           <Divider />
-          <form onSubmit={handleSubmitLocalizacao} className="flex flex-col gap-4">
-            <h3 className="text-xs font-bold uppercase tracking-widest text-neutral-400">
-              Localização
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <Field label="CNPJ">
-                <input
+          <form onSubmit={handleSubmitLocalizacao} className="flex flex-col gap-5">
+            <div className="flex items-center gap-3 mb-1">
+              <div className="w-1.5 h-6 bg-green-500 rounded-full" />
+              <h3 className="text-sm font-black uppercase tracking-widest text-neutral-800">
+                Localização & CNPJ
+              </h3>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+              <FieldGroup>
+                <Label>CNPJ</Label>
+                <Input
                   value={cnpj}
                   onChange={e => setCnpj(formatCNPJ(e.target.value))}
-                  className={inputClass}
                   placeholder="00.000.000/0000-00"
                 />
-              </Field>
-              <Field label="Estado">
-                <select
+              </FieldGroup>
+              <FieldGroup>
+                <Label>Estado</Label>
+                <Select
                   value={estado}
                   onChange={e => { setEstado(e.target.value); setCidade('') }}
-                  className={`${inputClass} appearance-none`}
-                >
-                  <option value="">Selecione</option>
-                  {ESTADOS.map(e => <option key={e.value} value={e.value}>{e.label}</option>)}
-                </select>
-              </Field>
-              <Field label="Cidade">
+                  options={ESTADOS}
+                  placeholder="Selecione"
+                />
+              </FieldGroup>
+              <FieldGroup>
+                <Label>Cidade</Label>
                 <CitySelect
                   estado={estado}
                   value={cidade}
                   onChange={e => setCidade(e.target.value)}
                   placeholder="Selecione a cidade"
                 />
-              </Field>
+              </FieldGroup>
             </div>
             <div className="flex justify-end">
-              <SubmitButton loading={loadingLoc} label="Salvar localização" />
+              <Button variant="dark" loading={loadingLoc} type="submit" className="px-8 font-black tracking-widest uppercase text-xs h-12 shadow-lg shadow-black/10">
+                ATUALIZAR LOCALIZAÇÃO
+              </Button>
             </div>
           </form>
         </>
@@ -316,21 +326,8 @@ export function ProfileForm({ profile, escolinha, isEscolinha }: any) {
 
 // ── Helpers ──────────────────────────────────────────────────
 
-const inputClass = 'w-full px-3 py-2.5 text-sm border border-neutral-200 rounded-lg bg-white outline-none focus:border-green-400 focus:ring-2 focus:ring-green-100 transition-colors'
-
-function Field({ label, children, className = '' }: { label: string; children: React.ReactNode; className?: string }) {
-  return (
-    <div className={className}>
-      <label className="block text-[10px] font-bold text-neutral-400 uppercase tracking-wide mb-1.5">
-        {label}
-      </label>
-      {children}
-    </div>
-  )
-}
-
 function Divider() {
-  return <hr className="border-neutral-100" />
+  return <hr className="my-4 border-neutral-100 border-2 rounded-full" />
 }
 
 function SubmitButton({ loading, label, onClick }: { loading: boolean; label: string; onClick?: () => void }) {
