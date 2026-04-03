@@ -92,12 +92,33 @@ export function AthleteForm({ initialData, athleteId, mode, onSubmit }: AthleteF
   async function handleSubmit() {
     setLoading(true)
     setServerError('')
-    const res = await onSubmit(data)
-    setLoading(false)
-    if (res.error) {
-      setServerError(res.error)
-    } else {
-      setDone(true)
+    try {
+      const { uploadImage, uploadImages } = await import('@/lib/storage')
+      
+      const fotosAdd = data.fotosAdicionais.filter((f: any) => typeof f === 'string' ? true : (f && f instanceof File))
+      
+      const fotoPerfil = data.fotoPerfilUrl instanceof File ? await uploadImage(data.fotoPerfilUrl, 'atleta') : (data.fotoPerfilUrl ?? null)
+      const fotoCapa = data.fotoCapaUrl instanceof File ? await uploadImage(data.fotoCapaUrl, 'atleta_capa') : (data.fotoCapaUrl ?? null)
+      const fotosUrls = await uploadImages(fotosAdd, 'atleta_galeria')
+
+      const payload = {
+        ...data,
+        fotoUrl: fotoPerfil,
+        capaUrl: fotoCapa,
+        fotosAdicionais: fotosUrls,
+      }
+
+      const res = await onSubmit(payload)
+      if (res.error) {
+        setServerError(res.error)
+      } else {
+        setDone(true)
+      }
+    } catch (e: any) {
+      console.error(e)
+      setServerError('Erro ao fazer upload das imagens. Tente novamente.')
+    } finally {
+      setLoading(false)
     }
   }
 
