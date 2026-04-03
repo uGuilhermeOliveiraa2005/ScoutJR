@@ -9,7 +9,7 @@ import { ESTADOS } from '@/lib/utils'
 import { toast } from 'sonner'
 import {
   ArrowLeft, ArrowRight, Eye, MapPin,
-  MessageCircle, CircleCheckBig,
+  MessageCircle, CircleCheckBig, Quote,
   Users, Trash2, Trophy, Image as ImageIcon
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -249,11 +249,17 @@ return (
             <Input type="date" value={data.dataNascimento} onChange={(e: any) => setData({ ...data, dataNascimento: e.target.value })} />
           </FieldGroup>
         </div>
-        <FieldGroup>
-          <Label>Descrição / Bio (Obrigatório)</Label>
-          <Textarea placeholder="Conte a história do atleta, pontos fortes e trajetória..."
-            value={data.descricao} onChange={(e: any) => setData({ ...data, descricao: e.target.value })} className="min-h-[100px]" />
-        </FieldGroup>
+        <div className="relative p-5 sm:p-6 bg-gradient-to-br from-[#f8faf9] to-[#f1f5f3] rounded-3xl border border-green-100/60 shadow-inner mt-2 mb-2">
+          <div className="absolute top-4 right-5 text-green-600/10"><Quote size={48} /></div>
+          <FieldGroup className="relative z-10 w-full">
+            <Label className="text-green-800 font-black uppercase tracking-widest text-[11px] mb-3 flex items-center gap-2">
+              <div className="w-1.5 h-4 bg-green-500 rounded-full"/> Resumo do Atleta (Obrigatório)
+            </Label>
+            <Textarea placeholder="Conte a história, os pontos fortes, estilo de jogo e a trajetória..."
+              value={data.descricao} onChange={(e: any) => setData({ ...data, descricao: e.target.value })} 
+              className="min-h-[120px] bg-white border border-neutral-100 shadow-[0_4px_12px_-4px_rgba(0,0,0,0.05)] rounded-2xl resize-y px-4 py-3 text-sm focus:border-green-400 focus:ring-green-100 transition-all" />
+          </FieldGroup>
+        </div>
         <div className="grid grid-cols-2 gap-3">
           <FieldGroup>
             <Label>Estado</Label>
@@ -283,13 +289,13 @@ return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6 bg-green-50/30 p-4 sm:p-5 rounded-2xl border border-green-100/50 mt-1">
           <FieldGroup>
             <Label className="flex items-center gap-2 mb-3"><div className="w-1.5 h-4 bg-amber-500 rounded-full"/> Posição Principal</Label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3">
+            <div className="flex flex-wrap gap-2">
               {posicoes.map(p => {
                 const active = data.posicao === p.value
                 return (
                   <button key={p.value} type="button" onClick={() => setData({ ...data, posicao: p.value })}
                     className={cn(
-                      'p-2.5 sm:p-3 border-2 rounded-xl text-center transition-all duration-300 relative overflow-hidden group outline-none focus-visible:ring-4 focus-visible:ring-green-500/20',
+                      'px-3.5 py-2.5 sm:px-4 sm:py-3 border-2 rounded-xl text-center transition-all duration-300 relative overflow-hidden group outline-none focus-visible:ring-4 focus-visible:ring-green-500/20 flex-1 min-w-[30%] max-w-[48%]',
                       active 
                         ? 'border-green-500 bg-green-50 shadow-[0_4px_15px_-3px_rgba(34,197,94,0.2)]' 
                         : 'border-neutral-200 bg-white hover:border-neutral-300 hover:bg-neutral-50 shadow-sm'
