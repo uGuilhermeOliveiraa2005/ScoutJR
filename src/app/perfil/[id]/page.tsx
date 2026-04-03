@@ -153,18 +153,18 @@ export default async function PerfilAtletaPage({ params }: { params: Promise<{ i
                     className="z-10 border-4 border-white shadow-xl flex-shrink-0 scale-110 animate-pulse-glow"
                   />
                   {rankNumber === 1 && (
-                    <div className="absolute -top-5 -left-4 animate-float z-20 pointer-events-none drop-shadow-2xl" style={{ transform: 'rotate(-15deg)' }}>
-                      <span className="text-[45px] block" title="1º Lugar no Ranking Geral">👑</span>
+                    <div className="absolute -top-7 left-1/2 -translate-x-1/2 -rotate-[15deg] animate-float z-30 pointer-events-none drop-shadow-2xl">
+                      <span className="text-[40px] block filter drop-shadow-[0_4px_10px_rgba(251,191,36,0.6)]" title="1º Lugar no Ranking Geral">👑</span>
                     </div>
                   )}
                   {rankNumber === 2 && (
-                    <div className="absolute -top-5 -left-4 animate-float z-20 pointer-events-none drop-shadow-2xl" style={{ transform: 'rotate(-15deg)' }}>
-                      <span className="text-[45px] block" title="2º Lugar no Ranking Geral">🥈</span>
+                    <div className="absolute -top-7 left-1/2 -translate-x-1/2 -rotate-[15deg] animate-float z-30 pointer-events-none drop-shadow-2xl">
+                      <span className="text-[40px] block filter drop-shadow-[0_4px_10px_rgba(156,163,175,0.6)]" title="2º Lugar no Ranking Geral">🥈</span>
                     </div>
                   )}
                   {rankNumber === 3 && (
-                    <div className="absolute -top-5 -left-4 animate-float z-20 pointer-events-none drop-shadow-2xl" style={{ transform: 'rotate(-15deg)' }}>
-                      <span className="text-[45px] block" title="3º Lugar no Ranking Geral">🥉</span>
+                    <div className="absolute -top-7 left-1/2 -translate-x-1/2 -rotate-[15deg] animate-float z-30 pointer-events-none drop-shadow-2xl">
+                      <span className="text-[40px] block filter drop-shadow-[0_4px_10px_rgba(180,83,9,0.6)]" title="3º Lugar no Ranking Geral">🥉</span>
                     </div>
                   )}
                 </div>
