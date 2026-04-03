@@ -81,6 +81,19 @@ export default async function PerfilAtletaPage({ params }: { params: Promise<{ i
   const idade = calcularIdade(atleta.data_nascimento)
   const statsAtual = atleta.atleta_stats?.sort((a: any, b: any) => b.temporada - a.temporada)[0]
 
+  // Calcula o rank do atleta para possíveis medalhas
+  const { data: topAtletas } = await supabase
+    .from('atletas')
+    .select('id')
+    .eq('status', 'ativo')
+    .gt('ranking_score', 0)
+    .order('ranking_score', { ascending: false })
+    .order('favoritos_count', { ascending: false })
+    .limit(3)
+
+  const rankIndex = topAtletas?.findIndex((a: any) => a.id === atleta.id) ?? -1
+  const rankNumber = rankIndex !== -1 ? rankIndex + 1 : null
+
   const habilidades = [
     { label: 'Técnica', value: atleta.habilidade_tecnica, color: 'green' as const },
     { label: 'Velocidade', value: atleta.habilidade_velocidade, color: 'amber' as const },
@@ -142,7 +155,12 @@ export default async function PerfilAtletaPage({ params }: { params: Promise<{ i
                   {atleta.posicao}
                 </div>
                 <div className="flex-1 z-10 min-w-0">
-                  <h1 className="font-display text-3xl text-neutral-900 leading-tight mb-1 truncate tracking-tight">{atleta.nome}</h1>
+                  <h1 className="font-display text-3xl text-neutral-900 leading-tight mb-1 tracking-tight pr-2 flex items-center gap-2 flex-wrap">
+                    {atleta.nome}
+                    {rankNumber === 1 && <span className="text-[28px] filter drop-shadow-md pb-1 shrink-0" title="1º Lugar no Ranking Geral">👑</span>}
+                    {rankNumber === 2 && <span className="text-[28px] filter drop-shadow-md pb-1 shrink-0" title="2º Lugar no Ranking Geral">🥈</span>}
+                    {rankNumber === 3 && <span className="text-[28px] filter drop-shadow-md pb-1 shrink-0" title="3º Lugar no Ranking Geral">🥉</span>}
+                  </h1>
                   <div className="flex items-center gap-2">
                     <span className="inline-block w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                     <p className="text-[11px] text-neutral-500 font-black uppercase tracking-[0.2em] truncate">{POSICAO_LABEL[atleta.posicao]}</p>
