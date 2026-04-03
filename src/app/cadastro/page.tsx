@@ -460,7 +460,7 @@ function CadastroForm() {
 
       {/* Right Side: Form Wizard */}
       <div className="w-full lg:w-1/2 flex items-start justify-center p-4 sm:p-8 lg:p-12 bg-neutral-50 lg:bg-white overflow-y-auto max-h-screen custom-scrollbar">
-        <div className="w-full max-w-lg py-6 sm:py-8 animate-slide-up">
+        <div className="w-full max-w-2xl xl:max-w-3xl py-6 sm:py-8 animate-slide-up">
 
           <div className="lg:hidden mb-8 sm:mb-12 text-center">
             <Link href="/" className="font-display text-3xl tracking-widest text-green-700 inline-block animate-scale-in">
@@ -1088,19 +1088,58 @@ function AtletaSteps({ step, setStep, data, setData, loading, serverError, onSub
             <Input type="number" min="20" max="120" placeholder="Ex: 68" value={data.peso_kg} onChange={(e: any) => setData({ ...data, peso_kg: e.target.value })} />
           </FieldGroup>
         </div>
-        <FieldGroup>
-          <Label>Posição Principal</Label>
-          <div className="grid grid-cols-3 gap-1.5 sm:gap-2 mt-1">
-            {posicoes.map(p => (
-              <button key={p.value} type="button" onClick={() => setData({ ...data, posicao: p.value })}
-                className={cn('p-2 border rounded-lg text-center transition-all',
-                  data.posicao === p.value ? 'border-green-400 bg-green-50 text-green-700' : 'border-neutral-200 hover:border-neutral-300')}>
-                <div className="text-xs sm:text-sm font-medium">{p.label}</div>
-                <div className="text-[9px] sm:text-[10px] text-neutral-400">{p.sub}</div>
-              </button>
-            ))}
-          </div>
-        </FieldGroup>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6 bg-green-50/30 p-4 sm:p-5 rounded-2xl border border-green-100/50 mt-1">
+          <FieldGroup>
+            <Label className="flex items-center gap-2 mb-3"><div className="w-1.5 h-4 bg-amber-500 rounded-full"/> Posição Principal</Label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3">
+              {posicoes.map(p => {
+                const active = data.posicao === p.value
+                return (
+                  <button key={p.value} type="button" onClick={() => setData({ ...data, posicao: p.value })}
+                    className={cn(
+                      'p-2.5 sm:p-3 border-2 rounded-xl text-center transition-all duration-300 relative overflow-hidden group outline-none focus-visible:ring-4 focus-visible:ring-green-500/20',
+                      active 
+                        ? 'border-green-500 bg-green-50 shadow-[0_4px_15px_-3px_rgba(34,197,94,0.2)]' 
+                        : 'border-neutral-200 bg-white hover:border-neutral-300 hover:bg-neutral-50 shadow-sm'
+                    )}>
+                    {active && <div className="absolute inset-0 bg-gradient-to-br from-green-400/10 to-transparent pointer-events-none" />}
+                    <div className={cn("text-xs font-bold transition-colors relative z-10", active ? "text-green-800" : "text-neutral-700 group-hover:text-neutral-900")}>{p.label}</div>
+                    <div className={cn("text-[9px] font-black uppercase tracking-widest transition-colors mt-0.5 relative z-10", active ? "text-green-600" : "text-neutral-400")}>{p.sub}</div>
+                  </button>
+                )
+              })}
+            </div>
+          </FieldGroup>
+          <FieldGroup>
+            <Label className="flex items-center gap-2 mb-3"><div className="w-1.5 h-4 bg-green-500 rounded-full"/> Pé Dominante</Label>
+            <div className="flex flex-col gap-2">
+              {[
+                { value: 'destro', label: 'Destro', sub: 'Pé Direito' },
+                { value: 'canhoto', label: 'Canhoto', sub: 'Pé Esquerdo' },
+                { value: 'ambidestro', label: 'Ambidestro', sub: 'Ambos' },
+              ].map(pe => {
+                const active = data.peDominante === pe.value
+                return (
+                  <button key={pe.value} type="button" onClick={() => setData({ ...data, peDominante: pe.value })}
+                    className={cn(
+                      'px-4 py-3 border-2 rounded-xl text-left transition-all duration-300 flex items-center justify-between group',
+                      active 
+                        ? 'border-green-500 bg-green-50 shadow-[0_4px_15px_-3px_rgba(34,197,94,0.2)]' 
+                        : 'border-neutral-200 bg-white hover:border-neutral-300 hover:bg-neutral-50 shadow-sm'
+                    )}>
+                    <div>
+                      <div className={cn("text-sm font-bold transition-colors", active ? "text-green-800" : "text-neutral-700")}>{pe.label}</div>
+                      <div className={cn("text-[10px] font-black uppercase tracking-widest transition-colors mt-0.5", active ? "text-green-600" : "text-neutral-400")}>{pe.sub}</div>
+                    </div>
+                    <div className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors", active ? "border-green-500 bg-green-500" : "border-neutral-300")}>
+                      {active && <div className="w-2 h-2 rounded-full bg-white" />}
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+          </FieldGroup>
+        </div>
       </div>
       <div className="flex justify-between mt-5 sm:mt-6">
         <Button variant="outline" type="button" onClick={() => setStep(2)}><ArrowLeft size={14} /> Voltar</Button>
