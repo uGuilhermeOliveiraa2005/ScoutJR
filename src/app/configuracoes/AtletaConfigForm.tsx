@@ -141,93 +141,89 @@ export function AtletaConfigForm({ atleta }: { atleta: any }) {
         else { toast.success('Perfil do atleta atualizado!'); setSelectedFile(null); router.refresh() }
     }
 
-    const inputClass = 'w-full px-3 py-2.5 text-sm border border-neutral-200 rounded-lg bg-white outline-none focus:border-green-400 focus:ring-2 focus:ring-green-100 transition-colors'
+    const inputClass = 'w-full px-3.5 py-3 text-sm border border-neutral-200 rounded-xl bg-white outline-none focus:border-green-400 focus:ring-2 focus:ring-green-100 transition-all hover:border-neutral-300 font-medium'
+
+    const getSkillLevel = (val: number) => {
+        if (val >= 85) return { label: 'Elite', color: 'bg-green-500 text-white' }
+        if (val >= 70) return { label: 'Avançado', color: 'bg-green-100 text-green-700' }
+        if (val >= 50) return { label: 'Bom', color: 'bg-amber-100 text-amber-700' }
+        return { label: 'Iniciante', color: 'bg-neutral-100 text-neutral-600' }
+    }
 
     return (
-        <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-8">
 
             {/* Fotos */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                {/* Foto de Perfil */}
-                <div>
-                    <label className="block text-[10px] font-bold text-neutral-400 uppercase tracking-wide mb-3">
-                        Foto de Perfil
-                    </label>
-                    <div className="flex items-center gap-4">
-                        <div
-                            className="relative w-20 h-20 rounded-full bg-neutral-100 border-2 border-dashed border-neutral-300 overflow-hidden cursor-pointer group flex-shrink-0"
-                            onClick={() => fileInputRef.current?.click()}
-                        >
-                            {displayFoto
-                                ? <img src={displayFoto} className="w-full h-full object-cover" alt="Perfil" />
-                                : <ImageIcon size={24} className="absolute inset-0 m-auto text-neutral-400" />}
-                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                <Camera size={18} className="text-white" />
-                            </div>
-                        </div>
-                        <input ref={fileInputRef} type="file" accept="image/*" className="hidden"
-                            onChange={e => {
-                                const file = e.target.files?.[0]
-                                if (file) {
-                                    setSelectedFile(file)
-                                    const reader = new FileReader()
-                                    reader.onload = ev => setPreview(ev.target?.result as string)
-                                    reader.readAsDataURL(file)
-                                }
-                            }} />
-                        <div>
-                            <div className="text-xs font-medium text-neutral-700 mb-0.5">Avatar</div>
-                            <div className="text-[10px] text-neutral-400">
-                                {selectedFile ? `📎 ${selectedFile.name}` : 'Alterar avatar'}
-                            </div>
+            {/* Combined Photo Header */}
+            <div className="relative rounded-2xl overflow-hidden border border-neutral-200 shadow-sm">
+                {/* Capa Background */}
+                <div
+                    className="relative h-28 sm:h-36 bg-gradient-to-br from-neutral-100 to-neutral-50 cursor-pointer group"
+                    onClick={() => capaInputRef.current?.click()}
+                >
+                    {displayCapa
+                        ? <img src={displayCapa} className="w-full h-full object-cover" alt="Capa" />
+                        : <div className="absolute inset-0 flex flex-col items-center justify-center text-neutral-300 gap-1">
+                            <ImageIcon size={24} />
+                            <span className="text-[9px] font-bold uppercase tracking-widest">Foto de capa</span>
+                          </div>}
+                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="bg-white/90 backdrop-blur-sm rounded-xl px-4 py-2 flex items-center gap-2 shadow-lg">
+                            <Camera size={14} className="text-neutral-700" />
+                            <span className="text-xs font-bold text-neutral-700">Alterar capa</span>
                         </div>
                     </div>
                 </div>
-
-                {/* Foto de Capa */}
-                <div>
-                    <label className="block text-[10px] font-bold text-neutral-400 uppercase tracking-wide mb-3">
-                        Foto de Capa
-                    </label>
-                    <div className="flex items-center gap-4">
-                        <div
-                            className="relative w-32 h-20 rounded-xl bg-neutral-100 border-2 border-dashed border-neutral-300 overflow-hidden cursor-pointer group flex-shrink-0"
-                            onClick={() => capaInputRef.current?.click()}
-                        >
-                            {displayCapa
-                                ? <img src={displayCapa} className="w-full h-full object-cover" alt="Capa" />
-                                : <ImageIcon size={24} className="absolute inset-0 m-auto text-neutral-400" />}
-                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                <Camera size={18} className="text-white" />
-                            </div>
+                <input ref={capaInputRef} type="file" accept="image/*" className="hidden"
+                    onChange={e => {
+                        const file = e.target.files?.[0]
+                        if (file) {
+                            setSelectedCapa(file)
+                            const reader = new FileReader()
+                            reader.onload = ev => setCapaPreview(ev.target?.result as string)
+                            reader.readAsDataURL(file)
+                        }
+                    }} />
+                {/* Avatar Overlay */}
+                <div className="absolute left-5 -bottom-8 z-10">
+                    <div
+                        className="relative w-20 h-20 rounded-2xl bg-white border-4 border-white shadow-lg overflow-hidden cursor-pointer group"
+                        onClick={() => fileInputRef.current?.click()}
+                    >
+                        {displayFoto
+                            ? <img src={displayFoto} className="w-full h-full object-cover" alt="Perfil" />
+                            : <div className="w-full h-full bg-neutral-100 flex items-center justify-center"><ImageIcon size={24} className="text-neutral-300" /></div>}
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl">
+                            <Camera size={16} className="text-white" />
                         </div>
-                        <input ref={capaInputRef} type="file" accept="image/*" className="hidden"
-                            onChange={e => {
-                                const file = e.target.files?.[0]
-                                if (file) {
-                                    setSelectedCapa(file)
-                                    const reader = new FileReader()
-                                    reader.onload = ev => setCapaPreview(ev.target?.result as string)
-                                    reader.readAsDataURL(file)
-                                }
-                            }} />
-                        <div>
-                            <div className="text-xs font-medium text-neutral-700 mb-0.5">Banner</div>
-                            <div className="text-[10px] text-neutral-400">
-                                {selectedCapa ? `📎 ${selectedCapa.name}` : 'Alterar capa'}
-                            </div>
-                        </div>
+                    </div>
+                </div>
+                <input ref={fileInputRef} type="file" accept="image/*" className="hidden"
+                    onChange={e => {
+                        const file = e.target.files?.[0]
+                        if (file) {
+                            setSelectedFile(file)
+                            const reader = new FileReader()
+                            reader.onload = ev => setPreview(ev.target?.result as string)
+                            reader.readAsDataURL(file)
+                        }
+                    }} />
+                {/* File info bar */}
+                <div className="pt-12 pb-4 px-5 bg-white">
+                    <div className="flex items-center gap-3 text-[10px] text-neutral-400">
+                        {selectedFile && <span className="bg-green-50 text-green-600 px-2 py-0.5 rounded-md font-bold">📎 Avatar: {selectedFile.name}</span>}
+                        {selectedCapa && <span className="bg-green-50 text-green-600 px-2 py-0.5 rounded-md font-bold">📎 Capa: {selectedCapa.name}</span>}
+                        {!selectedFile && !selectedCapa && <span className="font-medium">Clique na foto ou capa para alterar</span>}
                     </div>
                 </div>
             </div>
 
-            <hr className="border-neutral-100" />
-
             {/* Dados básicos */}
             <div>
-                <label className="block text-[10px] font-bold text-neutral-400 uppercase tracking-wide mb-3">
-                    Dados do atleta
-                </label>
+                <div className="flex items-center gap-3 mb-4">
+                    <div className="w-1.5 h-6 bg-green-500 rounded-full" />
+                    <label className="text-sm font-black uppercase tracking-widest text-neutral-800">Dados do atleta</label>
+                </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <Field label="Nome completo">
                         <input value={nome} onChange={e => setNome(e.target.value)} className={inputClass} />
@@ -275,19 +271,21 @@ export function AtletaConfigForm({ atleta }: { atleta: any }) {
 
             {/* Posição */}
             <div>
-                <label className="block text-[10px] font-bold text-neutral-400 uppercase tracking-wide mb-3">
-                    Posição principal
-                </label>
+                <div className="flex items-center gap-3 mb-4">
+                    <div className="w-1.5 h-6 bg-amber-500 rounded-full" />
+                    <label className="text-sm font-black uppercase tracking-widest text-neutral-800">Posição principal</label>
+                </div>
                 <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
                     {POSICOES.map(p => (
                         <button key={p.value} type="button" onClick={() => setPosicao(p.value)}
-                            className={cn('p-2 border rounded-lg text-center transition-all',
+                            className={cn('p-2.5 border-2 rounded-xl text-center transition-all relative overflow-hidden group',
                                 posicao === p.value
-                                    ? 'border-green-400 bg-green-50 text-green-700'
-                                    : 'border-neutral-200 hover:border-neutral-300 text-neutral-600'
+                                    ? 'border-green-400 bg-green-50 text-green-700 shadow-[0_4px_12px_-3px_rgba(34,197,94,0.2)]'
+                                    : 'border-neutral-200 hover:border-neutral-300 text-neutral-600 hover:bg-neutral-50'
                             )}>
-                            <div className="text-xs sm:text-sm font-bold">{p.label}</div>
-                            <div className="text-[9px] sm:text-[10px] text-neutral-400">{p.sub}</div>
+                            {posicao === p.value && <div className="absolute inset-0 bg-gradient-to-br from-green-400/10 to-transparent pointer-events-none" />}
+                            <div className="text-xs sm:text-sm font-bold relative z-10">{p.label}</div>
+                            <div className="text-[9px] sm:text-[10px] text-neutral-400 relative z-10">{p.sub}</div>
                         </button>
                     ))}
                 </div>
@@ -297,26 +295,31 @@ export function AtletaConfigForm({ atleta }: { atleta: any }) {
 
             {/* Habilidades */}
             <div>
-                <label className="block text-[10px] font-bold text-neutral-400 uppercase tracking-wide mb-3">
-                    Habilidades
-                </label>
-                <div className="flex flex-col gap-4">
-                    {HABILIDADES.map(h => (
-                        <div key={h.key} className="flex items-center gap-3 sm:gap-4">
-                            <span className="w-24 sm:w-28 flex-shrink-0 text-xs sm:text-sm font-medium text-neutral-700">
-                                {h.label}
-                            </span>
-                            <input
-                                type="range" min={1} max={99}
-                                value={habilidades[h.key as keyof typeof habilidades]}
-                                onChange={e => setHabilidades(prev => ({ ...prev, [h.key]: +e.target.value }))}
-                                className="flex-1 accent-green-500"
-                            />
-                            <div className="w-9 h-8 bg-green-100 text-green-700 rounded-lg flex items-center justify-center text-xs sm:text-sm font-bold flex-shrink-0">
-                                {habilidades[h.key as keyof typeof habilidades]}
+                <div className="flex items-center gap-3 mb-5">
+                    <div className="w-1.5 h-6 bg-green-500 rounded-full" />
+                    <label className="text-sm font-black uppercase tracking-widest text-neutral-800">Habilidades</label>
+                </div>
+                <div className="flex flex-col gap-5">
+                    {HABILIDADES.map(h => {
+                        const val = habilidades[h.key as keyof typeof habilidades]
+                        const level = getSkillLevel(val)
+                        return (
+                            <div key={h.key} className="flex items-center gap-3 sm:gap-4">
+                                <span className="w-24 sm:w-28 flex-shrink-0 text-xs sm:text-sm font-medium text-neutral-700">
+                                    {h.label}
+                                </span>
+                                <input
+                                    type="range" min={1} max={99}
+                                    value={val}
+                                    onChange={e => setHabilidades(prev => ({ ...prev, [h.key]: +e.target.value }))}
+                                    className="flex-1"
+                                />
+                                <div className={cn('px-2 py-1 rounded-lg flex items-center justify-center text-[10px] font-black flex-shrink-0 min-w-[52px] text-center', level.color)}>
+                                    {val}
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        )
+                    })}
                 </div>
             </div>
 
@@ -324,9 +327,10 @@ export function AtletaConfigForm({ atleta }: { atleta: any }) {
 
             {/* Privacidade */}
             <div>
-                <label className="block text-[10px] font-bold text-neutral-400 uppercase tracking-wide mb-3">
-                    Privacidade
-                </label>
+                <div className="flex items-center gap-3 mb-4">
+                    <div className="w-1.5 h-6 bg-neutral-700 rounded-full" />
+                    <label className="text-sm font-black uppercase tracking-widest text-neutral-800">Privacidade</label>
+                </div>
                 <div className="border border-neutral-200 rounded-xl overflow-hidden">
                     {[
                         { key: 'visivel', value: visivel, setter: setVisivel, icon: <Eye size={14} />, title: 'Perfil visível para escolinhas', sub: 'Quando desativado, nenhuma escolinha verá o perfil' },
@@ -355,11 +359,11 @@ export function AtletaConfigForm({ atleta }: { atleta: any }) {
             </div>
 
             {/* Submit */}
-            <div className="flex justify-end pt-2">
+            <div className="flex justify-end pt-4">
                 <button type="submit" disabled={loading}
-                    className="px-6 py-2.5 text-sm bg-green-700 text-white rounded-lg hover:bg-green-800 transition-colors font-medium disabled:opacity-50 flex items-center gap-2">
+                    className="px-8 py-3 text-xs bg-neutral-900 text-white rounded-xl hover:bg-neutral-800 transition-all font-black disabled:opacity-50 flex items-center gap-2 uppercase tracking-widest shadow-lg shadow-black/10 hover:shadow-xl hover:shadow-black/15 hover:-translate-y-0.5">
                     {loading && <Loader2 size={14} className="animate-spin" />}
-                    {loading ? 'Salvando...' : 'Salvar alterações do atleta'}
+                    {loading ? 'Salvando...' : 'Salvar alterações'}
                 </button>
             </div>
         </form>

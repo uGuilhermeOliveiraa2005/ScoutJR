@@ -404,8 +404,24 @@ function CadastroForm() {
       <div className="hidden lg:flex lg:w-1/2 bg-[#0A1A14] relative items-center justify-center p-12 overflow-hidden sticky top-0 h-screen">
         {/* Background Effects */}
         <div className="absolute inset-0 bg-[url('/noise.svg')] opacity-20 mix-blend-overlay"></div>
-        <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] rounded-full bg-green-500/10 blur-[120px]"></div>
-        <div className="absolute bottom-[-10%] left-[-10%] w-[60%] h-[60%] rounded-full bg-amber-500/5 blur-[120px]"></div>
+        <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] rounded-full bg-green-500/10 blur-[120px] animate-float"></div>
+        <div className="absolute bottom-[-10%] left-[-10%] w-[60%] h-[60%] rounded-full bg-amber-500/5 blur-[120px] animate-float-delay"></div>
+        <div className="absolute top-[50%] left-[50%] w-[30%] h-[30%] rounded-full bg-green-400/5 blur-[80px] animate-pulse"></div>
+
+        {/* Vertical progress indicator */}
+        <div className="absolute left-8 top-1/2 -translate-y-1/2 flex flex-col items-center gap-2 z-20">
+          {labels.map((_, i) => (
+            <div key={i} className="flex flex-col items-center">
+              <div className={cn(
+                'w-2.5 h-2.5 rounded-full transition-all duration-500',
+                i <= step ? 'bg-green-400 shadow-[0_0_8px_rgba(34,197,94,0.4)]' : 'bg-white/15'
+              )} />
+              {i < labels.length - 1 && (
+                <div className={cn('w-px h-4 transition-all duration-500', i < step ? 'bg-green-400/50' : 'bg-white/10')} />
+              )}
+            </div>
+          ))}
+        </div>
 
         <div className="relative z-10 max-w-lg">
           <Link href="/" className="inline-flex items-center gap-2 text-white/60 hover:text-white transition-colors mb-20 group">
@@ -413,25 +429,25 @@ function CadastroForm() {
             <span className="text-sm font-medium">Voltar para a home</span>
           </Link>
 
-          <div className="font-display text-7xl text-white leading-none mb-8 uppercase">
+          <div className="font-display text-7xl text-white leading-none mb-8 uppercase animate-fade-up">
             A JORNADA <br />
-            <span className="text-green-400">COMEÇA</span> <br />
+            <span className="text-gradient-green bg-gradient-to-r from-green-400 to-green-300 bg-clip-text text-transparent">COMEÇA</span> <br />
             AQUI.
           </div>
 
-          <p className="text-neutral-400 text-lg leading-relaxed mb-12">
+          <p className="text-neutral-400 text-lg leading-relaxed mb-12 animate-fade-up stagger-2">
             {tipo === 'responsavel'
               ? 'Dê o primeiro passo para o futuro do seu pequeno atleta. Cadastre-se e ganhe visibilidade nacional.'
               : 'Encontre e monitore a evolução das maiores promessas da base em um só lugar.'}
           </p>
 
-          <div className="grid grid-cols-1 gap-6">
+          <div className="grid grid-cols-1 gap-4 animate-fade-up stagger-3">
             {[
               { icon: <CircleCheckBig className="text-green-400" />, title: 'Passo a Passo', desc: 'Preenchimento intuitivo e rápido.' },
               { icon: <Trophy className="text-amber-400" />, title: 'Visibilidade Real', desc: 'Seu perfil direto nas mãos de quem recruta.' },
             ].map((item, i) => (
-              <div key={i} className="flex gap-4 p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm">
-                <div className="shrink-0 mt-1">{item.icon}</div>
+              <div key={i} className="flex gap-4 p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm transition-all hover:bg-white/8 hover:border-white/20 group">
+                <div className="shrink-0 mt-1 group-hover:scale-110 transition-transform">{item.icon}</div>
                 <div>
                   <div className="text-white font-bold text-sm mb-0.5">{item.title}</div>
                   <div className="text-neutral-500 text-xs leading-relaxed">{item.desc}</div>
@@ -443,61 +459,64 @@ function CadastroForm() {
       </div>
 
       {/* Right Side: Form Wizard */}
-      <div className="w-full lg:w-1/2 flex items-start justify-center p-6 sm:p-12 bg-neutral-50 lg:bg-white overflow-y-auto max-h-screen custom-scrollbar">
-        <div className="w-full max-w-lg py-8 animate-fade-up">
+      <div className="w-full lg:w-1/2 flex items-start justify-center p-4 sm:p-8 lg:p-12 bg-neutral-50 lg:bg-white overflow-y-auto max-h-screen custom-scrollbar">
+        <div className="w-full max-w-lg py-6 sm:py-8 animate-slide-up">
 
-          <div className="lg:hidden mb-12 text-center">
-            <Link href="/" className="font-display text-3xl tracking-widest text-green-700">
+          <div className="lg:hidden mb-8 sm:mb-12 text-center">
+            <Link href="/" className="font-display text-3xl tracking-widest text-green-700 inline-block animate-scale-in">
               SCOUT<span className="text-amber-500">JR</span>
             </Link>
           </div>
 
           {/* Progress Header */}
-          <div className="mb-10">
+          <div className="mb-8 sm:mb-10">
             <div className="flex items-end justify-between mb-4">
               <div>
-                <span className="text-[10px] font-bold text-green-600 uppercase tracking-widest bg-green-50 px-2 py-1 rounded-md mb-2 inline-block">Etapa {step} de {totalSteps}</span>
-                <h1 className="text-3xl font-bold text-neutral-900 leading-tight">Criação de Conta</h1>
+                <span className="text-[10px] font-bold text-green-600 uppercase tracking-widest bg-green-50 px-2.5 py-1 rounded-lg mb-2 inline-block border border-green-100">Etapa {step + 1} de {totalSteps}</span>
+                <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900 leading-tight">Criação de Conta</h1>
               </div>
               <div className="text-right">
-                <span className="text-2xl font-display text-neutral-300 tracking-tighter">{Math.round(progressPercent)}%</span>
+                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-neutral-900 flex items-center justify-center">
+                  <span className="text-lg sm:text-xl font-display text-green-400 tracking-tighter">{Math.round(progressPercent)}%</span>
+                </div>
               </div>
             </div>
-            <div className="relative h-2 bg-neutral-100 rounded-full overflow-hidden border border-neutral-200/50">
+            <div className="relative h-2.5 bg-neutral-100 rounded-full overflow-hidden border border-neutral-200/50">
               <div
-                className="absolute left-0 top-0 h-full bg-gradient-to-r from-green-600 to-green-400 rounded-full transition-all duration-700 ease-out shadow-[0_0_10px_rgba(22,163,74,0.3)]"
+                className="absolute left-0 top-0 h-full bg-gradient-to-r from-green-600 to-green-400 rounded-full transition-all duration-700 ease-out"
                 style={{ width: `${progressPercent}%` }}
               />
+              <div className="absolute left-0 top-0 h-full bg-shimmer rounded-full" style={{ width: `${progressPercent}%` }} />
             </div>
-            <div className="relative mt-4 -mx-4">
+            <div className="relative mt-4 -mx-2 sm:-mx-4">
               <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-neutral-50 lg:from-white to-transparent z-10 pointer-events-none" />
-              <div className="flex items-center gap-x-6 overflow-x-auto scrollbar-hide py-2 px-4 shadow-[inset_-20px_0_20px_-20px_rgba(0,0,0,0.05)]">
+              <div className="flex items-center gap-x-4 sm:gap-x-6 overflow-x-auto scrollbar-hide py-2 px-2 sm:px-4">
                 {labels.map((l, i) => (
                   <div key={l} className={cn(
-                    'text-[9px] font-bold uppercase tracking-widest flex items-center gap-2 shrink-0 transition-all duration-300',
+                    'text-[9px] font-bold uppercase tracking-widest flex items-center gap-1.5 sm:gap-2 shrink-0 transition-all duration-300',
                     i === step ? 'text-green-700 opacity-100 scale-110' : i < step ? 'text-green-600 opacity-80' : 'text-neutral-300 opacity-40'
                   )}>
                     <div className={cn(
-                      "w-2.5 h-2.5 rounded-full flex items-center justify-center transition-all duration-500",
-                      i <= step ? "bg-current shadow-[0_0_8px_rgba(34,197,94,0.3)]" : "bg-neutral-200"
+                      "w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center transition-all duration-500 text-[8px] font-black",
+                      i < step ? "bg-green-500 text-white shadow-[0_0_8px_rgba(34,197,94,0.3)]" : i === step ? "bg-green-100 text-green-700 border-2 border-green-400" : "bg-neutral-100 text-neutral-400"
                     )}>
-                      {i < step && <CircleCheckBig size={8} className="text-white" />}
+                      {i < step ? <CircleCheckBig size={10} /> : i + 1}
                     </div>
-                    <span className="whitespace-nowrap">{l}</span>
+                    <span className="whitespace-nowrap hidden sm:inline">{l}</span>
                   </div>
                 ))}
               </div>
             </div>
           </div>
 
-          <div className="bg-white lg:bg-transparent border border-neutral-200 lg:border-none rounded-2xl p-6 sm:p-0 shadow-sm lg:shadow-none">
+          <div className="bg-white lg:bg-transparent border border-neutral-200 lg:border-none rounded-3xl p-5 sm:p-6 lg:p-0 shadow-sm lg:shadow-none">
 
             {/* STEP 0 — Método de autenticação */}
             {step === 0 && (
-              <div>
-                <div className="font-display text-3xl sm:text-4xl text-neutral-400 mb-1.5 leading-none">01</div>
-                <h2 className="text-lg sm:text-xl font-medium mb-1">Como deseja criar sua conta?</h2>
-                <p className="text-xs sm:text-sm text-neutral-500 mb-5 sm:mb-6">Escolha uma forma de se cadastrar.</p>
+              <div className="animate-slide-up">
+                <div className="font-display text-4xl sm:text-5xl text-neutral-200/60 mb-2 leading-none select-none">01</div>
+                <h2 className="text-xl sm:text-2xl font-bold mb-1 text-neutral-900">Como deseja criar sua conta?</h2>
+                <p className="text-xs sm:text-sm text-neutral-500 mb-6 sm:mb-8">Escolha uma forma de se cadastrar.</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-6 sm:mb-8">
                   <button type="button" onClick={async () => {
                     setAuthMethod('google')
@@ -508,22 +527,28 @@ function CadastroForm() {
                       }
                     })
                   }}
-                    className="p-5 sm:p-6 border-2 rounded-xl text-left transition-all border-neutral-200 hover:border-green-400 hover:bg-green-50/50 group"
+                    className="p-5 sm:p-6 border-2 rounded-2xl text-left transition-all border-neutral-200 hover:border-green-400 hover:bg-green-50/30 group card-hover-lift relative overflow-hidden"
                   >
-                    <div className="mb-3 flex items-center gap-3">
-                      <svg height="1em" style={{ flex: 'none', lineHeight: 1 }} viewBox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg" className="w-6 h-6"><title>Google</title><path d="M23 12.245c0-.905-.075-1.565-.236-2.25h-10.54v4.083h6.186c-.124 1.014-.797 2.542-2.294 3.569l-.021.136 3.332 2.53.23.022C21.779 18.417 23 15.593 23 12.245z" fill="#4285F4"></path><path d="M12.225 23c3.03 0 5.574-.978 7.433-2.665l-3.542-2.688c-.948.648-2.22 1.1-3.891 1.1a6.745 6.745 0 01-6.386-4.572l-.132.011-3.465 2.628-.045.124C4.043 20.531 7.835 23 12.225 23z" fill="#34A853"></path><path d="M5.84 14.175A6.65 6.65 0 015.463 12c0-.758.138-1.491.361-2.175l-.006-.147-3.508-2.67-.115.054A10.831 10.831 0 001 12c0 1.772.436 3.447 1.197 4.938l3.642-2.763z" fill="#FBBC05"></path><path d="M12.225 5.253c2.108 0 3.529.892 4.34 1.638l3.167-3.031C17.787 2.088 15.255 1 12.225 1 7.834 1 4.043 3.469 2.197 7.062l3.63 2.763a6.77 6.77 0 016.398-4.572z" fill="#EB4335"></path></svg>
+                    <div className="absolute inset-0 bg-gradient-to-br from-green-400/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <div className="mb-3 flex items-center gap-3 relative z-10">
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-neutral-50 border border-neutral-100 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <svg height="1em" style={{ flex: 'none', lineHeight: 1 }} viewBox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 sm:w-6 sm:h-6"><title>Google</title><path d="M23 12.245c0-.905-.075-1.565-.236-2.25h-10.54v4.083h6.186c-.124 1.014-.797 2.542-2.294 3.569l-.021.136 3.332 2.53.23.022C21.779 18.417 23 15.593 23 12.245z" fill="#4285F4"></path><path d="M12.225 23c3.03 0 5.574-.978 7.433-2.665l-3.542-2.688c-.948.648-2.22 1.1-3.891 1.1a6.745 6.745 0 01-6.386-4.572l-.132.011-3.465 2.628-.045.124C4.043 20.531 7.835 23 12.225 23z" fill="#34A853"></path><path d="M5.84 14.175A6.65 6.65 0 015.463 12c0-.758.138-1.491.361-2.175l-.006-.147-3.508-2.67-.115.054A10.831 10.831 0 001 12c0 1.772.436 3.447 1.197 4.938l3.642-2.763z" fill="#FBBC05"></path><path d="M12.225 5.253c2.108 0 3.529.892 4.34 1.638l3.167-3.031C17.787 2.088 15.255 1 12.225 1 7.834 1 4.043 3.469 2.197 7.062l3.63 2.763a6.77 6.77 0 016.398-4.572z" fill="#EB4335"></path></svg>
+                      </div>
                       <span className="text-sm sm:text-base font-bold text-neutral-700">Criar com Google</span>
                     </div>
-                    <div className="text-[10px] sm:text-xs text-neutral-400 leading-snug">Rápido e seguro. Use sua conta Google para se cadastrar com um clique.</div>
+                    <div className="text-[10px] sm:text-xs text-neutral-400 leading-snug relative z-10">Rápido e seguro. Use sua conta Google para se cadastrar com um clique.</div>
                   </button>
                   <button type="button" onClick={() => { setAuthMethod('email'); setStep(1) }}
-                    className="p-5 sm:p-6 border-2 rounded-xl text-left transition-all border-neutral-200 hover:border-green-400 hover:bg-green-50/50 group"
+                    className="p-5 sm:p-6 border-2 rounded-2xl text-left transition-all border-neutral-200 hover:border-green-400 hover:bg-green-50/30 group card-hover-lift relative overflow-hidden"
                   >
-                    <div className="mb-3 flex items-center gap-3">
-                      <Mail size={24} className="text-green-600" />
+                    <div className="absolute inset-0 bg-gradient-to-br from-green-400/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <div className="mb-3 flex items-center gap-3 relative z-10">
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-green-50 border border-green-100 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <Mail size={20} className="text-green-600" />
+                      </div>
                       <span className="text-sm sm:text-base font-bold text-neutral-700">Criar com E-mail</span>
                     </div>
-                    <div className="text-[10px] sm:text-xs text-neutral-400 leading-snug">Crie uma conta com seu e-mail e senha. Controle total dos seus dados.</div>
+                    <div className="text-[10px] sm:text-xs text-neutral-400 leading-snug relative z-10">Crie uma conta com seu e-mail e senha. Controle total dos seus dados.</div>
                   </button>
                 </div>
               </div>
@@ -531,12 +556,12 @@ function CadastroForm() {
 
             {/* STEP 1 — Tipo de conta */}
             {step === 1 && (
-              <div>
-                <div className="font-display text-3xl sm:text-4xl text-neutral-400 mb-1.5 leading-none">02</div>
-                <h2 className="text-lg sm:text-xl font-medium mb-1">Que tipo de conta?</h2>
+              <div className="animate-slide-up">
+                <div className="font-display text-4xl sm:text-5xl text-neutral-200/60 mb-2 leading-none select-none">02</div>
+                <h2 className="text-xl sm:text-2xl font-bold mb-1 text-neutral-900">Que tipo de conta?</h2>
                 <p className="text-xs sm:text-sm text-neutral-500 mb-5 sm:mb-6">Escolha o perfil que se aplica.</p>
                 {isGoogle && googleUser && (
-                  <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in duration-300">
+                  <div className="mb-6 p-4 bg-gradient-to-r from-green-50 to-green-50/50 border border-green-200 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-scale-in">
                     <div className="flex items-center gap-4">
                       {googleUser.avatar_url && !avatarError ? (
                         <img
@@ -544,7 +569,7 @@ function CadastroForm() {
                           alt=""
                           referrerPolicy="no-referrer"
                           onError={() => setAvatarError(true)}
-                          className="w-10 h-10 rounded-full border-2 border-green-300 object-cover"
+                          className="w-10 h-10 rounded-full border-2 border-green-300 object-cover shadow-sm"
                         />
                       ) : (
                         <div className="w-10 h-10 rounded-full border-2 border-green-300 bg-green-100 flex items-center justify-center text-green-700 font-bold text-lg shrink-0">
@@ -569,18 +594,20 @@ function CadastroForm() {
                     </button>
                   </div>
                 )}
-                <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-6 sm:mb-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-6 sm:mb-8">
                   {([
-                    { val: 'responsavel', icon: <Users size={22} />, title: 'Sou responsável', sub: 'Quero cadastrar meu filho(a) como atleta' },
-                    { val: 'escolinha', icon: <Landmark size={22} />, title: 'Sou uma escolinha', sub: 'Quero buscar e recrutar jovens talentos' },
+                    { val: 'responsavel', icon: <Users size={24} />, title: 'Sou responsável', sub: 'Quero cadastrar meu filho(a) como atleta', gradient: 'from-green-500/10 to-transparent' },
+                    { val: 'escolinha', icon: <Landmark size={24} />, title: 'Sou uma escolinha', sub: 'Quero buscar e recrutar jovens talentos', gradient: 'from-amber-500/10 to-transparent' },
                   ] as const).map(opt => (
                     <button key={opt.val} type="button" onClick={() => setTipo(opt.val)}
-                      className={cn('p-4 sm:p-5 border-2 rounded-xl text-left transition-all',
-                        tipo === opt.val ? 'border-green-400 bg-green-50' : 'border-neutral-200 hover:border-neutral-300'
+                      className={cn('p-5 sm:p-6 border-2 rounded-2xl text-left transition-all relative overflow-hidden group',
+                        tipo === opt.val ? 'border-green-400 bg-green-50 shadow-[0_4px_15px_-3px_rgba(34,197,94,0.15)]' : 'border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50'
                       )}>
-                      <div className={cn('mb-2 sm:mb-3', tipo === opt.val ? 'text-green-600' : 'text-neutral-400')}>{opt.icon}</div>
-                      <div className="text-xs sm:text-sm font-medium mb-0.5 sm:mb-1">{opt.title}</div>
-                      <div className="text-[10px] sm:text-xs text-neutral-400 leading-snug">{opt.sub}</div>
+                      {tipo === opt.val && <div className={`absolute inset-0 bg-gradient-to-br ${opt.gradient} pointer-events-none`} />}
+                      <div className={cn('mb-3 w-11 h-11 rounded-xl flex items-center justify-center transition-all relative z-10', tipo === opt.val ? 'bg-green-500 text-white shadow-lg shadow-green-500/20' : 'bg-neutral-100 text-neutral-400 group-hover:bg-neutral-200')}>{opt.icon}</div>
+                      <div className="text-sm sm:text-base font-bold mb-1 relative z-10">{opt.title}</div>
+                      <div className="text-[10px] sm:text-xs text-neutral-400 leading-snug relative z-10">{opt.sub}</div>
+                      {tipo === opt.val && <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-green-500 text-white flex items-center justify-center"><CircleCheckBig size={12} /></div>}
                     </button>
                   ))}
                 </div>
@@ -594,10 +621,11 @@ function CadastroForm() {
             {/* ── RESPONSÁVEL ── */}
 
             {step === 2 && tipo === 'responsavel' && (
-              <form onSubmit={formResp.handleSubmit(() => setStep(3))}>
-                <div className="font-display text-3xl sm:text-4xl text-neutral-400 mb-1.5 leading-none">03</div>
-                <h2 className="text-lg sm:text-xl font-medium mb-1">Seus dados de contato</h2>
-                <p className="text-xs sm:text-sm text-neutral-500 mb-4 sm:mb-6">Nunca aparecem no perfil público do atleta.</p>
+              <form onSubmit={formResp.handleSubmit(() => setStep(3))} className="animate-slide-up">
+                <div className="font-display text-4xl sm:text-5xl text-neutral-200/60 mb-2 leading-none select-none">03</div>
+                <h2 className="text-xl sm:text-2xl font-bold mb-1 text-neutral-900">Seus dados de contato</h2>
+                <p className="text-xs sm:text-sm text-neutral-500 mb-5 sm:mb-6">Nunca aparecem no perfil público do atleta.</p>
+                <div className="h-px w-full bg-gradient-to-r from-neutral-200 to-transparent mb-5" />
                 <div className="flex flex-col gap-3 sm:gap-4">
                   {/* Foto responsável */}
                   {isGoogle && googleUser?.avatar_url && !avatarError ? (
@@ -701,10 +729,11 @@ function CadastroForm() {
             {/* ── ESCOLINHA ── */}
 
             {step === 2 && tipo === 'escolinha' && (
-              <form onSubmit={formEscolinha.handleSubmit(() => setStep(3))}>
-                <div className="font-display text-3xl sm:text-4xl text-neutral-400 mb-1.5 leading-none">03</div>
-                <h2 className="text-lg sm:text-xl font-medium mb-1">Dados da escolinha</h2>
-                <p className="text-xs sm:text-sm text-neutral-500 mb-4 sm:mb-6">Informações da instituição.</p>
+              <form onSubmit={formEscolinha.handleSubmit(() => setStep(3))} className="animate-slide-up">
+                <div className="font-display text-4xl sm:text-5xl text-neutral-200/60 mb-2 leading-none select-none">03</div>
+                <h2 className="text-xl sm:text-2xl font-bold mb-1 text-neutral-900">Dados da escolinha</h2>
+                <p className="text-xs sm:text-sm text-neutral-500 mb-5 sm:mb-6">Informações da instituição.</p>
+                <div className="h-px w-full bg-gradient-to-r from-neutral-200 to-transparent mb-5" />
                 <div className="flex flex-col gap-3 sm:gap-4">
                   <FieldGroup>
                     <Label>Nome da escolinha</Label>
@@ -1013,9 +1042,10 @@ function AtletaSteps({ step, setStep, data, setData, loading, serverError, onSub
   // Step 3 — Dados do atleta
   if (step === 3) return (
     <div className="flex flex-col gap-4">
-      <div className="font-display text-3xl sm:text-4xl text-neutral-400 mb-1.5 leading-none">03</div>
-      <h2 className="text-lg sm:text-xl font-medium mb-1">Dados do atleta</h2>
+      <div className="font-display text-4xl sm:text-5xl text-neutral-200/60 mb-2 leading-none select-none">03</div>
+      <h2 className="text-xl sm:text-2xl font-bold mb-1 text-neutral-900">Dados do atleta</h2>
       <p className="text-xs sm:text-sm text-neutral-500 mb-4 sm:mb-6">Apenas cidade e estado são exibidos publicamente.</p>
+      <div className="h-px w-full bg-gradient-to-r from-neutral-200 to-transparent mb-4" />
       <div className="flex flex-col gap-3 sm:gap-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <FieldGroup>
@@ -1086,9 +1116,10 @@ function AtletaSteps({ step, setStep, data, setData, loading, serverError, onSub
   // Step 4 — Habilidades
   if (step === 4) return (
     <div>
-      <div className="font-display text-3xl sm:text-4xl text-neutral-400 mb-1.5 leading-none">04</div>
-      <h2 className="text-lg sm:text-xl font-medium mb-1">Habilidades</h2>
+      <div className="font-display text-4xl sm:text-5xl text-neutral-200/60 mb-2 leading-none select-none">04</div>
+      <h2 className="text-xl sm:text-2xl font-bold mb-1 text-neutral-900">Habilidades</h2>
       <p className="text-xs sm:text-sm text-neutral-500 mb-4 sm:mb-6">Seja honesto. Escolinhas valorizam evolução.</p>
+      <div className="h-px w-full bg-gradient-to-r from-neutral-200 to-transparent mb-4" />
       <div className="flex flex-col gap-4 sm:gap-5">
         {habilidades.map((h, i) => (
           <div key={h} className="flex items-center gap-3 sm:gap-4">

@@ -182,12 +182,12 @@ function Section({ icon, title, children }: {
   children: React.ReactNode
 }) {
   return (
-    <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden shadow-sm">
-      <div className="flex items-center gap-2.5 sm:gap-3 px-4 sm:px-5 py-3 sm:py-4 border-b border-neutral-100 bg-neutral-50/50">
-        <div className="text-neutral-400">{icon}</div>
-        <h2 className="text-xs sm:text-sm font-semibold text-neutral-700 uppercase tracking-wide">{title}</h2>
+    <div className="bg-white border border-neutral-200 rounded-2xl overflow-hidden shadow-sm transition-all hover:shadow-md animate-slide-up">
+      <div className="flex items-center gap-3 px-5 py-4 border-b border-neutral-100 bg-gradient-to-r from-neutral-50/80 to-transparent">
+        <div className="w-8 h-8 rounded-lg bg-neutral-100 flex items-center justify-center text-neutral-500">{icon}</div>
+        <h2 className="text-xs font-black text-neutral-700 uppercase tracking-widest">{title}</h2>
       </div>
-      <div className="p-4 sm:p-5">{children}</div>
+      <div className="p-5">{children}</div>
     </div>
   )
 }

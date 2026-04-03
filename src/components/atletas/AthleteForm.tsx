@@ -138,29 +138,45 @@ export function AthleteForm({ initialData, athleteId, mode, onSubmit }: AthleteF
       </div>
 
       {/* Progress */}
-      <div className="mb-8">
-        <div className="relative h-1.5 bg-neutral-200 rounded-full mb-3 overflow-hidden">
+      <div className="mb-8 sm:mb-10">
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-[10px] font-bold text-green-600 uppercase tracking-widest bg-green-50 px-2.5 py-1 rounded-lg border border-green-100">
+            Etapa {step} de {STEP_LABELS.length}
+          </span>
+          <div className="w-12 h-12 rounded-2xl bg-neutral-900 flex items-center justify-center">
+            <span className="text-lg font-display text-green-400 tracking-tighter">{Math.round(progressPercent)}%</span>
+          </div>
+        </div>
+        <div className="relative h-2.5 bg-neutral-100 rounded-full mb-4 overflow-hidden border border-neutral-200/50">
           <div
-            className="h-full bg-green-400 rounded-full transition-all duration-500"
+            className="h-full bg-gradient-to-r from-green-600 to-green-400 rounded-full transition-all duration-700"
             style={{ width: `${progressPercent}%` }}
           />
         </div>
-        <div className={`grid grid-cols-${STEP_LABELS.length}`} style={{ gridTemplateColumns: `repeat(${STEP_LABELS.length}, 1fr)` }}>
+        <div className="flex items-center justify-between" style={{ gridTemplateColumns: `repeat(${STEP_LABELS.length}, 1fr)` }}>
           {STEP_LABELS.map((l, i) => (
-            <span
+            <div
               key={l}
               className={cn(
-                'text-[9px] sm:text-[10px] font-bold uppercase tracking-tighter text-center',
-                i + 1 === step ? 'text-green-700' : i + 1 < step ? 'text-green-400' : 'text-neutral-300'
+                'flex flex-col items-center gap-1 transition-all duration-300',
+                i + 1 === step ? 'opacity-100 scale-110' : i + 1 < step ? 'opacity-80' : 'opacity-30'
               )}
             >
-              {l}
-            </span>
+              <div className={cn(
+                'w-6 h-6 rounded-full flex items-center justify-center text-[8px] font-black transition-all',
+                i + 1 < step ? 'bg-green-500 text-white shadow-[0_0_8px_rgba(34,197,94,0.3)]' : i + 1 === step ? 'bg-green-100 text-green-700 border-2 border-green-400' : 'bg-neutral-100 text-neutral-400'
+              )}>
+                {i + 1 < step ? '✓' : i + 1}
+              </div>
+              <span className='text-[8px] sm:text-[9px] font-bold uppercase tracking-tighter text-center leading-tight'>
+                {l}
+              </span>
+            </div>
           ))}
         </div>
       </div>
 
-      <div className="bg-white border-2 border-neutral-100 rounded-3xl p-6 sm:p-10 shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition-all">
+      <div className="bg-white border-2 border-neutral-100 rounded-3xl p-6 sm:p-10 shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition-all animate-slide-up">
         {step === 1 && <Step1 data={data} setData={setData} setStep={setStep} />}
         {step === 2 && <Step2 data={data} setData={setData} setStep={setStep} />}
         {step === 3 && <Step3 data={data} setData={setData} setStep={setStep} />}

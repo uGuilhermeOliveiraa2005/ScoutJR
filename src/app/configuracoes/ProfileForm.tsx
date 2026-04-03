@@ -136,21 +136,22 @@ export function ProfileForm({ profile, escolinha, isEscolinha }: any) {
     <div className="flex flex-col gap-6">
 
       {/* ── Dados básicos ── */}
-      <form onSubmit={handleSubmitBasico} className="flex flex-col gap-4">
-        <h3 className="text-xs font-bold uppercase tracking-widest text-neutral-400">
-          Dados principais
-        </h3>
+      <form onSubmit={handleSubmitBasico} className="flex flex-col gap-5">
+        <div className="flex items-center gap-3 mb-1">
+          <div className="w-1.5 h-6 bg-green-500 rounded-full" />
+          <h3 className="text-sm font-black uppercase tracking-widest text-neutral-800">Dados principais</h3>
+        </div>
 
         {/* Foto */}
-        <div className="flex items-center gap-6 p-4 bg-neutral-50/50 rounded-2xl border border-neutral-100 shadow-sm">
+        <div className="flex items-center gap-6 p-4 bg-gradient-to-r from-neutral-50 to-white rounded-2xl border border-neutral-200 shadow-sm">
           <div
-            className="relative w-20 h-20 rounded-2xl bg-white border-2 border-dashed border-neutral-200 overflow-hidden cursor-pointer group flex-shrink-0 shadow-sm transition-all hover:border-green-400"
+            className="relative w-24 h-24 rounded-2xl bg-white border-2 border-neutral-200 overflow-hidden cursor-pointer group flex-shrink-0 shadow-sm transition-all hover:border-green-400 hover:shadow-lg"
             onClick={() => fileInputRef.current?.click()}
           >
             {displayFoto
               ? <img src={displayFoto} className="w-full h-full object-cover" alt="Foto" />
               : <User size={28} className="absolute inset-0 m-auto text-neutral-300" />}
-            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl">
               <Camera size={20} className="text-white" />
             </div>
           </div>
@@ -159,9 +160,13 @@ export function ProfileForm({ profile, escolinha, isEscolinha }: any) {
             <h4 className="text-sm font-bold text-neutral-800 mb-1">
               {isEscolinha ? 'Logo da escolinha' : 'Foto de perfil'}
             </h4>
-            <p className="text-xs text-neutral-500 font-medium font-sans">
-              {selectedFile ? `Selecionado: ${selectedFile.name}` : 'A imagem deve ser quadrada (1:1) para melhor exibição.'}
+            <p className="text-xs text-neutral-500 font-medium font-sans mb-2">
+              {selectedFile ? `📎 ${selectedFile.name}` : 'A imagem deve ser quadrada (1:1) para melhor exibição.'}
             </p>
+            <button type="button" onClick={() => fileInputRef.current?.click()}
+              className="text-[10px] font-black uppercase tracking-widest text-green-600 bg-green-50 border border-green-200 px-3 py-1.5 rounded-lg hover:bg-green-100 transition-all">
+              Alterar foto
+            </button>
           </div>
         </div>
 
@@ -327,7 +332,7 @@ export function ProfileForm({ profile, escolinha, isEscolinha }: any) {
 // ── Helpers ──────────────────────────────────────────────────
 
 function Divider() {
-  return <hr className="my-4 border-neutral-100 border-2 rounded-full" />
+  return <div className="h-px w-full bg-gradient-to-r from-neutral-200 to-transparent my-4" />
 }
 
 function SubmitButton({ loading, label, onClick }: { loading: boolean; label: string; onClick?: () => void }) {
@@ -336,7 +341,7 @@ function SubmitButton({ loading, label, onClick }: { loading: boolean; label: st
       type={onClick ? 'button' : 'submit'}
       onClick={onClick}
       disabled={loading}
-      className="px-5 py-2.5 text-sm bg-green-700 text-white rounded-lg hover:bg-green-800 transition-colors font-medium disabled:opacity-50 flex items-center gap-2"
+      className="px-8 py-3 text-xs bg-neutral-900 text-white rounded-xl hover:bg-neutral-800 transition-all font-black disabled:opacity-50 flex items-center gap-2 uppercase tracking-widest shadow-lg shadow-black/10 hover:shadow-xl hover:-translate-y-0.5"
     >
       {loading && <Loader2 size={14} className="animate-spin" />}
       {loading ? 'Salvando...' : label}
