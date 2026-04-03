@@ -144,22 +144,36 @@ export default async function PerfilAtletaPage({ params }: { params: Promise<{ i
             {/* Card Principal de Perfil */}
             <div className="bg-white border border-neutral-200 rounded-3xl overflow-hidden shadow-sm animate-slide-up card-hover-lift">
               <div className="bg-gradient-to-br from-green-50 via-green-50/50 to-white px-6 py-8 flex items-center gap-6 relative overflow-hidden border-b border-green-100/50">
-                <Avatar
-                  src={atleta.foto_url}
-                  nome={atleta.nome}
-                  size="xl"
-                  colorClass="bg-green-500 text-white"
-                  className="z-10 border-4 border-white shadow-xl flex-shrink-0 scale-110 animate-pulse-glow"
-                />
+                <div className="relative">
+                  <Avatar
+                    src={atleta.foto_url}
+                    nome={atleta.nome}
+                    size="xl"
+                    colorClass="bg-green-500 text-white"
+                    className="z-10 border-4 border-white shadow-xl flex-shrink-0 scale-110 animate-pulse-glow"
+                  />
+                  {rankNumber === 1 && (
+                    <div className="absolute -top-5 -left-4 animate-float z-20 pointer-events-none drop-shadow-2xl" style={{ transform: 'rotate(-15deg)' }}>
+                      <span className="text-[45px] block" title="1º Lugar no Ranking Geral">👑</span>
+                    </div>
+                  )}
+                  {rankNumber === 2 && (
+                    <div className="absolute -top-5 -left-4 animate-float z-20 pointer-events-none drop-shadow-2xl" style={{ transform: 'rotate(-15deg)' }}>
+                      <span className="text-[45px] block" title="2º Lugar no Ranking Geral">🥈</span>
+                    </div>
+                  )}
+                  {rankNumber === 3 && (
+                    <div className="absolute -top-5 -left-4 animate-float z-20 pointer-events-none drop-shadow-2xl" style={{ transform: 'rotate(-15deg)' }}>
+                      <span className="text-[45px] block" title="3º Lugar no Ranking Geral">🥉</span>
+                    </div>
+                  )}
+                </div>
                 <div className="font-display text-8xl text-green-500/10 absolute right-4 -bottom-6 leading-none select-none pointer-events-none italic font-black">
                   {atleta.posicao}
                 </div>
                 <div className="flex-1 z-10 min-w-0">
                   <h1 className="font-display text-3xl text-neutral-900 leading-tight mb-1 tracking-tight pr-2 flex items-center gap-2 flex-wrap">
                     {atleta.nome}
-                    {rankNumber === 1 && <span className="text-[28px] filter drop-shadow-md pb-1 shrink-0" title="1º Lugar no Ranking Geral">👑</span>}
-                    {rankNumber === 2 && <span className="text-[28px] filter drop-shadow-md pb-1 shrink-0" title="2º Lugar no Ranking Geral">🥈</span>}
-                    {rankNumber === 3 && <span className="text-[28px] filter drop-shadow-md pb-1 shrink-0" title="3º Lugar no Ranking Geral">🥉</span>}
                   </h1>
                   <div className="flex items-center gap-2">
                     <span className="inline-block w-2 h-2 rounded-full bg-green-500 animate-pulse" />
@@ -168,7 +182,17 @@ export default async function PerfilAtletaPage({ params }: { params: Promise<{ i
                 </div>
               </div>
               <div className="p-6">
-                <div className="flex flex-wrap gap-2 mb-4">
+                <div className="flex flex-wrap gap-2 mb-4 items-center">
+                  {rankNumber && rankNumber <= 3 && (
+                    <Badge className={cn("px-3 py-[5px] text-[10px] sm:text-xs font-black uppercase tracking-widest text-white border-none shadow-md animate-pulse-glow flex items-center gap-1.5", 
+                      rankNumber === 1 ? "bg-gradient-to-r from-amber-400 to-amber-600 shadow-amber-500/30" :
+                      rankNumber === 2 ? "bg-gradient-to-r from-neutral-400 to-neutral-500 shadow-neutral-500/30" :
+                      "bg-gradient-to-r from-orange-400 to-amber-700 shadow-orange-500/30"
+                    )}>
+                      <Trophy size={13} className="text-white/90" />
+                      TOP {rankNumber} RANKING
+                    </Badge>
+                  )}
                   <Badge variant="outline" className="bg-neutral-50 px-3 py-1.5 text-xs font-semibold">{idade} anos</Badge>
                   {atleta.exibir_cidade && <Badge variant="outline" className="bg-neutral-50 px-3 py-1.5 text-xs font-semibold">{atleta.cidade}, {atleta.estado}</Badge>}
                 </div>
